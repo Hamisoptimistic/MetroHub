@@ -26,6 +26,7 @@ public sealed class MetroSyncSecurity
     public static MetroSyncSecurity Default { get; } = new();
 
     public string CredentialsPath => _credentialsPath;
+    public string DirectoryPath => _directoryPath;
 
     public MetroSyncSecurity(string? baseDirectory = null)
     {

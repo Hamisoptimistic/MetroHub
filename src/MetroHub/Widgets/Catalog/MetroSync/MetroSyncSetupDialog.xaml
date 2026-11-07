@@ -266,19 +266,74 @@
                     </Grid>
                 </Border>
 
-                <!-- State 3: Confirmation -->
-                <Grid x:Name="State3Panel" Visibility="Collapsed" VerticalAlignment="Center">
-                    <TextBlock x:Name="ConfirmationPromptText"
-                               Text="Connect as {name}?"
-                               FontSize="{DynamicResource TypeHeaderFontSize}"
-                               FontWeight="{DynamicResource TypeHeaderFontWeight}"
-                               Foreground="{DynamicResource TextPrimaryBrush}"
-                               VerticalAlignment="Center"
-                               TextWrapping="Wrap" />
-                </Grid>
+                <!-- State 3: Confirmation (Verified Account Card) -->
+                <Border x:Name="State3Panel"
+                        Visibility="Collapsed"
+                        Background="{DynamicResource SurfaceGlassBrush}"
+                        BorderBrush="{DynamicResource SurfaceBorderBrush}"
+                        BorderThickness="1"
+                        CornerRadius="{DynamicResource ControlCornerRadius}"
+                        Padding="18,16"
+                        VerticalAlignment="Center">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+
+                        <!-- 42x42 Avatar Badge -->
+                        <Border Grid.Column="0"
+                                Width="42" Height="42"
+                                CornerRadius="21"
+                                Background="{DynamicResource SurfaceGlassSubtleBrush}"
+                                BorderBrush="{DynamicResource SurfaceBorderBrush}"
+                                BorderThickness="1"
+                                VerticalAlignment="Center"
+                                Margin="0,0,16,0">
+                            <Grid>
+                                <!-- Fallback Symbol (shown when no avatar) -->
+                                <ui:SymbolIcon x:Name="ConfirmationAvatarFallback"
+                                               Symbol="Person24"
+                                               FontSize="20"
+                                               Foreground="{DynamicResource TextPrimaryBrush}"
+                                               HorizontalAlignment="Center"
+                                               VerticalAlignment="Center" />
+                                <!-- Avatar Image (Exact 40x40 inner bounds) -->
+                                <Image x:Name="ConfirmationAvatarImage"
+                                       Width="40" Height="40"
+                                       Stretch="UniformToFill"
+                                       RenderOptions.BitmapScalingMode="HighQuality"
+                                       Visibility="Collapsed">
+                                    <Image.Clip>
+                                        <EllipseGeometry Center="20,20" RadiusX="20" RadiusY="20" />
+                                    </Image.Clip>
+                                </Image>
+                            </Grid>
+                        </Border>
+
+                        <!-- 2-Line Account Information -->
+                        <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                            <!-- Account Name -->
+                            <TextBlock x:Name="ConfirmationAccountNameText"
+                                       Text="Anon"
+                                       FontSize="{DynamicResource TypeBodyStrongFontSize}"
+                                       FontWeight="{DynamicResource TypeBodyStrongFontWeight}"
+                                       Foreground="{DynamicResource TextPrimaryBrush}"
+                                       TextTrimming="CharacterEllipsis" />
+
+                            <!-- Telegram Handle / ID -->
+                            <TextBlock x:Name="ConfirmationAccountHandleText"
+                                       Text="@username"
+                                       FontSize="{DynamicResource TypeCaptionFontSize}"
+                                       Foreground="{DynamicResource TextSecondaryBrush}"
+                                       Margin="0,3,0,0"
+                                       TextTrimming="CharacterEllipsis" />
+                        </StackPanel>
+                    </Grid>
+                </Border>
 
                 <!-- State 4: Manual User ID Entry -->
-                <Grid x:Name="State4Panel" Visibility="Collapsed" VerticalAlignment="Center">
+                <Grid x:Name="State4Panel" Visibility="Collapsed" VerticalAlignment="Top">
                     <StackPanel>
                         <TextBlock Text="User ID"
                                    FontSize="{DynamicResource TypeCaptionFontSize}"
@@ -288,6 +343,12 @@
                         <TextBox x:Name="ManualUserIdInput"
                                  Height="36"
                                  KeyDown="OnManualUserIdInputKeyDown" />
+                        <TextBlock FontSize="{DynamicResource TypeCaptionFontSize}"
+                                   Foreground="{DynamicResource TextSecondaryBrush}"
+                                   Margin="0,6,0,0"
+                                   TextWrapping="Wrap">
+                            <Run Text="Find your numeric ID by messaging " /><Run Text="@userinfobot" FontWeight="SemiBold" /><Run Text=" in Telegram." />
+                        </TextBlock>
                     </StackPanel>
                 </Grid>
             </Grid>
@@ -363,13 +424,15 @@
                                 Orientation="Horizontal"
                                 HorizontalAlignment="Right"
                                 Visibility="Collapsed">
-                        <Button Style="{DynamicResource DefaultButtonStyle}"
+                        <Button x:Name="NotMeButton"
+                                Style="{DynamicResource DefaultButtonStyle}"
                                 Content="Not me"
                                 Height="34"
                                 Padding="16,0"
                                 Margin="0,0,8,0"
                                 Click="OnNotMeClick" />
-                        <Button Style="{DynamicResource AccentButtonStyle}"
+                        <Button x:Name="ConfirmConnectButton"
+                                Style="{DynamicResource AccentButtonStyle}"
                                 Content="Connect"
                                 Height="34"
                                 Padding="20,0"

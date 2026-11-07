@@ -38,6 +38,10 @@ public interface ITelegramTransport
     Task<JsonDocument> SendMessageAsync(long chatId, string text, CancellationToken ct);
 
     Task<JsonDocument> SendPhotoAsync(long chatId, Stream imageStream, string? caption, CancellationToken ct);
+
+    Task<byte[]?> GetUserProfilePhotoBytesAsync(long userId, CancellationToken ct) => Task.FromResult<byte[]?>(null);
+
+    Task<byte[]?> GetBotPhotoBytesAsync(string? username, long botId, CancellationToken ct) => Task.FromResult<byte[]?>(null);
 }
 
 public interface IUpdateNormalizer

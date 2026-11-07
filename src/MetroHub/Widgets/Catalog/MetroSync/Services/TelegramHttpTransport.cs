@@ -251,6 +251,142 @@ public sealed class TelegramHttpTransport : ITelegramTransport
         return await PostJsonAsync(url, form, ct).ConfigureAwait(false);
     }
 
+    public async Task<byte[]?> GetUserProfilePhotoBytesAsync(long userId, CancellationToken ct)
+    {
+        try
+        {
+            var url = $"{_apiRoot}getUserProfilePhotos?user_id={userId}&limit=1";
+            using var doc = await GetJsonAsync(url, ct).ConfigureAwait(false);
+            if (!doc.RootElement.TryGetProperty("result", out var result) ||
+                !result.TryGetProperty("photos", out var photos) ||
+                photos.ValueKind != JsonValueKind.Array ||
+                photos.GetArrayLength() == 0)
+            {
+                return null;
+            }
+
+            var firstPhotoSizes = photos[0];
+            if (firstPhotoSizes.ValueKind != JsonValueKind.Array ||
+                firstPhotoSizes.GetArrayLength() == 0)
+            {
+                return null;
+            }
+
+            var firstSize = firstPhotoSizes[0];
+            if (!firstSize.TryGetProperty("file_id", out var fileIdProp) ||
+                fileIdProp.ValueKind != JsonValueKind.String)
+            {
+                return null;
+            }
+
+            var fileId = fileIdProp.GetString();
+            if (string.IsNullOrWhiteSpace(fileId))
+            {
+                return null;
+            }
+
+            var fileInfo = await GetFileAsync(fileId, ct).ConfigureAwait(false);
+            if (string.IsNullOrWhiteSpace(fileInfo.FilePath) ||
+                fileInfo.FilePath.Contains("..", StringComparison.Ordinal) ||
+                fileInfo.FilePath.Contains('\\'))
+            {
+                return null;
+            }
+
+            using var ms = new MemoryStream();
+            await DownloadAsync(fileInfo.FilePath, ms, maxBytes: 2 * 1024 * 1024, ct).ConfigureAwait(false);
+            return ms.ToArray();
+        }
+        catch (OperationCanceledException) when (ct.IsCancellationRequested)
+        {
+            throw;
+        }
+        catch
+        {
+            return null;
+        }
+    }
+
+    public async Task<byte[]?> GetBotPhotoBytesAsync(string? username, long botId, CancellationToken ct)
+    {
+        try
+        {
+            string? fileId = null;
+
+            // 1. Try getChat with @username if available, or botId
+            string target = !string.IsNullOrWhiteSpace(username)
+                ? $"@{username.TrimStart('@')}"
+                : (botId > 0 ? botId.ToString(System.Globalization.CultureInfo.InvariantCulture) : string.Empty);
+
+            if (!string.IsNullOrEmpty(target))
+            {
+                var url = $"{_apiRoot}getChat?chat_id={Uri.EscapeDataString(target)}";
+                using var doc = await GetJsonAsync(url, ct).ConfigureAwait(false);
+                if (doc.RootElement.TryGetProperty("result", out var result) &&
+                    result.TryGetProperty("photo", out var photo))
+                {
+                    if (photo.TryGetProperty("small_file_id", out var smallProp) &&
+                        smallProp.ValueKind == JsonValueKind.String)
+                    {
+                        fileId = smallProp.GetString();
+                    }
+                    else if (photo.TryGetProperty("big_file_id", out var bigProp) &&
+                             bigProp.ValueKind == JsonValueKind.String)
+                    {
+                        fileId = bigProp.GetString();
+                    }
+                }
+            }
+
+            // 2. Fallback to getUserProfilePhotos if getChat returned no photo
+            if (string.IsNullOrWhiteSpace(fileId) && botId > 0)
+            {
+                var photosUrl = $"{_apiRoot}getUserProfilePhotos?user_id={botId}&limit=1";
+                using var photosDoc = await GetJsonAsync(photosUrl, ct).ConfigureAwait(false);
+                if (photosDoc.RootElement.TryGetProperty("result", out var pResult) &&
+                    pResult.TryGetProperty("photos", out var photos) &&
+                    photos.ValueKind == JsonValueKind.Array &&
+                    photos.GetArrayLength() > 0)
+                {
+                    var firstSizes = photos[0];
+                    if (firstSizes.ValueKind == JsonValueKind.Array && firstSizes.GetArrayLength() > 0)
+                    {
+                        var firstSize = firstSizes[0];
+                        if (firstSize.TryGetProperty("file_id", out var fProp) && fProp.ValueKind == JsonValueKind.String)
+                        {
+                            fileId = fProp.GetString();
+                        }
+                    }
+                }
+            }
+
+            if (string.IsNullOrWhiteSpace(fileId))
+            {
+                return null;
+            }
+
+            var fileInfo = await GetFileAsync(fileId, ct).ConfigureAwait(false);
+            if (string.IsNullOrWhiteSpace(fileInfo.FilePath) ||
+                fileInfo.FilePath.Contains("..", StringComparison.Ordinal) ||
+                fileInfo.FilePath.Contains('\\'))
+            {
+                return null;
+            }
+
+            using var ms = new MemoryStream();
+            await DownloadAsync(fileInfo.FilePath, ms, maxBytes: 2 * 1024 * 1024, ct).ConfigureAwait(false);
+            return ms.ToArray();
+        }
+        catch (OperationCanceledException) when (ct.IsCancellationRequested)
+        {
+            throw;
+        }
+        catch
+        {
+            return null;
+        }
+    }
+
     private async Task<JsonDocument> PostJsonAsync(string url, HttpContent content, CancellationToken ct)
     {
         HttpResponseMessage response;

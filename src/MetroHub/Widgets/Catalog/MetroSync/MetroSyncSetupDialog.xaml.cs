@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
+using System.IO;
 using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
@@ -38,6 +39,8 @@ public partial class MetroSyncSetupDialog : MetroDialog
     private CancellationTokenSource? _pollingCts;
     private TelegramBotUser? _botUser;
     private CandidateSender? _candidate;
+    private byte[]? _candidateAvatarBytes;
+    private byte[]? _botAvatarBytes;
     private string? _currentBotToken;
     private SetupVisualState _currentState = SetupVisualState.Intro;
 
@@ -89,6 +92,8 @@ public partial class MetroSyncSetupDialog : MetroDialog
         CancelPolling();
         _ownedClient?.Dispose();
         _ownedClient = null;
+        _candidateAvatarBytes = null;
+        _botAvatarBytes = null;
     }
 
     private void SetVisualState(SetupVisualState state)
@@ -136,7 +141,7 @@ public partial class MetroSyncSetupDialog : MetroDialog
         }
 
         BotTokenInput.IsEnabled = state is SetupVisualState.TokenEntry or SetupVisualState.ManualEntry;
-        ManualIdToggleButton.Visibility = state is not (SetupVisualState.ManualEntry or SetupVisualState.Intro) ? Visibility.Visible : Visibility.Collapsed;
+        ManualIdToggleButton.Visibility = state is not (SetupVisualState.ManualEntry or SetupVisualState.Intro or SetupVisualState.Confirmation) ? Visibility.Visible : Visibility.Collapsed;
 
         if (state == SetupVisualState.TokenEntry)
         {
@@ -208,6 +213,9 @@ public partial class MetroSyncSetupDialog : MetroDialog
     {
         _botUser = null;
         _currentBotToken = null;
+        _candidate = null;
+        _candidateAvatarBytes = null;
+        _botAvatarBytes = null;
         ShowError(null);
     }
 
@@ -231,6 +239,14 @@ public partial class MetroSyncSetupDialog : MetroDialog
             _transport = new TelegramHttpTransport(_ownedClient, new Uri("https://api.telegram.org"), token);
 
             _botUser = await _transport.GetMeAsync(CancellationToken.None).ConfigureAwait(true);
+            try
+            {
+                _botAvatarBytes = await _transport.GetBotPhotoBytesAsync(_botUser.Username, _botUser.Id, CancellationToken.None).ConfigureAwait(true);
+            }
+            catch
+            {
+                _botAvatarBytes = null;
+            }
 
             var botHandle = !string.IsNullOrWhiteSpace(_botUser.Username)
                 ? $"@{_botUser.Username}"
@@ -284,12 +300,26 @@ public partial class MetroSyncSetupDialog : MetroDialog
                 var candidate = await _pairingService.WaitForCandidateSenderAsync(_transport, _ignoredUserIds, ct).ConfigureAwait(false);
                 if (candidate != null && !ct.IsCancellationRequested)
                 {
+                    byte[]? avatarBytes = _botAvatarBytes;
+                    if (avatarBytes == null && _transport != null && _botUser != null)
+                    {
+                        try
+                        {
+                            avatarBytes = await _transport.GetBotPhotoBytesAsync(_botUser.Username, _botUser.Id, ct).ConfigureAwait(false);
+                            _botAvatarBytes = avatarBytes;
+                        }
+                        catch
+                        {
+                            // Best effort bot avatar retrieval
+                        }
+                    }
+
+                    if (ct.IsCancellationRequested) return;
+
                     await Dispatcher.InvokeAsync(() =>
                     {
                         if (ct.IsCancellationRequested) return;
-                        _candidate = candidate;
-                        ConfirmationPromptText.Text = $"Connect as {candidate.DisplayName}?";
-                        SetVisualState(SetupVisualState.Confirmation);
+                        SetCandidatePreview(candidate, avatarBytes);
                     });
                 }
             }
@@ -324,6 +354,46 @@ public partial class MetroSyncSetupDialog : MetroDialog
         }, ct);
     }
 
+    internal void SetCandidatePreview(CandidateSender candidate, byte[]? avatarBytes)
+    {
+        _candidate = candidate;
+        _candidateAvatarBytes = avatarBytes;
+
+        ConfirmationAccountNameText.Text = !string.IsNullOrWhiteSpace(candidate.FirstName)
+            ? candidate.FirstName
+            : candidate.DisplayName;
+
+        ConfirmationAccountHandleText.Text = !string.IsNullOrWhiteSpace(candidate.Username)
+            ? $"@{candidate.Username.TrimStart('@')}"
+            : candidate.UserId.ToString(System.Globalization.CultureInfo.InvariantCulture);
+
+        if (_candidateAvatarBytes != null)
+        {
+            try
+            {
+                using var ms = new MemoryStream(_candidateAvatarBytes);
+                var bmp = MetroSyncThumbnails.CreateFrozenThumbnail(ms, maxDimension: 84);
+                ConfirmationAvatarImage.Source = bmp;
+                ConfirmationAvatarImage.Visibility = Visibility.Visible;
+                ConfirmationAvatarFallback.Visibility = Visibility.Collapsed;
+            }
+            catch
+            {
+                ConfirmationAvatarImage.Source = null;
+                ConfirmationAvatarImage.Visibility = Visibility.Collapsed;
+                ConfirmationAvatarFallback.Visibility = Visibility.Visible;
+            }
+        }
+        else
+        {
+            ConfirmationAvatarImage.Source = null;
+            ConfirmationAvatarImage.Visibility = Visibility.Collapsed;
+            ConfirmationAvatarFallback.Visibility = Visibility.Visible;
+        }
+
+        SetVisualState(SetupVisualState.Confirmation);
+    }
+
     private void OnPollingCancelClick(object sender, RoutedEventArgs e)
     {
         CancelPolling();
@@ -352,6 +422,17 @@ public partial class MetroSyncSetupDialog : MetroDialog
 
     private void OnNotMeClick(object sender, RoutedEventArgs e)
     {
+        _candidateAvatarBytes = null;
+        if (ConfirmationAvatarImage != null)
+        {
+            ConfirmationAvatarImage.Source = null;
+            ConfirmationAvatarImage.Visibility = Visibility.Collapsed;
+        }
+        if (ConfirmationAvatarFallback != null)
+        {
+            ConfirmationAvatarFallback.Visibility = Visibility.Visible;
+        }
+
         if (_candidate != null)
         {
             _ignoredUserIds.Add(_candidate.UserId);
@@ -430,6 +511,14 @@ public partial class MetroSyncSetupDialog : MetroDialog
                 _ownedClient = TelegramHttpTransport.CreateDedicatedClient();
                 _transport = new TelegramHttpTransport(_ownedClient, new Uri("https://api.telegram.org"), token);
                 _botUser = await _transport.GetMeAsync(CancellationToken.None).ConfigureAwait(true);
+                try
+                {
+                    _botAvatarBytes = await _transport.GetBotPhotoBytesAsync(_botUser.Username, _botUser.Id, CancellationToken.None).ConfigureAwait(true);
+                }
+                catch
+                {
+                    _botAvatarBytes = null;
+                }
             }
 
             SaveAndConnect(token, userId);
@@ -448,15 +537,52 @@ public partial class MetroSyncSetupDialog : MetroDialog
         }
     }
 
-    private void SaveAndConnect(string token, long userId)
+    internal void SaveAndConnect(string token, long userId)
     {
+        try
+        {
+            var profilePath = _viewModel != null
+                ? _viewModel.ProfilePhotoPath
+                : Path.Combine(_security.DirectoryPath, "profile.jpg");
+
+            var avatarBytes = _botAvatarBytes ?? _candidateAvatarBytes;
+            if (avatarBytes != null)
+            {
+                var dir = Path.GetDirectoryName(profilePath);
+                if (!string.IsNullOrEmpty(dir))
+                {
+                    Directory.CreateDirectory(dir);
+                }
+                File.WriteAllBytes(profilePath, avatarBytes);
+            }
+            else
+            {
+                if (File.Exists(profilePath))
+                {
+                    File.Delete(profilePath);
+                }
+            }
+        }
+        catch
+        {
+            // Profile photo persistence is best-effort
+        }
+
         _security.SaveCredentials(token, userId);
         if (_viewModel != null)
         {
             _ = _viewModel.ConnectAsync(new MetroSyncCredentials(token, userId));
         }
 
-        DialogResult = true;
+        try
+        {
+            DialogResult = true;
+        }
+        catch (InvalidOperationException)
+        {
+            // Ignored if window is not displayed modally via ShowDialog
+        }
+
         Close();
     }
 }

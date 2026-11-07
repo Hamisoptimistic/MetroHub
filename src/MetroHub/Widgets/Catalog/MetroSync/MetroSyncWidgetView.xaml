@@ -42,12 +42,32 @@
                     <ColumnDefinition Width="Auto" />
                 </Grid.ColumnDefinitions>
 
-                <TextBlock Grid.Column="0"
-                           Text="MetroSync"
-                           FontSize="{DynamicResource TypeSubtitleFontSize}"
-                           FontWeight="{DynamicResource TypeSubtitleFontWeight}"
-                           Foreground="{DynamicResource TextPrimaryBrush}"
-                           VerticalAlignment="Center" />
+                <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
+                    <!-- 24x24 Header Avatar (Visible when paired & avatar exists) -->
+                    <Border x:Name="HeaderAvatarBorder"
+                            Width="24" Height="24"
+                            CornerRadius="12"
+                            Background="{DynamicResource SurfaceGlassSubtleBrush}"
+                            BorderBrush="{DynamicResource SurfaceBorderBrush}"
+                            BorderThickness="1"
+                            Margin="0,0,10,0"
+                            Visibility="Collapsed">
+                        <Image x:Name="HeaderAvatarImage"
+                               Width="22" Height="22"
+                               Stretch="UniformToFill"
+                               RenderOptions.BitmapScalingMode="HighQuality">
+                            <Image.Clip>
+                                <EllipseGeometry Center="11,11" RadiusX="11" RadiusY="11" />
+                            </Image.Clip>
+                        </Image>
+                    </Border>
+
+                    <TextBlock Text="MetroSync"
+                               FontSize="{DynamicResource TypeSubtitleFontSize}"
+                               FontWeight="{DynamicResource TypeSubtitleFontWeight}"
+                               Foreground="{DynamicResource TextPrimaryBrush}"
+                               VerticalAlignment="Center" />
+                </StackPanel>
 
                 <!-- Header Menu Button [⋯] with Connect/Disconnect ContextMenu -->
                 <Button Grid.Column="1"

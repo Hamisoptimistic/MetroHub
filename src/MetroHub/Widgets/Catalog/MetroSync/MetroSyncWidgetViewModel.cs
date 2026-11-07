@@ -97,6 +97,8 @@ public sealed partial class MetroSyncWidgetViewModel : WidgetViewModelBase, IWid
 
     public bool CanSendClipboardImage => !IsSending && IsPaired;
 
+    public string ProfilePhotoPath => Path.Combine(_security.DirectoryPath, "profile.jpg");
+
     public ObservableCollection<MetroSyncMessageItem> Items { get; } = new();
 
     public ObservableCollection<MetroSyncMessageItem> Feed => Items;
@@ -794,6 +796,17 @@ public sealed partial class MetroSyncWidgetViewModel : WidgetViewModelBase, IWid
         {
             _security.Delete();
             _historyStore.DeleteState();
+            try
+            {
+                var profilePath = ProfilePhotoPath;
+                if (File.Exists(profilePath))
+                {
+                    File.Delete(profilePath);
+                }
+            }
+            catch
+            {
+            }
 
             await _engineLock.WaitAsync(_lifecycleCts.Token).ConfigureAwait(false);
             try

@@ -1,11 +1,14 @@
 using System;
 using System.Collections.Specialized;
+using System.ComponentModel;
+using System.IO;
 using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Threading;
 using MetroHub.Widgets.Catalog.MetroSync.Models;
+using MetroHub.Widgets.Catalog.MetroSync.Services;
 
 namespace MetroHub.Widgets.Catalog.MetroSync;
 
@@ -31,6 +34,7 @@ public partial class MetroSyncWidgetView : UserControl
     {
         UpdatePlaceholderVisibility();
         HookViewModel(DataContext as MetroSyncWidgetViewModel);
+        UpdateConnectionState();
     }
 
     private void OnUnloaded(object sender, RoutedEventArgs e)
@@ -50,7 +54,9 @@ public partial class MetroSyncWidgetView : UserControl
 
         _viewModel = vm;
         ((INotifyCollectionChanged)_viewModel.Items).CollectionChanged += OnItemsCollectionChanged;
+        _viewModel.PropertyChanged += OnViewModelPropertyChanged;
         _viewModel.SetupRequested += OnSetupRequested;
+        UpdateConnectionState();
     }
 
     private void UnhookViewModel()
@@ -58,9 +64,52 @@ public partial class MetroSyncWidgetView : UserControl
         if (_viewModel != null)
         {
             ((INotifyCollectionChanged)_viewModel.Items).CollectionChanged -= OnItemsCollectionChanged;
+            _viewModel.PropertyChanged -= OnViewModelPropertyChanged;
             _viewModel.SetupRequested -= OnSetupRequested;
             _viewModel = null;
         }
+    }
+
+    private void OnViewModelPropertyChanged(object? sender, PropertyChangedEventArgs e)
+    {
+        if (e.PropertyName == nameof(MetroSyncWidgetViewModel.IsPaired))
+        {
+            if (Dispatcher.CheckAccess())
+            {
+                UpdateConnectionState();
+            }
+            else
+            {
+                _ = Dispatcher.InvokeAsync(UpdateConnectionState);
+            }
+        }
+    }
+
+    private void UpdateConnectionState()
+    {
+        if (HeaderAvatarBorder == null || HeaderAvatarImage == null) return;
+
+        if (_viewModel == null || !_viewModel.IsPaired)
+        {
+            HeaderAvatarBorder.Visibility = Visibility.Collapsed;
+            HeaderAvatarImage.Source = null;
+            return;
+        }
+
+        var profilePath = _viewModel.ProfilePhotoPath;
+        if (File.Exists(profilePath))
+        {
+            var bmp = MetroSyncThumbnails.LoadThumbnail(profilePath, maxDimension: 48);
+            if (bmp != null)
+            {
+                HeaderAvatarImage.Source = bmp;
+                HeaderAvatarBorder.Visibility = Visibility.Visible;
+                return;
+            }
+        }
+
+        HeaderAvatarBorder.Visibility = Visibility.Collapsed;
+        HeaderAvatarImage.Source = null;
     }
 
     private void OnItemsCollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)
@@ -93,6 +142,7 @@ public partial class MetroSyncWidgetView : UserControl
         {
             var window = Window.GetWindow(this) ?? Application.Current?.MainWindow;
             MetroSyncSetupDialog.Show(window, _viewModel);
+            UpdateConnectionState();
         }
         finally
         {

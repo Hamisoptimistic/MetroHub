@@ -58,6 +58,8 @@ public sealed class FakeTelegramServer : IAsyncDisposable
     private readonly object _gate = new();
     private readonly List<Stored> _queue = new();
     private readonly ConcurrentDictionary<string, (byte[] Content, long DeclaredSize)> _files = new();
+    private readonly ConcurrentDictionary<long, string> _userPhotos = new();
+    private readonly ConcurrentDictionary<string, string> _chatPhotos = new(StringComparer.OrdinalIgnoreCase);
     private readonly ConcurrentQueue<string> _requestLog = new();
     private TaskCompletionSource _signal = NewSignal();
     private long _nextUpdateId = 1000;
@@ -119,6 +121,12 @@ public sealed class FakeTelegramServer : IAsyncDisposable
     public void AddFile(string fileId, byte[] content, long? declaredSize = null) =>
         _files[fileId] = (content, declaredSize ?? content.Length);
 
+    public void SetUserProfilePhoto(long userId, string fileId) =>
+        _userPhotos[userId] = fileId;
+
+    public void SetChatPhoto(string chatOrUsername, string fileId) =>
+        _chatPhotos[chatOrUsername.TrimStart('@')] = fileId;
+
     /// <summary>Simulates Telegram's 24-hour retention: drops unreceived updates older than age.</summary>
     public int ExpireOlderThan(TimeSpan age)
     {
@@ -148,6 +156,8 @@ public sealed class FakeTelegramServer : IAsyncDisposable
                 case "getMe": await GetMeAsync(ctx).ConfigureAwait(false); break;
                 case "getUpdates": await GetUpdatesAsync(ctx).ConfigureAwait(false); break;
                 case "getFile": await GetFileAsync(ctx).ConfigureAwait(false); break;
+                case "getChat": await GetChatAsync(ctx).ConfigureAwait(false); break;
+                case "getUserProfilePhotos": await GetUserProfilePhotosAsync(ctx).ConfigureAwait(false); break;
                 case "sendMessage": await SendMessageAsync(ctx).ConfigureAwait(false); break;
                 case "sendPhoto": await SendPhotoAsync(ctx).ConfigureAwait(false); break;
                 default: await WriteErrorAsync(ctx, 404, "Not Found").ConfigureAwait(false); break;
@@ -367,6 +377,103 @@ public sealed class FakeTelegramServer : IAsyncDisposable
                 file_path = "files/" + fileId,
             },
         };
+        ctx.Response.ContentType = "application/json";
+        await ctx.Response.WriteAsync(JsonSerializer.Serialize(result)).ConfigureAwait(false);
+    }
+
+    private async Task GetUserProfilePhotosAsync(HttpContext ctx)
+    {
+        long userId = 0;
+        if (ctx.Request.Query.TryGetValue("user_id", out var idStr) && long.TryParse(idStr, out var id))
+        {
+            userId = id;
+        }
+
+        object result;
+        if (_userPhotos.TryGetValue(userId, out var fileId))
+        {
+            result = new
+            {
+                ok = true,
+                result = new
+                {
+                    total_count = 1,
+                    photos = new[]
+                    {
+                        new[]
+                        {
+                            new
+                            {
+                                file_id = fileId,
+                                file_unique_id = "u_" + fileId,
+                                width = 160,
+                                height = 160,
+                                file_size = _files.TryGetValue(fileId, out var f) ? f.DeclaredSize : 1024
+                            }
+                        }
+                    }
+                }
+            };
+        }
+        else
+        {
+            result = new
+            {
+                ok = true,
+                result = new
+                {
+                    total_count = 0,
+                    photos = Array.Empty<object>()
+                }
+            };
+        }
+
+        ctx.Response.ContentType = "application/json";
+        await ctx.Response.WriteAsync(JsonSerializer.Serialize(result)).ConfigureAwait(false);
+    }
+
+    private async Task GetChatAsync(HttpContext ctx)
+    {
+        string? chatIdStr = null;
+        if (ctx.Request.Query.TryGetValue("chat_id", out var idValues))
+        {
+            chatIdStr = idValues.ToString();
+        }
+
+        object result;
+        var cleanTarget = chatIdStr?.Trim().TrimStart('@') ?? "";
+        if (!string.IsNullOrEmpty(cleanTarget) && _chatPhotos.TryGetValue(cleanTarget, out var fileId))
+        {
+            result = new
+            {
+                ok = true,
+                result = new
+                {
+                    id = 123456789,
+                    type = "private",
+                    photo = new
+                    {
+                        small_file_id = fileId,
+                        small_file_unique_id = "u_" + fileId,
+                        big_file_id = fileId,
+                        big_file_unique_id = "ub_" + fileId,
+                    }
+                }
+            };
+        }
+        else
+        {
+            result = new
+            {
+                ok = true,
+                result = new
+                {
+                    id = 123456789,
+                    type = "private"
+                }
+            };
+        }
+
         ctx.Response.ContentType = "application/json";
         await ctx.Response.WriteAsync(JsonSerializer.Serialize(result)).ConfigureAwait(false);
     }
