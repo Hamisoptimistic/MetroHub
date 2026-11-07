@@ -5,7 +5,7 @@
                      xmlns:controls="clr-namespace:MetroHub.Presentation.Controls"
                      xmlns:dialogs="clr-namespace:MetroHub.Presentation.Dialogs"
                      Title="Connect MetroSync"
-                     Width="580"
+                     Width="620"
                      Height="360">
 
     <dialogs:MetroDialog.SidebarContent>
@@ -17,147 +17,303 @@
     </dialogs:MetroDialog.SidebarContent>
 
     <Grid Margin="0,4,0,0">
-        <Grid.RowDefinitions>
-            <!-- Row 0: Bot Token Input Tier -->
-            <RowDefinition Height="Auto" />
-            <!-- Row 1: State Specific Content Slot -->
-            <RowDefinition Height="*" />
-            <!-- Row 2: Bottom Status & Manual Switch Link Slot -->
-            <RowDefinition Height="Auto" />
-        </Grid.RowDefinitions>
+        <!-- ================================================================= -->
+        <!-- STATE 0: INTRO / HOW TO CONNECT (Step 1)                          -->
+        <!-- ================================================================= -->
+        <Grid x:Name="IntroPanel">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="*" />
+                <RowDefinition Height="Auto" />
+            </Grid.RowDefinitions>
 
-        <!-- Row 0: Bot Token Input -->
-        <StackPanel Grid.Row="0">
-            <TextBlock Text="Bot token"
-                       FontSize="{DynamicResource TypeCaptionFontSize}"
-                       FontWeight="{DynamicResource TypeCaptionFontWeight}"
-                       Foreground="{DynamicResource TextSecondaryBrush}"
-                       Margin="0,0,0,6" />
-            <TextBox x:Name="BotTokenInput"
-                     Height="36"
-                     TextChanged="OnBotTokenInputTextChanged"
-                     KeyDown="OnBotTokenInputKeyDown" />
-        </StackPanel>
-
-        <!-- Row 1: The 4 Visual States -->
-        <Grid Grid.Row="1" Margin="0,16,0,0">
-            <!-- State 1: Token Entry -->
-            <Grid x:Name="State1Panel">
-                <Button x:Name="ContinueButton"
-                        Style="{DynamicResource AccentButtonStyle}"
-                        Content="Continue"
-                        Height="34"
-                        Padding="20,0"
-                        HorizontalAlignment="Right"
-                        VerticalAlignment="Top"
-                        Click="OnContinueClick" />
-            </Grid>
-
-            <!-- State 2: Polling Wait -->
-            <Grid x:Name="State2Panel" Visibility="Collapsed">
+            <!-- Continuous Stepper Layout: 4 Steps (Equidistant 52px rows) -->
+            <Grid Grid.Row="0" Margin="0,12,0,0">
                 <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="24" />
                     <ColumnDefinition Width="*" />
-                    <ColumnDefinition Width="Auto" />
                 </Grid.ColumnDefinitions>
-                <StackPanel Grid.Column="0" VerticalAlignment="Center">
-                    <TextBlock x:Name="PollingInstructionText"
-                               Text="Open @bot in Telegram and send /start."
-                               FontSize="{DynamicResource TypeBodyFontSize}"
-                               Foreground="{DynamicResource TextPrimaryBrush}"
-                               TextWrapping="Wrap" />
-                    <ui:ProgressRing x:Name="PollingProgressRing"
-                                     Width="20" Height="20"
-                                     IsIndeterminate="False"
-                                     HorizontalAlignment="Left"
-                                     Margin="0,12,0,0" />
-                </StackPanel>
-                <Button Grid.Column="1"
-                        Style="{DynamicResource DefaultButtonStyle}"
-                        Content="Cancel"
-                        Height="34"
-                        Padding="20,0"
-                        VerticalAlignment="Center"
-                        Click="OnPollingCancelClick" />
-            </Grid>
+                <Grid.RowDefinitions>
+                    <!-- Step 1 -->
+                    <RowDefinition Height="44" />
+                    <!-- Step 2 -->
+                    <RowDefinition Height="44" />
+                    <!-- Step 3 -->
+                    <RowDefinition Height="44" />
+                    <!-- Step 4 -->
+                    <RowDefinition Height="44" />
+                    <!-- Step 5 -->
+                    <RowDefinition Height="44" />
+                </Grid.RowDefinitions>
 
-            <!-- State 3: Confirmation -->
-            <Grid x:Name="State3Panel" Visibility="Collapsed">
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="*" />
-                    <ColumnDefinition Width="Auto" />
-                </Grid.ColumnDefinitions>
-                <TextBlock Grid.Column="0"
-                           x:Name="ConfirmationPromptText"
-                           Text="Connect as {name}?"
-                           FontSize="{DynamicResource TypeBodyStrongFontSize}"
-                           FontWeight="{DynamicResource TypeBodyStrongFontWeight}"
+                <!-- ================= Step 1 ================= -->
+                <Rectangle Grid.Column="0" Grid.Row="0"
+                           Width="2"
+                           Fill="{DynamicResource SystemAccentColorPrimaryBrush}"
+                           Opacity="0.35"
+                           HorizontalAlignment="Center"
+                           VerticalAlignment="Stretch"
+                           Margin="0,10,0,-1" />
+                <Ellipse Grid.Column="0" Grid.Row="0"
+                         Width="10" Height="10"
+                         Fill="{DynamicResource SystemAccentColorPrimaryBrush}"
+                         HorizontalAlignment="Center"
+                         VerticalAlignment="Top"
+                         Margin="0,5,0,0" />
+                <TextBlock Grid.Column="1" Grid.Row="0"
+                           FontSize="{DynamicResource TypeBodyFontSize}"
                            Foreground="{DynamicResource TextPrimaryBrush}"
-                           VerticalAlignment="Center"
-                           TextWrapping="Wrap" />
-                <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
-                    <Button Style="{DynamicResource DefaultButtonStyle}"
-                            Content="Not me"
-                            Height="34"
-                            Padding="16,0"
-                            Margin="0,0,8,0"
-                            Click="OnNotMeClick" />
-                    <Button Style="{DynamicResource AccentButtonStyle}"
-                            Content="Connect"
+                           Margin="12,0,0,0"
+                           TextWrapping="Wrap">
+                    <Run Text="Search " /><Run Text="@BotFather" FontWeight="SemiBold" /><Run Text=" in Telegram and type " /><Run Text="/newbot" FontWeight="SemiBold" /><Run Text="." />
+                </TextBlock>
+
+                <!-- ================= Step 2 ================= -->
+                <Rectangle Grid.Column="0" Grid.Row="1"
+                           Width="2"
+                           Fill="{DynamicResource SystemAccentColorPrimaryBrush}"
+                           Opacity="0.35"
+                           HorizontalAlignment="Center"
+                           VerticalAlignment="Stretch"
+                           Margin="0,0,0,-1" />
+                <Ellipse Grid.Column="0" Grid.Row="1"
+                         Width="10" Height="10"
+                         Fill="{DynamicResource SystemAccentColorPrimaryBrush}"
+                         HorizontalAlignment="Center"
+                         VerticalAlignment="Top"
+                         Margin="0,5,0,0" />
+                <TextBlock Grid.Column="1" Grid.Row="1"
+                           FontSize="{DynamicResource TypeBodyFontSize}"
+                           Foreground="{DynamicResource TextPrimaryBrush}"
+                           Margin="12,0,0,0"
+                           TextWrapping="Wrap">
+                    <Run Text="Enter a unique " /><Run Text="username" FontWeight="SemiBold" /><Run Text=" (follow Telegram steps)." />
+                </TextBlock>
+
+                <!-- ================= Step 3 ================= -->
+                <Rectangle Grid.Column="0" Grid.Row="2"
+                           Width="2"
+                           Fill="{DynamicResource SystemAccentColorPrimaryBrush}"
+                           Opacity="0.35"
+                           HorizontalAlignment="Center"
+                           VerticalAlignment="Stretch"
+                           Margin="0,0,0,-1" />
+                <Ellipse Grid.Column="0" Grid.Row="2"
+                         Width="10" Height="10"
+                         Fill="{DynamicResource SystemAccentColorPrimaryBrush}"
+                         HorizontalAlignment="Center"
+                         VerticalAlignment="Top"
+                         Margin="0,5,0,0" />
+                <TextBlock Grid.Column="1" Grid.Row="2"
+                           FontSize="{DynamicResource TypeBodyFontSize}"
+                           Foreground="{DynamicResource TextPrimaryBrush}"
+                           Margin="12,0,0,0"
+                           TextWrapping="Wrap">
+                    <Run Text="Copy the " /><Run Text="HTTP API token" FontWeight="SemiBold" /><Run Text=" BotFather gives you." />
+                </TextBlock>
+
+                <!-- ================= Step 4 ================= -->
+                <Rectangle Grid.Column="0" Grid.Row="3"
+                           Width="2"
+                           Fill="{DynamicResource SystemAccentColorPrimaryBrush}"
+                           Opacity="0.35"
+                           HorizontalAlignment="Center"
+                           VerticalAlignment="Stretch"
+                           Margin="0,0,0,-1" />
+                <Ellipse Grid.Column="0" Grid.Row="3"
+                         Width="10" Height="10"
+                         Fill="{DynamicResource SystemAccentColorPrimaryBrush}"
+                         HorizontalAlignment="Center"
+                         VerticalAlignment="Top"
+                         Margin="0,5,0,0" />
+                <TextBlock Grid.Column="1" Grid.Row="3"
+                           FontSize="{DynamicResource TypeBodyFontSize}"
+                           Foreground="{DynamicResource TextPrimaryBrush}"
+                           Margin="12,0,0,0"
+                           TextWrapping="Wrap">
+                    <Run Text="Paste the token here and enter " /><Run Text="/start" FontWeight="SemiBold" /><Run Text=" on your bot." />
+                </TextBlock>
+
+                <!-- ================= Step 5 ================= -->
+                <Rectangle Grid.Column="0" Grid.Row="4"
+                           Width="2"
+                           Fill="{DynamicResource SystemAccentColorPrimaryBrush}"
+                           Opacity="0.35"
+                           HorizontalAlignment="Center"
+                           VerticalAlignment="Top"
+                           Height="10" />
+                <Ellipse Grid.Column="0" Grid.Row="4"
+                         Width="10" Height="10"
+                         Fill="{DynamicResource SystemAccentColorPrimaryBrush}"
+                         HorizontalAlignment="Center"
+                         VerticalAlignment="Top"
+                         Margin="0,5,0,0" />
+                <TextBlock Grid.Column="1" Grid.Row="4"
+                           FontSize="{DynamicResource TypeBodyFontSize}"
+                           Foreground="{DynamicResource TextPrimaryBrush}"
+                           Margin="12,0,0,0"
+                           TextWrapping="Wrap">
+                    <Run Text="Your device is " /><Run Text="securely connected" FontWeight="SemiBold" /><Run Text=" and ready to sync." />
+                </TextBlock>
+            </Grid>
+
+            <!-- Bottom Action Bar (Only Next) -->
+            <Grid Grid.Row="1" Margin="0,16,0,0">
+                <Button x:Name="IntroNextButton"
+                        Style="{DynamicResource AccentButtonStyle}"
+                        Content="Next"
+                        Height="34"
+                        Padding="24,0"
+                        HorizontalAlignment="Right"
+                        Click="OnIntroNextClick" />
+            </Grid>
+        </Grid>
+
+        <!-- ================================================================= -->
+        <!-- WIZARD PANEL: TOKEN ENTRY & PAIRING FLOW (Steps 2+)               -->
+        <!-- ================================================================= -->
+        <Grid x:Name="WizardPanel" Visibility="Collapsed">
+            <Grid.RowDefinitions>
+                <!-- Row 0: Bot Token Input Tier -->
+                <RowDefinition Height="Auto" />
+                <!-- Row 1: State Specific Content Slot -->
+                <RowDefinition Height="*" />
+                <!-- Row 2: Bottom Status & Manual Switch Link Slot -->
+                <RowDefinition Height="Auto" />
+            </Grid.RowDefinitions>
+
+            <!-- Row 0: Bot Token Input -->
+            <StackPanel Grid.Row="0">
+                <TextBlock Text="Bot token"
+                           FontSize="{DynamicResource TypeCaptionFontSize}"
+                           FontWeight="{DynamicResource TypeCaptionFontWeight}"
+                           Foreground="{DynamicResource TextSecondaryBrush}"
+                           Margin="0,0,0,6" />
+                <TextBox x:Name="BotTokenInput"
+                         Height="36"
+                         TextChanged="OnBotTokenInputTextChanged"
+                         KeyDown="OnBotTokenInputKeyDown" />
+            </StackPanel>
+
+            <!-- Row 1: The 4 Visual States -->
+            <Grid Grid.Row="1" Margin="0,16,0,0">
+                <!-- State 1: Token Entry -->
+                <Grid x:Name="State1Panel">
+                    <Button x:Name="ContinueButton"
+                            Style="{DynamicResource AccentButtonStyle}"
+                            Content="Continue"
                             Height="34"
                             Padding="20,0"
-                            Click="OnConfirmConnectClick" />
-                </StackPanel>
-            </Grid>
+                            HorizontalAlignment="Right"
+                            VerticalAlignment="Top"
+                            Click="OnContinueClick" />
+                </Grid>
 
-            <!-- State 4: Manual User ID Entry -->
-            <Grid x:Name="State4Panel" Visibility="Collapsed">
-                <StackPanel>
-                    <TextBlock Text="User ID"
-                               FontSize="{DynamicResource TypeCaptionFontSize}"
-                               FontWeight="{DynamicResource TypeCaptionFontWeight}"
-                               Foreground="{DynamicResource TextSecondaryBrush}"
-                               Margin="0,0,0,6" />
-                    <TextBox x:Name="ManualUserIdInput"
-                             Height="36"
-                             KeyDown="OnManualUserIdInputKeyDown" />
-                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,16,0,0">
+                <!-- State 2: Polling Wait -->
+                <Grid x:Name="State2Panel" Visibility="Collapsed">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+                    <StackPanel Grid.Column="0" VerticalAlignment="Center">
+                        <TextBlock x:Name="PollingInstructionText"
+                                   Text="Open @bot in Telegram and send /start."
+                                   FontSize="{DynamicResource TypeBodyFontSize}"
+                                   Foreground="{DynamicResource TextPrimaryBrush}"
+                                   TextWrapping="Wrap" />
+                        <ui:ProgressRing x:Name="PollingProgressRing"
+                                         Width="20" Height="20"
+                                         IsIndeterminate="False"
+                                         HorizontalAlignment="Left"
+                                         Margin="0,12,0,0" />
+                    </StackPanel>
+                    <Button Grid.Column="1"
+                            Style="{DynamicResource DefaultButtonStyle}"
+                            Content="Cancel"
+                            Height="34"
+                            Padding="20,0"
+                            VerticalAlignment="Center"
+                            Click="OnPollingCancelClick" />
+                </Grid>
+
+                <!-- State 3: Confirmation -->
+                <Grid x:Name="State3Panel" Visibility="Collapsed">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+                    <TextBlock Grid.Column="0"
+                               x:Name="ConfirmationPromptText"
+                               Text="Connect as {name}?"
+                               FontSize="{DynamicResource TypeBodyStrongFontSize}"
+                               FontWeight="{DynamicResource TypeBodyStrongFontWeight}"
+                               Foreground="{DynamicResource TextPrimaryBrush}"
+                               VerticalAlignment="Center"
+                               TextWrapping="Wrap" />
+                    <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
                         <Button Style="{DynamicResource DefaultButtonStyle}"
-                                Content="Cancel"
+                                Content="Not me"
                                 Height="34"
                                 Padding="16,0"
                                 Margin="0,0,8,0"
-                                Click="OnManualCancelClick" />
+                                Click="OnNotMeClick" />
                         <Button Style="{DynamicResource AccentButtonStyle}"
                                 Content="Connect"
                                 Height="34"
                                 Padding="20,0"
-                                Click="OnManualConnectClick" />
+                                Click="OnConfirmConnectClick" />
                     </StackPanel>
-                </StackPanel>
+                </Grid>
+
+                <!-- State 4: Manual User ID Entry -->
+                <Grid x:Name="State4Panel" Visibility="Collapsed">
+                    <StackPanel>
+                        <TextBlock Text="User ID"
+                                   FontSize="{DynamicResource TypeCaptionFontSize}"
+                                   FontWeight="{DynamicResource TypeCaptionFontWeight}"
+                                   Foreground="{DynamicResource TextSecondaryBrush}"
+                                   Margin="0,0,0,6" />
+                        <TextBox x:Name="ManualUserIdInput"
+                                 Height="36"
+                                 KeyDown="OnManualUserIdInputKeyDown" />
+                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,16,0,0">
+                            <Button Style="{DynamicResource DefaultButtonStyle}"
+                                    Content="Cancel"
+                                    Height="34"
+                                    Padding="16,0"
+                                    Margin="0,0,8,0"
+                                    Click="OnManualCancelClick" />
+                            <Button Style="{DynamicResource AccentButtonStyle}"
+                                    Content="Connect"
+                                    Height="34"
+                                    Padding="20,0"
+                                    Click="OnManualConnectClick" />
+                        </StackPanel>
+                    </StackPanel>
+                </Grid>
             </Grid>
+
+            <!-- Row 2: Bottom Inline Error & Manual Link -->
+            <StackPanel Grid.Row="2" Margin="0,12,0,0">
+                <!-- Inline Error -->
+                <TextBlock x:Name="InlineErrorText"
+                           Foreground="{DynamicResource StatusErrorBrush}"
+                           FontSize="{DynamicResource TypeCaptionFontSize}"
+                           Margin="0,0,0,10"
+                           TextWrapping="Wrap"
+                           Visibility="Collapsed" />
+
+                <!-- Manual User ID Link -->
+                <Button x:Name="ManualIdToggleButton"
+                        Style="{DynamicResource SubtleButtonStyle}"
+                        Content="Enter user ID manually"
+                        HorizontalAlignment="Left"
+                        Padding="0"
+                        Height="Auto"
+                        Cursor="Hand"
+                        Foreground="{DynamicResource TextSubtleBrush}"
+                        FontSize="{DynamicResource TypeCaptionFontSize}"
+                        Click="OnManualIdToggleClick" />
+            </StackPanel>
         </Grid>
-
-        <!-- Row 2: Bottom Inline Error & Manual Link -->
-        <StackPanel Grid.Row="2" Margin="0,12,0,0">
-            <!-- Inline Error -->
-            <TextBlock x:Name="InlineErrorText"
-                       Foreground="{DynamicResource StatusErrorBrush}"
-                       FontSize="{DynamicResource TypeCaptionFontSize}"
-                       Margin="0,0,0,10"
-                       TextWrapping="Wrap"
-                       Visibility="Collapsed" />
-
-            <!-- Manual User ID Link -->
-            <Button x:Name="ManualIdToggleButton"
-                    Style="{DynamicResource SubtleButtonStyle}"
-                    Content="Enter user ID manually"
-                    HorizontalAlignment="Left"
-                    Padding="0"
-                    Height="Auto"
-                    Cursor="Hand"
-                    Foreground="{DynamicResource TextSubtleBrush}"
-                    FontSize="{DynamicResource TypeCaptionFontSize}"
-                    Click="OnManualIdToggleClick" />
-        </StackPanel>
     </Grid>
 </dialogs:MetroDialog>

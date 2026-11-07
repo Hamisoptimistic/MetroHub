@@ -21,6 +21,7 @@ public partial class MetroSyncSetupDialog : MetroDialog
 {
     private enum SetupVisualState
     {
+        Intro,
         TokenEntry,
         PollingWait,
         Confirmation,
@@ -38,7 +39,7 @@ public partial class MetroSyncSetupDialog : MetroDialog
     private TelegramBotUser? _botUser;
     private CandidateSender? _candidate;
     private string? _currentBotToken;
-    private SetupVisualState _currentState = SetupVisualState.TokenEntry;
+    private SetupVisualState _currentState = SetupVisualState.Intro;
 
     public MetroSyncSetupDialog()
         : this(null, null, null)
@@ -54,7 +55,7 @@ public partial class MetroSyncSetupDialog : MetroDialog
         _viewModel = viewModel;
         _security = security ?? MetroSyncSecurity.Default;
         _pairingService = pairingService ?? new MetroSyncPairingService(_security);
-        SetVisualState(SetupVisualState.TokenEntry);
+        SetVisualState(SetupVisualState.Intro);
     }
 
     public static bool Show(Window? owner, MetroSyncWidgetViewModel? viewModel = null)
@@ -79,6 +80,20 @@ public partial class MetroSyncSetupDialog : MetroDialog
     {
         _currentState = state;
 
+        Title = state == SetupVisualState.Intro
+            ? "Follow these steps to connect your device"
+            : "Connect MetroSync";
+
+        if (IntroPanel != null)
+        {
+            IntroPanel.Visibility = state == SetupVisualState.Intro ? Visibility.Visible : Visibility.Collapsed;
+        }
+
+        if (WizardPanel != null)
+        {
+            WizardPanel.Visibility = state != SetupVisualState.Intro ? Visibility.Visible : Visibility.Collapsed;
+        }
+
         State1Panel.Visibility = state == SetupVisualState.TokenEntry ? Visibility.Visible : Visibility.Collapsed;
         State2Panel.Visibility = state == SetupVisualState.PollingWait ? Visibility.Visible : Visibility.Collapsed;
         State3Panel.Visibility = state == SetupVisualState.Confirmation ? Visibility.Visible : Visibility.Collapsed;
@@ -90,7 +105,12 @@ public partial class MetroSyncSetupDialog : MetroDialog
         }
 
         BotTokenInput.IsEnabled = state is SetupVisualState.TokenEntry or SetupVisualState.ManualEntry;
-        ManualIdToggleButton.Visibility = state != SetupVisualState.ManualEntry ? Visibility.Visible : Visibility.Collapsed;
+        ManualIdToggleButton.Visibility = state is not (SetupVisualState.ManualEntry or SetupVisualState.Intro) ? Visibility.Visible : Visibility.Collapsed;
+
+        if (state == SetupVisualState.TokenEntry)
+        {
+            BotTokenInput.Focus();
+        }
     }
 
     private void ShowError(string? message)
@@ -126,6 +146,11 @@ public partial class MetroSyncSetupDialog : MetroDialog
         {
             _pollingCts = null;
         }
+    }
+
+    private void OnIntroNextClick(object sender, RoutedEventArgs e)
+    {
+        SetVisualState(SetupVisualState.TokenEntry);
     }
 
     private async void OnContinueClick(object sender, RoutedEventArgs e)
