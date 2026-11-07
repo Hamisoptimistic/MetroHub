@@ -106,7 +106,7 @@
                   HorizontalAlignment="Center"
                   VerticalAlignment="Center"
                   Margin="24,0,24,0"
-                  MaxWidth="340"
+                  MaxWidth="380"
                   Visibility="{Binding CanConnect, Converter={StaticResource BoolToVis}}">
                 <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
                     <TextBlock Text="MetroSync"
@@ -115,18 +115,118 @@
                                Foreground="{DynamicResource TextPrimaryBrush}"
                                TextAlignment="Center"
                                HorizontalAlignment="Center"
-                               Margin="0,0,0,12" />
-                    <TextBlock Text="Send messages, files, and photos between your phone and PC instantly using Telegram."
+                               Margin="0,0,0,4" />
+                    <TextBlock Text="Two-way phone and PC transfer via Telegram"
                                FontSize="{DynamicResource TypeBodyFontSize}"
                                Foreground="{DynamicResource TextSecondaryBrush}"
                                TextAlignment="Center"
-                               TextWrapping="Wrap"
                                HorizontalAlignment="Center"
-                               Margin="0,0,0,24" />
+                               Margin="0,0,0,20" />
+
+                    <!-- Card 1: Two-Way Sharing -->
+                    <Border Background="{DynamicResource SurfaceGlassSubtleBrush}"
+                            BorderBrush="{DynamicResource SurfaceBorderBrush}"
+                            BorderThickness="1"
+                            CornerRadius="{DynamicResource ControlCornerRadius}"
+                            Padding="14,10"
+                            MinHeight="72"
+                            Margin="0,0,0,8">
+                        <Grid VerticalAlignment="Center">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="32" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <ui:FontIcon Grid.Column="0"
+                                         Glyph="&#xE895;"
+                                         FontFamily="Segoe MDL2 Assets"
+                                         FontSize="18"
+                                         Foreground="{DynamicResource TextSecondaryBrush}"
+                                         VerticalAlignment="Center" />
+                            <StackPanel Grid.Column="1" Margin="6,0,0,0">
+                                <TextBlock Text="Two-Way Sharing"
+                                           FontSize="{DynamicResource TypeBodyStrongFontSize}"
+                                           FontWeight="{DynamicResource TypeBodyStrongFontWeight}"
+                                           Foreground="{DynamicResource TextPrimaryBrush}"
+                                           Margin="0,0,0,2" />
+                                <TextBlock Text="Share files and messages between your desktop and phone through your Telegram."
+                                           FontSize="{DynamicResource TypeCaptionFontSize}"
+                                           Foreground="{DynamicResource TextSecondaryBrush}"
+                                           TextWrapping="Wrap" />
+                            </StackPanel>
+                        </Grid>
+                    </Border>
+
+                    <!-- Card 2: Your Personal Bot -->
+                    <Border Background="{DynamicResource SurfaceGlassSubtleBrush}"
+                            BorderBrush="{DynamicResource SurfaceBorderBrush}"
+                            BorderThickness="1"
+                            CornerRadius="{DynamicResource ControlCornerRadius}"
+                            Padding="14,10"
+                            MinHeight="72"
+                            Margin="0,0,0,8">
+                        <Grid VerticalAlignment="Center">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="32" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <ui:FontIcon Grid.Column="0"
+                                         Glyph="&#xE99A;"
+                                         FontFamily="Segoe MDL2 Assets"
+                                         FontSize="18"
+                                         Foreground="{DynamicResource TextSecondaryBrush}"
+                                         VerticalAlignment="Center" />
+                            <StackPanel Grid.Column="1" Margin="6,0,0,0">
+                                <TextBlock Text="Your Personal Bot"
+                                           FontSize="{DynamicResource TypeBodyStrongFontSize}"
+                                           FontWeight="{DynamicResource TypeBodyStrongFontWeight}"
+                                           Foreground="{DynamicResource TextPrimaryBrush}"
+                                           Margin="0,0,0,2" />
+                                <TextBlock Text="Powered by your own Telegram bot. Only you have access."
+                                           FontSize="{DynamicResource TypeCaptionFontSize}"
+                                           Foreground="{DynamicResource TextSecondaryBrush}"
+                                           TextWrapping="Wrap" />
+                            </StackPanel>
+                        </Grid>
+                    </Border>
+
+                    <!-- Card 3: No Companion App Needed -->
+                    <Border Background="{DynamicResource SurfaceGlassSubtleBrush}"
+                            BorderBrush="{DynamicResource SurfaceBorderBrush}"
+                            BorderThickness="1"
+                            CornerRadius="{DynamicResource ControlCornerRadius}"
+                            Padding="14,10"
+                            MinHeight="72"
+                            Margin="0,0,0,20">
+                        <Grid VerticalAlignment="Center">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="32" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <ui:FontIcon Grid.Column="0"
+                                         Glyph="&#xE724;"
+                                         FontFamily="Segoe MDL2 Assets"
+                                         FontSize="18"
+                                         Foreground="{DynamicResource TextSecondaryBrush}"
+                                         VerticalAlignment="Center" />
+                            <StackPanel Grid.Column="1" Margin="6,0,0,0">
+                                <TextBlock Text="No Companion App Needed"
+                                           FontSize="{DynamicResource TypeBodyStrongFontSize}"
+                                           FontWeight="{DynamicResource TypeBodyStrongFontWeight}"
+                                           Foreground="{DynamicResource TextPrimaryBrush}"
+                                           Margin="0,0,0,2" />
+                                <TextBlock Text="Use the Telegram app you already have. Nothing extra to install on your phone."
+                                           FontSize="{DynamicResource TypeCaptionFontSize}"
+                                           Foreground="{DynamicResource TextSecondaryBrush}"
+                                           TextWrapping="Wrap" />
+                            </StackPanel>
+                        </Grid>
+                    </Border>
+
+                    <!-- Primary Action Button -->
                     <Button Style="{DynamicResource AccentButtonStyle}"
                             Content="Connect"
                             Height="36"
-                            Padding="28,0"
+                            Padding="36,0"
                             HorizontalAlignment="Center"
                             Command="{Binding OpenSetupCommand}" />
                 </StackPanel>
