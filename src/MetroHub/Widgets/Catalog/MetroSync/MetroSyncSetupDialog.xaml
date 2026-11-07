@@ -206,13 +206,15 @@
                         BorderBrush="{DynamicResource SurfaceBorderBrush}"
                         BorderThickness="1"
                         CornerRadius="{DynamicResource ControlCornerRadius}"
-                        Padding="18,14"
+                        Padding="18,16"
                         VerticalAlignment="Center">
                     <Grid>
                         <Grid.RowDefinitions>
                             <!-- Row 0: Instruction -->
                             <RowDefinition Height="Auto" />
-                            <!-- Row 1: Action + Live Status -->
+                            <!-- Row 1: Action (Open in Telegram) -->
+                            <RowDefinition Height="Auto" />
+                            <!-- Row 2: Live Status Telemetry -->
                             <RowDefinition Height="Auto" />
                         </Grid.RowDefinitions>
 
@@ -225,46 +227,42 @@
                             <Run Text="Send " /><Run Text="/start" FontWeight="SemiBold" Foreground="{DynamicResource SystemAccentColorPrimaryBrush}" /><Run Text=" in " /><Run x:Name="PollingBotNameRun" Text="@bot" FontWeight="SemiBold" /><Run Text=" to connect." />
                         </TextBlock>
 
-                        <!-- Row 1: Open in Telegram + Active Progress Indicator -->
-                        <Grid Grid.Row="1" Margin="0,14,0,0">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="Auto" />
-                                <ColumnDefinition Width="*" />
-                            </Grid.ColumnDefinitions>
-
-                            <Button x:Name="OpenTelegramButton"
-                                    Grid.Column="0"
-                                    Style="{DynamicResource DefaultButtonStyle}"
-                                    Height="32"
-                                    Padding="14,0"
-                                    Click="OnOpenTelegramClick">
-                                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                                    <ui:SymbolIcon Symbol="Open24"
-                                                   FontSize="14"
-                                                   Margin="0,0,8,0"
-                                                   VerticalAlignment="Center" />
-                                    <TextBlock Text="Open in Telegram"
-                                               FontSize="{DynamicResource TypeCaptionFontSize}"
-                                               FontWeight="{DynamicResource TypeCaptionFontWeight}"
+                        <!-- Row 1: Open in Telegram Button -->
+                        <Button x:Name="OpenTelegramButton"
+                                Grid.Row="1"
+                                Style="{DynamicResource DefaultButtonStyle}"
+                                Height="32"
+                                Padding="14,0"
+                                HorizontalAlignment="Left"
+                                Margin="0,14,0,0"
+                                Click="OnOpenTelegramClick">
+                            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                <ui:SymbolIcon Symbol="Open24"
+                                               FontSize="14"
+                                               Margin="0,0,8,0"
                                                VerticalAlignment="Center" />
-                                </StackPanel>
-                            </Button>
-
-                            <StackPanel Grid.Column="1"
-                                        Orientation="Horizontal"
-                                        VerticalAlignment="Center"
-                                        Margin="16,0,0,0">
-                                <ui:ProgressRing x:Name="PollingProgressRing"
-                                                 Width="16" Height="16"
-                                                 IsIndeterminate="False"
-                                                 VerticalAlignment="Center"
-                                                 Margin="0,0,8,0" />
-                                <TextBlock Text="Waiting for connection..."
+                                <TextBlock Text="Open in Telegram"
                                            FontSize="{DynamicResource TypeCaptionFontSize}"
-                                           Foreground="{DynamicResource TextSecondaryBrush}"
+                                           FontWeight="{DynamicResource TypeCaptionFontWeight}"
                                            VerticalAlignment="Center" />
                             </StackPanel>
-                        </Grid>
+                        </Button>
+
+                        <!-- Row 2: Live Progress Telemetry -->
+                        <StackPanel Grid.Row="2"
+                                    Orientation="Horizontal"
+                                    VerticalAlignment="Center"
+                                    Margin="0,14,0,0">
+                            <ui:ProgressRing x:Name="PollingProgressRing"
+                                             Width="16" Height="16"
+                                             IsIndeterminate="False"
+                                             VerticalAlignment="Center"
+                                             Margin="0,0,8,0" />
+                            <TextBlock Text="Waiting for /start..."
+                                       FontSize="{DynamicResource TypeCaptionFontSize}"
+                                       Foreground="{DynamicResource TextSecondaryBrush}"
+                                       VerticalAlignment="Center" />
+                        </StackPanel>
                     </Grid>
                 </Border>
 

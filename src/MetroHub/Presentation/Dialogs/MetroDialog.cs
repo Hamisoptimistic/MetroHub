@@ -129,6 +129,13 @@ public class MetroDialog : BorderlessFluentWindow
     protected virtual bool EnableLightDismiss => false;
 
     /// <summary>
+    /// When true (default), this dialog is dismissed when MetroHub deactivates or hides.
+    /// Setup wizards and verification flows that require external browser/mobile interaction
+    /// should override this to false to preserve their state across deactivations.
+    /// </summary>
+    public virtual bool DismissOnDeactivate => true;
+
+    /// <summary>
     /// Modal dialogs use WS_EX_TOOLWINDOW to prevent DWM composition flash on open
     /// and keep the dialog out of the Alt+Tab switcher and taskbar.
     /// </summary>

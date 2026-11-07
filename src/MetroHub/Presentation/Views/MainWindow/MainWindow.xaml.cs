@@ -894,7 +894,7 @@ public partial class MainWindow : BorderlessFluentWindow, INotifyPropertyChanged
         return false;
     }
 
-    private void DismissOpenDialogs()
+    private void DismissOpenDialogs(bool force = false)
     {
         if (Application.Current == null) return;
         var openWindows = Application.Current.Windows.OfType<Window>().ToList();
@@ -902,7 +902,10 @@ public partial class MainWindow : BorderlessFluentWindow, INotifyPropertyChanged
         {
             if (window is MetroHub.Presentation.Dialogs.MetroDialog dialog)
             {
-                dialog.DismissDialog();
+                if (force || dialog.DismissOnDeactivate)
+                {
+                    dialog.DismissDialog();
+                }
             }
             else if (window is MetroHub.Presentation.Views.Settings.SettingsWindow settingsWin)
             {
@@ -1131,6 +1134,7 @@ public partial class MainWindow : BorderlessFluentWindow, INotifyPropertyChanged
         _backdropManager?.Dispose();
         ClipboardSource.Instance?.Dispose();
         _ = LocalCompanionService.Instance.StopAsync();
+        DismissOpenDialogs(force: true);
         base.OnClosed(e);
     }
 
@@ -1232,6 +1236,14 @@ public partial class MainWindow : BorderlessFluentWindow, INotifyPropertyChanged
         Focus();
         Keyboard.Focus(this);
         UpdateExposedAddSlots();
+
+        var activeModal = Application.Current?.Windows.OfType<MetroHub.Presentation.Dialogs.MetroDialog>()
+            .FirstOrDefault(d => !d.DismissOnDeactivate && d.IsLoaded && !d.IsDismissing);
+        if (activeModal != null)
+        {
+            activeModal.Activate();
+            activeModal.Focus();
+        }
 
         // Immediate cohesive entrance animation without artificial Render-delay gating
         PlayOpenAnimation();

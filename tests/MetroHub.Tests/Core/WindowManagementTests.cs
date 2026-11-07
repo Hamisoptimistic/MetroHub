@@ -32,6 +32,7 @@ public class WindowManagementTests
         {
             var dialog = new WebLinkDialog();
             Assert.False(dialog.ShowInTaskbar);
+            Assert.True(dialog.DismissOnDeactivate);
         });
     }
 

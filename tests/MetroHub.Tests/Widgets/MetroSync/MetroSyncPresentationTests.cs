@@ -155,6 +155,9 @@ public sealed class MetroSyncPresentationTests
             var ring = dialog.FindName("PollingProgressRing") as Wpf.Ui.Controls.ProgressRing;
             Assert.NotNull(ring);
             Assert.False(ring.IsIndeterminate);
+
+            // Verify state preservation across app deactivations / deep links
+            Assert.False(dialog.DismissOnDeactivate);
         });
     }
 

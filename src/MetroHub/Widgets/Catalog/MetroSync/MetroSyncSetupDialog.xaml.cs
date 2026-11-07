@@ -41,6 +41,11 @@ public partial class MetroSyncSetupDialog : MetroDialog
     private string? _currentBotToken;
     private SetupVisualState _currentState = SetupVisualState.Intro;
 
+    /// <summary>
+    /// Preserves dialog state when MetroHub deactivates or minimizes (e.g. when opening Telegram deep links).
+    /// </summary>
+    public override bool DismissOnDeactivate => false;
+
     public MetroSyncSetupDialog()
         : this(null, null, null)
     {
