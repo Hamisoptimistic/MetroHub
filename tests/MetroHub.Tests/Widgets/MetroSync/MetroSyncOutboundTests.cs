@@ -442,6 +442,147 @@ public sealed class MetroSyncOutboundTests
         });
     }
 
+    [Fact]
+    public async Task SendDocumentAsync_ValidFile_UploadsAndAppendsFilePayloadItemWithLocalPath()
+    {
+        await using var server = await FakeTelegramServer.StartAsync();
+        using var client = TelegramHttpTransport.CreateDedicatedClient();
+        var transport = Http(server, client);
+
+        using var sandbox = new WidgetTestSandbox();
+        using var historyStore = new MetroSyncHistoryStore(sandbox.Root);
+        var normalizer = new MetroSyncUpdateNormalizer();
+        var thumbnails = new MetroSyncThumbnails(sandbox.Root);
+
+        var outbound = new MetroSyncOutboundService(transport, normalizer, historyStore, thumbnails);
+
+        var testFile = Path.Combine(sandbox.Root, "test_doc.pdf");
+        await File.WriteAllTextAsync(testFile, "%PDF-1.4 test document content");
+
+        var sent = await outbound.SendDocumentAsync(123456789, testFile, caption: "My PDF Report");
+
+        Assert.NotNull(sent);
+        Assert.True(sent.IsOutgoing);
+        Assert.Equal("test_doc.pdf", sent.FileName);
+        Assert.Equal(testFile, sent.LocalPath);
+        Assert.True(sent.IsDownloaded);
+        Assert.Equal("My PDF Report", sent.Caption);
+        Assert.True(sent.MessageId > 0);
+        Assert.Equal(1, server.Requests("sendDocument"));
+
+        var history = await historyStore.LoadLatestAsync(10);
+        Assert.Single(history);
+        var storedItem = Assert.IsType<FilePayloadItem>(history[0]);
+        Assert.Equal("test_doc.pdf", storedItem.FileName);
+        Assert.Equal(testFile, storedItem.LocalPath);
+        Assert.True(storedItem.IsDownloaded);
+    }
+
+    [Fact]
+    public async Task SendDocumentAsync_EmptyFile_ThrowsBeforeNetworkAndHistoryUntouched()
+    {
+        await using var server = await FakeTelegramServer.StartAsync();
+        using var client = TelegramHttpTransport.CreateDedicatedClient();
+        var transport = Http(server, client);
+        var recording = new RecordingTransport(transport);
+
+        using var sandbox = new WidgetTestSandbox();
+        using var historyStore = new MetroSyncHistoryStore(sandbox.Root);
+        var normalizer = new MetroSyncUpdateNormalizer();
+        var thumbnails = new MetroSyncThumbnails(sandbox.Root);
+
+        var outbound = new MetroSyncOutboundService(recording, normalizer, historyStore, thumbnails);
+
+        var emptyFile = Path.Combine(sandbox.Root, "empty.txt");
+        File.WriteAllBytes(emptyFile, Array.Empty<byte>());
+
+        await Assert.ThrowsAsync<ArgumentException>(() => outbound.SendDocumentAsync(123456789, emptyFile));
+
+        Assert.Equal(0, recording.SendDocumentCalls);
+        var history = await historyStore.LoadLatestAsync(10);
+        Assert.Empty(history);
+    }
+
+    [Fact]
+    public async Task SendDocumentAsync_Exceeds50MB_ThrowsFileTooLargeBeforeNetwork()
+    {
+        await using var server = await FakeTelegramServer.StartAsync();
+        using var client = TelegramHttpTransport.CreateDedicatedClient();
+        var transport = Http(server, client);
+        var recording = new RecordingTransport(transport);
+
+        using var sandbox = new WidgetTestSandbox();
+        using var historyStore = new MetroSyncHistoryStore(sandbox.Root);
+        var normalizer = new MetroSyncUpdateNormalizer();
+        var thumbnails = new MetroSyncThumbnails(sandbox.Root);
+
+        var outbound = new MetroSyncOutboundService(recording, normalizer, historyStore, thumbnails);
+
+        var largeFile = Path.Combine(sandbox.Root, "large.dat");
+        using (var fs = File.Create(largeFile))
+        {
+            fs.SetLength(51 * 1024 * 1024);
+        }
+
+        await Assert.ThrowsAsync<FileTooLargeException>(() => outbound.SendDocumentAsync(123456789, largeFile));
+
+        Assert.Equal(0, recording.SendDocumentCalls);
+        var history = await historyStore.LoadLatestAsync(10);
+        Assert.Empty(history);
+    }
+
+    [Fact]
+    public async Task SendFileAsync_ImageUnder10MB_RoutesToSendPhoto()
+    {
+        await using var server = await FakeTelegramServer.StartAsync();
+        using var client = TelegramHttpTransport.CreateDedicatedClient();
+        var transport = Http(server, client);
+
+        using var sandbox = new WidgetTestSandbox();
+        using var historyStore = new MetroSyncHistoryStore(sandbox.Root);
+        var normalizer = new MetroSyncUpdateNormalizer();
+        var thumbnails = new MetroSyncThumbnails(sandbox.Root);
+
+        var outbound = new MetroSyncOutboundService(transport, normalizer, historyStore, thumbnails);
+
+        var imagePath = Path.Combine(sandbox.Root, "photo.png");
+        using (var pngStream = CreateTestPngStream(50, 50))
+        using (var fs = File.Create(imagePath))
+        {
+            pngStream.CopyTo(fs);
+        }
+
+        var sent = await outbound.SendFileAsync(123456789, imagePath);
+
+        Assert.IsType<ImagePayloadItem>(sent);
+        Assert.Equal(1, server.Requests("sendPhoto"));
+        Assert.Equal(0, server.Requests("sendDocument"));
+    }
+
+    [Fact]
+    public async Task SendFileAsync_NonImage_RoutesToSendDocument()
+    {
+        await using var server = await FakeTelegramServer.StartAsync();
+        using var client = TelegramHttpTransport.CreateDedicatedClient();
+        var transport = Http(server, client);
+
+        using var sandbox = new WidgetTestSandbox();
+        using var historyStore = new MetroSyncHistoryStore(sandbox.Root);
+        var normalizer = new MetroSyncUpdateNormalizer();
+        var thumbnails = new MetroSyncThumbnails(sandbox.Root);
+
+        var outbound = new MetroSyncOutboundService(transport, normalizer, historyStore, thumbnails);
+
+        var docPath = Path.Combine(sandbox.Root, "archive.zip");
+        await File.WriteAllBytesAsync(docPath, [1, 2, 3, 4]);
+
+        var sent = await outbound.SendFileAsync(123456789, docPath);
+
+        Assert.IsType<FilePayloadItem>(sent);
+        Assert.Equal(0, server.Requests("sendPhoto"));
+        Assert.Equal(1, server.Requests("sendDocument"));
+    }
+
     private sealed class NonSeekableReadStream(byte[] data) : Stream
     {
         private int _position;

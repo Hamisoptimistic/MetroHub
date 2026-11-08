@@ -50,6 +50,7 @@ public sealed partial class MetroSyncWidgetViewModel : WidgetViewModelBase, IWid
 
     private readonly Action<string> _copyTextAction;
     private readonly Func<BitmapSource?> _getClipboardImageAction;
+    private readonly Func<string[]?> _pickFilesAction;
     private readonly Action<string> _openUrlAction;
     private readonly Action<string> _openFileAction;
     private readonly Action<string> _showInFolderAction;
@@ -76,11 +77,13 @@ public sealed partial class MetroSyncWidgetViewModel : WidgetViewModelBase, IWid
     [ObservableProperty]
     [NotifyCanExecuteChangedFor(nameof(SendCommand))]
     [NotifyCanExecuteChangedFor(nameof(SendClipboardImageCommand))]
+    [NotifyCanExecuteChangedFor(nameof(AttachFilesCommand))]
     private bool _isSending;
 
     [ObservableProperty]
     [NotifyCanExecuteChangedFor(nameof(SendCommand))]
     [NotifyCanExecuteChangedFor(nameof(SendClipboardImageCommand))]
+    [NotifyCanExecuteChangedFor(nameof(AttachFilesCommand))]
     [NotifyPropertyChangedFor(nameof(IsConnected))]
     [NotifyPropertyChangedFor(nameof(CanConnect))]
     private bool _isPaired;
@@ -96,6 +99,8 @@ public sealed partial class MetroSyncWidgetViewModel : WidgetViewModelBase, IWid
     public bool CanSend => !IsSending && IsPaired && !string.IsNullOrWhiteSpace(InputText);
 
     public bool CanSendClipboardImage => !IsSending && IsPaired;
+
+    public bool CanAttachFiles => !IsSending && IsPaired;
 
     public string ProfilePhotoPath => Path.Combine(_security.DirectoryPath, "profile.jpg");
 
@@ -131,6 +136,7 @@ public sealed partial class MetroSyncWidgetViewModel : WidgetViewModelBase, IWid
         string? baseDirectory = null,
         Action<string>? copyTextAction = null,
         Func<BitmapSource?>? getClipboardImageAction = null,
+        Func<string[]?>? pickFilesAction = null,
         Action<string>? openUrlAction = null,
         Action<string>? openFileAction = null,
         Action<string>? showInFolderAction = null,
@@ -166,6 +172,7 @@ public sealed partial class MetroSyncWidgetViewModel : WidgetViewModelBase, IWid
 
         _copyTextAction = copyTextAction ?? DefaultCopyText;
         _getClipboardImageAction = getClipboardImageAction ?? DefaultGetClipboardImage;
+        _pickFilesAction = pickFilesAction ?? DefaultPickFiles;
         _openUrlAction = openUrlAction ?? DefaultOpenUrl;
         _openFileAction = openFileAction ?? DefaultOpenFile;
         _showInFolderAction = showInFolderAction ?? DefaultShowInFolder;
@@ -598,6 +605,74 @@ public sealed partial class MetroSyncWidgetViewModel : WidgetViewModelBase, IWid
         }
     }
 
+    [RelayCommand(CanExecute = nameof(CanAttachFiles))]
+    public async Task AttachFilesAsync()
+    {
+        if (IsSending) return;
+
+        if (_credentials == null)
+        {
+            RunOnUIThread(() =>
+            {
+                ErrorMessage = "Not connected.";
+            });
+            return;
+        }
+
+        if (_outboundService == null)
+        {
+            RunOnUIThread(() =>
+            {
+                ErrorMessage = "Outbound service unavailable.";
+            });
+            return;
+        }
+
+        var files = _pickFilesAction();
+        if (files == null || files.Length == 0) return;
+
+        RunOnUIThread(() =>
+        {
+            ErrorMessage = null;
+            IsSending = true;
+        });
+
+        try
+        {
+            foreach (var file in files)
+            {
+                try
+                {
+                    var sentItem = await _outboundService.SendFileAsync(
+                        _credentials.AllowedUserId,
+                        file,
+                        caption: null,
+                        _lifecycleCts.Token).ConfigureAwait(false);
+
+                    AddToFeed(sentItem);
+                }
+                catch (OperationCanceledException)
+                {
+                    break;
+                }
+                catch (Exception ex)
+                {
+                    RunOnUIThread(() =>
+                    {
+                        ErrorMessage = RedactBotToken(ex.Message);
+                    });
+                }
+            }
+        }
+        finally
+        {
+            RunOnUIThread(() =>
+            {
+                IsSending = false;
+            });
+        }
+    }
+
     [RelayCommand]
     public void CopyText(object? parameter)
     {
@@ -956,6 +1031,17 @@ public sealed partial class MetroSyncWidgetViewModel : WidgetViewModelBase, IWid
     private static BitmapSource? DefaultGetClipboardImage()
     {
         return SafeClipboard.TryGetFrozenImage(SafeClipboard.GetDataObject());
+    }
+
+    private static string[]? DefaultPickFiles()
+    {
+        var dialog = new Microsoft.Win32.OpenFileDialog
+        {
+            Multiselect = true,
+            Filter = "All files (*.*)|*.*",
+            CheckFileExists = true
+        };
+        return dialog.ShowDialog() == true ? dialog.FileNames : null;
     }
 
     private static void DefaultOpenUrl(string url)

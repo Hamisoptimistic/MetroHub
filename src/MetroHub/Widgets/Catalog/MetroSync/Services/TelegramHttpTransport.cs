@@ -251,6 +251,48 @@ public sealed class TelegramHttpTransport : ITelegramTransport
         return await PostJsonAsync(url, form, ct).ConfigureAwait(false);
     }
 
+    [System.Diagnostics.CodeAnalysis.SuppressMessage("Reliability", "CA2000:Dispose objects before losing scope",
+        Justification = "Ownership of child HttpContent objects is transferred to MultipartFormDataContent which disposes them.")]
+    public async Task<JsonDocument> SendDocumentAsync(long chatId, Stream documentStream, string fileName, string? caption, CancellationToken ct)
+    {
+        ArgumentOutOfRangeException.ThrowIfZero(chatId);
+        ArgumentNullException.ThrowIfNull(documentStream);
+        ArgumentException.ThrowIfNullOrWhiteSpace(fileName);
+
+        const long maxDocSizeBytes = 50 * 1024 * 1024; // 50 MB
+        if (documentStream.CanSeek && documentStream.Length > maxDocSizeBytes)
+        {
+            throw new FileTooLargeException(maxDocSizeBytes);
+        }
+
+        if (caption is not null && caption.Length > 4096)
+        {
+            throw new ArgumentOutOfRangeException(nameof(caption), "Caption exceeds 4,096 characters.");
+        }
+
+        if (documentStream.CanSeek && documentStream.Position != 0)
+        {
+            documentStream.Position = 0;
+        }
+
+        var url = $"{_apiRoot}sendDocument";
+
+        using var form = new MultipartFormDataContent();
+        form.Add(new StringContent(chatId.ToString(System.Globalization.CultureInfo.InvariantCulture)), "chat_id");
+
+        if (!string.IsNullOrEmpty(caption))
+        {
+            form.Add(new StringContent(caption), "caption");
+        }
+
+        Stream uploadStream = documentStream.CanSeek ? documentStream : new BoundedReadStream(documentStream, maxDocSizeBytes);
+        var streamContent = new StreamContent(uploadStream);
+        streamContent.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue("application/octet-stream");
+        form.Add(streamContent, "document", fileName);
+
+        return await PostJsonAsync(url, form, ct).ConfigureAwait(false);
+    }
+
     public async Task<byte[]?> GetUserProfilePhotoBytesAsync(long userId, CancellationToken ct)
     {
         try

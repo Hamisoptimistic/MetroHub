@@ -79,6 +79,14 @@ public sealed class CrashingTransport(ITelegramTransport inner, CrashPlan plan) 
         plan.Point("sendphoto.after");
         return res;
     }
+
+    public async Task<JsonDocument> SendDocumentAsync(long chatId, Stream documentStream, string fileName, string? caption, CancellationToken ct)
+    {
+        plan.Point("senddocument.before");
+        var res = await inner.SendDocumentAsync(chatId, documentStream, fileName, caption, ct).ConfigureAwait(false);
+        plan.Point("senddocument.after");
+        return res;
+    }
 }
 
 public static class CrashSweep

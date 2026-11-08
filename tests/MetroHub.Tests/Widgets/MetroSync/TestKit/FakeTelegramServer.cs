@@ -160,6 +160,7 @@ public sealed class FakeTelegramServer : IAsyncDisposable
                 case "getUserProfilePhotos": await GetUserProfilePhotosAsync(ctx).ConfigureAwait(false); break;
                 case "sendMessage": await SendMessageAsync(ctx).ConfigureAwait(false); break;
                 case "sendPhoto": await SendPhotoAsync(ctx).ConfigureAwait(false); break;
+                case "sendDocument": await SendDocumentAsync(ctx).ConfigureAwait(false); break;
                 default: await WriteErrorAsync(ctx, 404, "Not Found").ConfigureAwait(false); break;
             }
         }
@@ -305,6 +306,67 @@ public sealed class FakeTelegramServer : IAsyncDisposable
                 {
                     new { file_id = fileId + "_thumb", file_unique_id = "u_" + fileId + "_thumb", width = 150, height = 150, file_size = 5000 },
                     new { file_id = fileId + "_full", file_unique_id = "u_" + fileId + "_full", width = 800, height = 800, file_size = 50000 }
+                },
+                caption
+            }
+        };
+
+        ctx.Response.ContentType = "application/json";
+        await ctx.Response.WriteAsync(JsonSerializer.Serialize(result)).ConfigureAwait(false);
+    }
+
+    private async Task SendDocumentAsync(HttpContext ctx)
+    {
+        long chatId = 0;
+        string? caption = null;
+        string fileName = "document.bin";
+        long fileSize = 0;
+        string fileId = "doc_" + Guid.NewGuid().ToString("N");
+
+        if (ctx.Request.HasFormContentType)
+        {
+            var form = await ctx.Request.ReadFormAsync(ctx.RequestAborted).ConfigureAwait(false);
+            if (form.TryGetValue("chat_id", out var c) && long.TryParse(c.ToString(), out var id))
+            {
+                chatId = id;
+            }
+            if (form.TryGetValue("caption", out var cap))
+            {
+                caption = cap.ToString();
+            }
+
+            if (form.Files.GetFile("document") is { } docFile)
+            {
+                fileName = docFile.FileName;
+                fileSize = docFile.Length;
+                using var ms = new MemoryStream();
+                await docFile.CopyToAsync(ms, ctx.RequestAborted).ConfigureAwait(false);
+                var bytes = ms.ToArray();
+                AddFile(fileId, bytes);
+            }
+        }
+
+        long messageId;
+        lock (_gate)
+        {
+            messageId = _nextMessageId++;
+        }
+
+        var result = new
+        {
+            ok = true,
+            result = new
+            {
+                message_id = messageId,
+                chat = new { id = chatId, type = "private" },
+                date = DateTimeOffset.UtcNow.ToUnixTimeSeconds(),
+                document = new
+                {
+                    file_id = fileId,
+                    file_unique_id = "u_" + fileId,
+                    file_name = fileName,
+                    file_size = fileSize,
+                    mime_type = "application/octet-stream"
                 },
                 caption
             }

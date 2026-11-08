@@ -16,6 +16,7 @@ namespace MetroHub.Widgets.Catalog.MetroSync.Services;
 public sealed class MetroSyncOutboundService
 {
     public const long MaxPhotoSizeBytes = 10 * 1024 * 1024; // 10 MB
+    public const long MaxDocumentSizeBytes = 50 * 1024 * 1024; // 50 MB
     public const int MaxTextLength = 4096;
 
     private readonly ITelegramTransport _transport;
@@ -170,6 +171,107 @@ public sealed class MetroSyncOutboundService
             await _historyStore.AppendAsync(photoItem, ct).ConfigureAwait(false);
             return photoItem;
         }
+    }
+
+    /// <summary>
+    /// Sends a file as a document to Telegram, normalizes response into FilePayloadItem (IsOutgoing = true),
+    /// records the local file path so it is immediately marked as downloaded, and appends it to history.jsonl.
+    /// </summary>
+    public async Task<FilePayloadItem> SendDocumentAsync(
+        long chatId,
+        string filePath,
+        string? caption = null,
+        CancellationToken ct = default)
+    {
+        ArgumentOutOfRangeException.ThrowIfNegativeOrZero(chatId);
+        ArgumentException.ThrowIfNullOrWhiteSpace(filePath);
+
+        if (!File.Exists(filePath))
+        {
+            throw new FileNotFoundException("File to upload was not found.", filePath);
+        }
+
+        var fileInfo = new FileInfo(filePath);
+        if (fileInfo.Length == 0)
+        {
+            throw new ArgumentException("Cannot send empty (0-byte) file.", nameof(filePath));
+        }
+
+        if (fileInfo.Length > MaxDocumentSizeBytes)
+        {
+            throw new FileTooLargeException(MaxDocumentSizeBytes);
+        }
+
+        if (caption is not null && caption.Length > MaxTextLength)
+        {
+            throw new ArgumentOutOfRangeException(nameof(caption), $"Caption exceeds maximum length of {MaxTextLength} characters.");
+        }
+
+        var fileName = Path.GetFileName(filePath);
+
+        using (var fileStream = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.Read, bufferSize: 64 * 1024, useAsync: true))
+        {
+            using var doc = await _transport.SendDocumentAsync(chatId, fileStream, fileName, caption, ct).ConfigureAwait(false);
+            var item = _normalizer.NormalizeOutbound(doc.RootElement, DateTimeOffset.UtcNow);
+
+            if (item is not FilePayloadItem fileItem)
+            {
+                throw new InvalidOperationException("Failed to normalize outbound document message response.");
+            }
+
+            fileItem.IsOutgoing = true;
+            fileItem.LocalPath = filePath;
+            if (string.IsNullOrWhiteSpace(fileItem.FileName) || fileItem.FileName == "document")
+            {
+                fileItem.FileName = fileName;
+            }
+
+            await _historyStore.AppendAsync(fileItem, ct).ConfigureAwait(false);
+            return fileItem;
+        }
+    }
+
+    /// <summary>
+    /// Routes file upload: if file is an image (.png, .jpg, .jpeg) and &lt;= 10 MB,
+    /// sends via SendPhotoAsync (generating local thumbnail); otherwise sends via SendDocumentAsync.
+    /// </summary>
+    public async Task<MetroSyncMessageItem> SendFileAsync(
+        long chatId,
+        string filePath,
+        string? caption = null,
+        CancellationToken ct = default)
+    {
+        ArgumentOutOfRangeException.ThrowIfNegativeOrZero(chatId);
+        ArgumentException.ThrowIfNullOrWhiteSpace(filePath);
+
+        if (!File.Exists(filePath))
+        {
+            throw new FileNotFoundException("File to upload was not found.", filePath);
+        }
+
+        var fileInfo = new FileInfo(filePath);
+        if (fileInfo.Length == 0)
+        {
+            throw new ArgumentException("Cannot send empty (0-byte) file.", nameof(filePath));
+        }
+
+        if (fileInfo.Length > MaxDocumentSizeBytes)
+        {
+            throw new FileTooLargeException(MaxDocumentSizeBytes);
+        }
+
+        var ext = Path.GetExtension(filePath);
+        bool isImageExt = ext.Equals(".png", StringComparison.OrdinalIgnoreCase) ||
+                          ext.Equals(".jpg", StringComparison.OrdinalIgnoreCase) ||
+                          ext.Equals(".jpeg", StringComparison.OrdinalIgnoreCase);
+
+        if (isImageExt && fileInfo.Length <= MaxPhotoSizeBytes)
+        {
+            using var fileStream = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.Read, bufferSize: 64 * 1024, useAsync: true);
+            return await SendPhotoAsync(chatId, fileStream, caption, ct).ConfigureAwait(false);
+        }
+
+        return await SendDocumentAsync(chatId, filePath, caption, ct).ConfigureAwait(false);
     }
 
     /// <summary>

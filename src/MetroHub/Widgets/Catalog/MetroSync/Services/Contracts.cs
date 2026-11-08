@@ -39,6 +39,8 @@ public interface ITelegramTransport
 
     Task<JsonDocument> SendPhotoAsync(long chatId, Stream imageStream, string? caption, CancellationToken ct);
 
+    Task<JsonDocument> SendDocumentAsync(long chatId, Stream documentStream, string fileName, string? caption, CancellationToken ct);
+
     Task<byte[]?> GetUserProfilePhotoBytesAsync(long userId, CancellationToken ct) => Task.FromResult<byte[]?>(null);
 
     Task<byte[]?> GetBotPhotoBytesAsync(string? username, long botId, CancellationToken ct) => Task.FromResult<byte[]?>(null);

@@ -298,13 +298,13 @@
                         <ColumnDefinition Width="Auto" />
                     </Grid.ColumnDefinitions>
 
-                    <!-- Attach / Paste Button -->
+                    <!-- Attach Files Button -->
                     <Button Grid.Column="0"
                             Width="32" Height="32"
                             Padding="0"
                             VerticalAlignment="Center"
-                            Command="{Binding SendClipboardImageCommand}"
-                            ToolTip="Paste image from clipboard">
+                            Command="{Binding AttachFilesCommand}"
+                            ToolTip="Attach files">
                         <Button.Style>
                             <Style TargetType="Button">
                                 <Setter Property="OverridesDefaultStyle" Value="True" />

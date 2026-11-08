@@ -263,6 +263,9 @@ public sealed class MetroSyncWidgetViewModelTests
 
         public Task<JsonDocument> SendPhotoAsync(long chatId, Stream imageStream, string? caption, CancellationToken ct) =>
             throw new TelegramApiException(500, $"Internal server error for {BotToken}");
+
+        public Task<JsonDocument> SendDocumentAsync(long chatId, Stream documentStream, string fileName, string? caption, CancellationToken ct) =>
+            throw new TelegramApiException(500, $"Internal server error for {BotToken}");
     }
 
     [Fact]
@@ -352,6 +355,123 @@ public sealed class MetroSyncWidgetViewModelTests
 
         Assert.Equal("No image found on clipboard.", vm.ErrorMessage);
         Assert.Empty(vm.Items);
+    }
+
+    [Fact]
+    public async Task AttachFilesCommand_MultipleFiles_SendsSequentiallyAndAddsToFeed()
+    {
+        using var sandbox = new WidgetTestSandbox();
+        await using var server = await FakeTelegramServer.StartAsync();
+        using var http = TelegramHttpTransport.CreateDedicatedClient();
+        var transport = Http(server, http);
+
+        var security = new MetroSyncSecurity(sandbox.Root);
+        using var historyStore = new MetroSyncHistoryStore(sandbox.Root);
+        var thumbnails = new MetroSyncThumbnails(sandbox.Root);
+
+        security.SaveCredentials(FakeTelegramServer.Token, AllowedUserId);
+
+        var docPath = Path.Combine(sandbox.Root, "report.pdf");
+        await File.WriteAllTextAsync(docPath, "%PDF-1.4 report data");
+
+        var txtPath = Path.Combine(sandbox.Root, "notes.txt");
+        await File.WriteAllTextAsync(txtPath, "Hello from attached file");
+
+        var tile = CreateTestTile();
+        using var vm = new MetroSyncWidgetViewModel(
+            tile,
+            security: security,
+            historyStore: historyStore,
+            thumbnails: thumbnails,
+            transport: transport,
+            pickFilesAction: () => [docPath, txtPath],
+            baseDirectory: sandbox.Root);
+
+        await vm.InitializationTask;
+
+        Assert.True(vm.CanAttachFiles);
+
+        await vm.AttachFilesCommand.ExecuteAsync(null);
+
+        Assert.Null(vm.ErrorMessage);
+        Assert.Equal(2, vm.Items.Count);
+        Assert.Equal(2, server.Requests("sendDocument"));
+
+        var first = Assert.IsType<FilePayloadItem>(vm.Items[0]);
+        Assert.Equal("report.pdf", first.FileName);
+        Assert.Equal(docPath, first.LocalPath);
+        Assert.True(first.IsDownloaded);
+
+        var second = Assert.IsType<FilePayloadItem>(vm.Items[1]);
+        Assert.Equal("notes.txt", second.FileName);
+        Assert.Equal(txtPath, second.LocalPath);
+        Assert.True(second.IsDownloaded);
+    }
+
+    [Fact]
+    public async Task AttachFilesCommand_CancelledPicker_DoesNothing()
+    {
+        using var sandbox = new WidgetTestSandbox();
+        var security = new MetroSyncSecurity(sandbox.Root);
+        security.SaveCredentials(BotToken, AllowedUserId);
+
+        var tile = CreateTestTile();
+        using var vm = new MetroSyncWidgetViewModel(
+            tile,
+            security: security,
+            transport: new ScriptedTransport(),
+            pickFilesAction: () => null,
+            baseDirectory: sandbox.Root);
+
+        await vm.InitializationTask;
+
+        await vm.AttachFilesCommand.ExecuteAsync(null);
+
+        Assert.Null(vm.ErrorMessage);
+        Assert.Empty(vm.Items);
+    }
+
+    [Fact]
+    public async Task AttachFilesCommand_OneFileExceedsLimit_SetsErrorMessageAndContinues()
+    {
+        using var sandbox = new WidgetTestSandbox();
+        await using var server = await FakeTelegramServer.StartAsync();
+        using var http = TelegramHttpTransport.CreateDedicatedClient();
+        var transport = Http(server, http);
+
+        var security = new MetroSyncSecurity(sandbox.Root);
+        using var historyStore = new MetroSyncHistoryStore(sandbox.Root);
+        var thumbnails = new MetroSyncThumbnails(sandbox.Root);
+
+        security.SaveCredentials(FakeTelegramServer.Token, AllowedUserId);
+
+        var largePath = Path.Combine(sandbox.Root, "oversized.iso");
+        using (var fs = File.Create(largePath))
+        {
+            fs.SetLength(55 * 1024 * 1024);
+        }
+
+        var validPath = Path.Combine(sandbox.Root, "valid.txt");
+        await File.WriteAllTextAsync(validPath, "Valid text");
+
+        var tile = CreateTestTile();
+        using var vm = new MetroSyncWidgetViewModel(
+            tile,
+            security: security,
+            historyStore: historyStore,
+            thumbnails: thumbnails,
+            transport: transport,
+            pickFilesAction: () => [largePath, validPath],
+            baseDirectory: sandbox.Root);
+
+        await vm.InitializationTask;
+
+        await vm.AttachFilesCommand.ExecuteAsync(null);
+
+        Assert.NotNull(vm.ErrorMessage);
+        Assert.Single(vm.Items);
+        var item = Assert.IsType<FilePayloadItem>(vm.Items[0]);
+        Assert.Equal("valid.txt", item.FileName);
     }
 
     [Fact]
