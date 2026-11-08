@@ -154,6 +154,7 @@
     <SolidColorBrush x:Key="SurfaceBorderBrush" Color="#20FFFFFF" po:Freeze="True" />
     <SolidColorBrush x:Key="SurfaceBorderSubtleBrush" Color="#15FFFFFF" po:Freeze="True" />
     <SolidColorBrush x:Key="SurfaceInsetWellBrush" Color="#14000000" po:Freeze="True" />
+    <SolidColorBrush x:Key="SurfaceInputWellBrush" Color="#26000000" po:Freeze="True" />
 
     <!-- ========================================================================= -->
     <!-- CENTRAL FLUENT 2 SYSTEM ACCENT COLOR TOKENS                               -->

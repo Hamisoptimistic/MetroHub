@@ -280,7 +280,7 @@
 
             <!-- Row 3: Docked Bottom Container (Active When Paired) -->
             <Border Grid.Row="3"
-                    Background="{DynamicResource SurfaceInsetWellBrush}"
+                    Background="{DynamicResource SurfaceInputWellBrush}"
                     BorderThickness="0"
                     CornerRadius="{DynamicResource ControlCornerRadiusBottom}"
                     SnapsToDevicePixels="True"
@@ -306,17 +306,47 @@
                             Command="{Binding SendClipboardImageCommand}"
                             ToolTip="Paste image from clipboard">
                         <Button.Style>
-                            <Style TargetType="Button" BasedOn="{StaticResource SubtleButtonStyle}">
+                            <Style TargetType="Button">
                                 <Setter Property="OverridesDefaultStyle" Value="True" />
                                 <Setter Property="Width" Value="32" />
                                 <Setter Property="Height" Value="32" />
                                 <Setter Property="Padding" Value="0" />
+                                <Setter Property="Background" Value="Transparent" />
+                                <Setter Property="BorderBrush" Value="Transparent" />
+                                <Setter Property="BorderThickness" Value="0" />
+                                <Setter Property="Foreground" Value="{DynamicResource TextSecondaryBrush}" />
+                                <Setter Property="FocusVisualStyle" Value="{x:Null}" />
                                 <Setter Property="Cursor" Value="Hand" />
+                                <Setter Property="SnapsToDevicePixels" Value="True" />
+                                <Setter Property="UseLayoutRounding" Value="True" />
+                                <Setter Property="Template">
+                                    <Setter.Value>
+                                        <ControlTemplate TargetType="Button">
+                                            <Border Background="Transparent"
+                                                    Padding="{TemplateBinding Padding}">
+                                                <ContentPresenter HorizontalAlignment="Center"
+                                                                  VerticalAlignment="Center" />
+                                            </Border>
+                                        </ControlTemplate>
+                                    </Setter.Value>
+                                </Setter>
+                                <Style.Triggers>
+                                    <Trigger Property="IsMouseOver" Value="True">
+                                        <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
+                                    </Trigger>
+                                    <Trigger Property="IsPressed" Value="True">
+                                        <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
+                                    </Trigger>
+                                    <Trigger Property="IsEnabled" Value="False">
+                                        <Setter Property="Opacity" Value="0.35" />
+                                        <Setter Property="Cursor" Value="Arrow" />
+                                    </Trigger>
+                                </Style.Triggers>
                             </Style>
                         </Button.Style>
                         <ui:SymbolIcon Symbol="Attach24"
                                        FontSize="18"
-                                       Foreground="{DynamicResource TextSecondaryBrush}" />
+                                       Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" />
                     </Button>
 
                     <!-- Middle Seamless Input Area -->
