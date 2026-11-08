@@ -615,4 +615,58 @@ public sealed class MetroSyncPresentationTests
             Assert.NotEmpty(tb.Document.Blocks);
         });
     }
+
+    [Fact]
+    public void MetroSyncBubblePanel_SingleLineMessage_PacksTextAndTimeOnSameLine()
+    {
+        WpfTestHost.RunSta(() =>
+        {
+            var panel = new MetroHub.Widgets.Catalog.MetroSync.Controls.MetroSyncBubblePanel();
+            var textBlock = new MetroHub.Widgets.Catalog.MetroSync.Controls.MetroSyncSelectableTextBlock
+            {
+                Text = "asdadasd",
+                FontSize = 14
+            };
+            var timeBlock = new TextBlock
+            {
+                Text = "17:08",
+                FontSize = 10
+            };
+
+            panel.Children.Add(textBlock);
+            panel.Children.Add(timeBlock);
+
+            panel.Measure(new Size(360, 600));
+
+            // Desired width must shrink-wrap tightly around text + spacing + time (well below 360px limit)
+            Assert.True(panel.DesiredSize.Width < 200, $"Expected shrink-wrapped width < 200, but was {panel.DesiredSize.Width}");
+            // Desired height must be 1 line height (not 2 stacked lines)
+            Assert.True(panel.DesiredSize.Height < 36, $"Expected single-line height < 36, but was {panel.DesiredSize.Height}");
+
+            panel.Arrange(new Rect(0, 0, panel.DesiredSize.Width, panel.DesiredSize.Height));
+
+            // Both elements must be arranged within the same line height bounds
+            Assert.True(textBlock.RenderSize.Width > 0);
+            Assert.True(timeBlock.RenderSize.Width > 0);
+        });
+    }
+
+    [Fact]
+    public void MetroSyncSelectableTextBlock_ShrinkWrapsShortTextWidth()
+    {
+        WpfTestHost.RunSta(() =>
+        {
+            var tb = new MetroHub.Widgets.Catalog.MetroSync.Controls.MetroSyncSelectableTextBlock
+            {
+                Text = "asdadasd",
+                FontSize = 14
+            };
+
+            tb.Measure(new Size(360, 600));
+
+            // Must NOT stretch to 360px
+            Assert.True(tb.DesiredSize.Width < 120, $"Expected shrink-wrap width < 120, but was {tb.DesiredSize.Width}");
+            Assert.True(tb.IsSingleLine);
+        });
+    }
 }

@@ -6,27 +6,25 @@
 
     <!-- ========================================================================= -->
     <!-- METROSYNC DATA TEMPLATES (§8.1 & §8.2)                                    -->
-    <!-- Decoupled Action Pipeline & Context Menu Templates                        -->
+    <!-- Telegram Desktop Authentic Bubble Layout Pipeline                         -->
     <!-- ========================================================================= -->
 
     <!-- 1. Text & Link Payload Template -->
     <DataTemplate DataType="{x:Type models:TextPayloadItem}">
-        <Grid HorizontalAlignment="Stretch" Margin="0,3,0,3" Tag="InteractiveControl">
-            <Border CornerRadius="{DynamicResource ControlCornerRadius}"
-                    BorderThickness="1"
-                    Padding="12,8"
-                    MaxWidth="380"
+        <Grid HorizontalAlignment="Stretch" Margin="0,2,0,2" Tag="InteractiveControl">
+            <Border BorderThickness="1"
+                    Padding="10,6,10,6"
+                    MaxWidth="360"
                     Tag="{Binding DataContext, RelativeSource={RelativeSource AncestorType=UserControl}}">
                 <Border.Style>
                     <Style TargetType="Border">
                         <Setter Property="HorizontalAlignment" Value="Left" />
                         <Setter Property="Background" Value="{DynamicResource SurfaceGlassBrush}" />
                         <Setter Property="BorderBrush" Value="{DynamicResource SurfaceBorderSubtleBrush}" />
+                        <Setter Property="CornerRadius" Value="{DynamicResource ControlCornerRadius}" />
                         <Style.Triggers>
                             <DataTrigger Binding="{Binding IsOutgoing}" Value="True">
                                 <Setter Property="HorizontalAlignment" Value="Right" />
-                                <Setter Property="Background" Value="{DynamicResource FluentPressedBrush}" />
-                                <Setter Property="BorderBrush" Value="{DynamicResource SurfaceBorderBrush}" />
                             </DataTrigger>
                         </Style.Triggers>
                     </Style>
@@ -60,7 +58,8 @@
                     </ContextMenu>
                 </Border.ContextMenu>
 
-                <StackPanel Tag="InteractiveControl">
+                <!-- Telegram Desktop Inline / Trailing Bubble Panel -->
+                <controls:MetroSyncBubblePanel Tag="InteractiveControl">
                     <!-- Selectable Message Text with Clickable Hover-Underline Links -->
                     <controls:MetroSyncSelectableTextBlock Text="{Binding Text}"
                                                            LinkCommand="{Binding DataContext.OpenLinkCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
@@ -70,37 +69,34 @@
                                                            Foreground="{DynamicResource TextPrimaryBrush}"
                                                            Tag="InteractiveControl" />
 
-                    <!-- Timestamp (Bottom-Right) -->
+                    <!-- Inline / Bottom-Right Timestamp -->
                     <TextBlock Text="{Binding TimeDisplay}"
                                FontSize="10"
                                Foreground="{DynamicResource TextSubtleBrush}"
-                               Opacity="0.65"
-                               HorizontalAlignment="Right"
-                               Margin="0,3,0,0"
+                               Opacity="0.75"
+                               VerticalAlignment="Bottom"
                                IsHitTestVisible="False" />
-                </StackPanel>
+                </controls:MetroSyncBubblePanel>
             </Border>
         </Grid>
     </DataTemplate>
 
     <!-- 2. Image Payload Template -->
     <DataTemplate DataType="{x:Type models:ImagePayloadItem}">
-        <Grid HorizontalAlignment="Stretch" Margin="0,3,0,3" Tag="InteractiveControl">
-            <Border CornerRadius="{DynamicResource ControlCornerRadius}"
-                    BorderThickness="1"
-                    Padding="8"
-                    MaxWidth="380"
+        <Grid HorizontalAlignment="Stretch" Margin="0,2,0,2" Tag="InteractiveControl">
+            <Border BorderThickness="1"
+                    Padding="3"
+                    MaxWidth="300"
                     Tag="{Binding DataContext, RelativeSource={RelativeSource AncestorType=UserControl}}">
                 <Border.Style>
                     <Style TargetType="Border">
                         <Setter Property="HorizontalAlignment" Value="Left" />
                         <Setter Property="Background" Value="{DynamicResource SurfaceGlassBrush}" />
                         <Setter Property="BorderBrush" Value="{DynamicResource SurfaceBorderSubtleBrush}" />
+                        <Setter Property="CornerRadius" Value="{DynamicResource ControlCornerRadius}" />
                         <Style.Triggers>
                             <DataTrigger Binding="{Binding IsOutgoing}" Value="True">
                                 <Setter Property="HorizontalAlignment" Value="Right" />
-                                <Setter Property="Background" Value="{DynamicResource FluentPressedBrush}" />
-                                <Setter Property="BorderBrush" Value="{DynamicResource SurfaceBorderBrush}" />
                             </DataTrigger>
                         </Style.Triggers>
                     </Style>
@@ -141,7 +137,7 @@
                 </Border.ContextMenu>
 
                 <StackPanel Tag="InteractiveControl">
-                    <!-- Fixed-height thumbnail button (Left-click executes OpenFileCommand) -->
+                    <!-- Responsive Aspect Ratio Thumbnail Card -->
                     <Button Command="{Binding DataContext.OpenFileCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
                             CommandParameter="{Binding}"
                             Cursor="Hand"
@@ -152,23 +148,21 @@
                             VerticalContentAlignment="Stretch">
                         <Button.Template>
                             <ControlTemplate TargetType="Button">
-                                <Border Height="110"
-                                        Background="{DynamicResource SurfaceGlassSubtleBrush}"
-                                        CornerRadius="{DynamicResource ControlCornerRadius}"
-                                        ClipToBounds="True">
-                                    <Grid>
+                                <Border CornerRadius="{DynamicResource ControlCornerRadius}"
+                                        ClipToBounds="True"
+                                        Background="{DynamicResource SurfaceGlassSubtleBrush}">
+                                    <Grid MinHeight="80" MaxHeight="260">
+                                        <!-- Image content with true aspect ratio -->
                                         <Image Source="{Binding ThumbnailImage}"
                                                Stretch="Uniform"
                                                HorizontalAlignment="Center"
                                                VerticalAlignment="Center"
                                                RenderOptions.BitmapScalingMode="HighQuality" />
-                                        <ui:SymbolIcon Symbol="Image24"
-                                                       FontSize="32"
-                                                       Foreground="{DynamicResource TextSecondaryBrush}"
-                                                       HorizontalAlignment="Center"
-                                                       VerticalAlignment="Center">
-                                            <ui:SymbolIcon.Style>
-                                                <Style TargetType="ui:SymbolIcon">
+
+                                        <!-- Placeholder when no image loaded -->
+                                        <Grid Height="120" Width="180">
+                                            <Grid.Style>
+                                                <Style TargetType="Grid">
                                                     <Setter Property="Visibility" Value="Collapsed" />
                                                     <Style.Triggers>
                                                         <DataTrigger Binding="{Binding ThumbnailImage}" Value="{x:Null}">
@@ -176,10 +170,15 @@
                                                         </DataTrigger>
                                                     </Style.Triggers>
                                                 </Style>
-                                            </ui:SymbolIcon.Style>
-                                        </ui:SymbolIcon>
+                                            </Grid.Style>
+                                            <ui:SymbolIcon Symbol="Image24"
+                                                           FontSize="32"
+                                                           Foreground="{DynamicResource TextSecondaryBrush}"
+                                                           HorizontalAlignment="Center"
+                                                           VerticalAlignment="Center" />
+                                        </Grid>
 
-                                        <!-- Centered Downloading Progress Overlay for Photos -->
+                                        <!-- Centered Downloading Progress Overlay -->
                                         <Border Width="36" Height="36"
                                                 CornerRadius="18"
                                                 Background="#B0000000"
@@ -188,10 +187,34 @@
                                                 Visibility="{Binding IsDownloading, Converter={StaticResource BoolToVis}}"
                                                 IsHitTestVisible="False">
                                             <ui:ProgressRing Width="20" Height="20"
-                                                             Foreground="{DynamicResource SystemAccentColorPrimaryBrush}"
+                                                             Foreground="{DynamicResource TextPrimaryBrush}"
                                                              IsIndeterminate="{Binding IsDownloading}"
                                                              HorizontalAlignment="Center"
                                                              VerticalAlignment="Center" />
+                                        </Border>
+
+                                        <!-- Telegram-Style Floating Translucent Timestamp Badge (Visible when no caption) -->
+                                        <Border HorizontalAlignment="Right"
+                                                VerticalAlignment="Bottom"
+                                                Margin="0,0,6,6"
+                                                Background="#80000000"
+                                                CornerRadius="{DynamicResource ControlCornerRadius}"
+                                                Padding="6,2"
+                                                IsHitTestVisible="False">
+                                            <Border.Style>
+                                                <Style TargetType="Border">
+                                                    <Setter Property="Visibility" Value="Visible" />
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding HasCaption}" Value="True">
+                                                            <Setter Property="Visibility" Value="Collapsed" />
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </Border.Style>
+                                            <TextBlock Text="{Binding TimeDisplay}"
+                                                       FontSize="10"
+                                                       FontWeight="Medium"
+                                                       Foreground="#FFFFFF" />
                                         </Border>
                                     </Grid>
                                 </Border>
@@ -199,25 +222,27 @@
                         </Button.Template>
                     </Button>
 
-                    <!-- Caption text beneath thumbnail (if present) - Selectable with link support -->
-                    <controls:MetroSyncSelectableTextBlock Text="{Binding Caption}"
-                                                           LinkCommand="{Binding DataContext.OpenLinkCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
-                                                           LinkCommandParameter="{Binding}"
-                                                           FontSize="{DynamicResource TypeCaptionFontSize}"
-                                                           FontFamily="{DynamicResource AppFontFamily}"
-                                                           Foreground="{DynamicResource TextSecondaryBrush}"
-                                                           Margin="0,6,0,0"
-                                                           Visibility="{Binding HasCaption, Converter={StaticResource BoolToVis}}"
-                                                           Tag="InteractiveControl" />
+                    <!-- Caption Section (Visible only when caption is present) -->
+                    <Border Padding="6,4,6,2"
+                            Visibility="{Binding HasCaption, Converter={StaticResource BoolToVis}}"
+                            Tag="InteractiveControl">
+                        <controls:MetroSyncBubblePanel Tag="InteractiveControl">
+                            <controls:MetroSyncSelectableTextBlock Text="{Binding Caption}"
+                                                                   LinkCommand="{Binding DataContext.OpenLinkCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                                   LinkCommandParameter="{Binding}"
+                                                                   FontSize="{DynamicResource TypeCaptionFontSize}"
+                                                                   FontFamily="{DynamicResource AppFontFamily}"
+                                                                   Foreground="{DynamicResource TextPrimaryBrush}"
+                                                                   Tag="InteractiveControl" />
 
-                    <!-- Timestamp (Bottom-Right) -->
-                    <TextBlock Text="{Binding TimeDisplay}"
-                               FontSize="10"
-                               Foreground="{DynamicResource TextSubtleBrush}"
-                               Opacity="0.65"
-                               HorizontalAlignment="Right"
-                               Margin="0,3,0,0"
-                               IsHitTestVisible="False" />
+                            <TextBlock Text="{Binding TimeDisplay}"
+                                       FontSize="10"
+                                       Foreground="{DynamicResource TextSubtleBrush}"
+                                       Opacity="0.75"
+                                       VerticalAlignment="Bottom"
+                                       IsHitTestVisible="False" />
+                        </controls:MetroSyncBubblePanel>
+                    </Border>
                 </StackPanel>
             </Border>
         </Grid>
@@ -225,22 +250,20 @@
 
     <!-- 3. File, Audio, & Video Payload Template -->
     <DataTemplate DataType="{x:Type models:FilePayloadItem}">
-        <Grid HorizontalAlignment="Stretch" Margin="0,3,0,3" Tag="InteractiveControl">
-            <Border CornerRadius="{DynamicResource ControlCornerRadius}"
-                    BorderThickness="1"
+        <Grid HorizontalAlignment="Stretch" Margin="0,2,0,2" Tag="InteractiveControl">
+            <Border BorderThickness="1"
                     Padding="10,8"
-                    MaxWidth="380"
+                    MaxWidth="340"
                     Tag="{Binding DataContext, RelativeSource={RelativeSource AncestorType=UserControl}}">
                 <Border.Style>
                     <Style TargetType="Border">
                         <Setter Property="HorizontalAlignment" Value="Left" />
                         <Setter Property="Background" Value="{DynamicResource SurfaceGlassBrush}" />
                         <Setter Property="BorderBrush" Value="{DynamicResource SurfaceBorderSubtleBrush}" />
+                        <Setter Property="CornerRadius" Value="{DynamicResource ControlCornerRadius}" />
                         <Style.Triggers>
                             <DataTrigger Binding="{Binding IsOutgoing}" Value="True">
                                 <Setter Property="HorizontalAlignment" Value="Right" />
-                                <Setter Property="Background" Value="{DynamicResource FluentPressedBrush}" />
-                                <Setter Property="BorderBrush" Value="{DynamicResource SurfaceBorderBrush}" />
                             </DataTrigger>
                         </Style.Triggers>
                     </Style>
@@ -281,124 +304,137 @@
                     </ContextMenu>
                 </Border.ContextMenu>
 
-                <StackPanel Tag="InteractiveControl">
-                    <!-- In-bubble action: Card click initiates download or opens file -->
-                    <Button Command="{Binding DataContext.OpenOrDownloadFileCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
-                            CommandParameter="{Binding}"
-                            Cursor="Hand"
-                            Background="Transparent"
-                            BorderThickness="0"
-                            Padding="0"
-                            HorizontalContentAlignment="Stretch"
-                            VerticalContentAlignment="Stretch">
-                        <Button.Template>
-                            <ControlTemplate TargetType="Button">
-                                <Grid VerticalAlignment="Center">
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="Auto" />
-                                        <ColumnDefinition Width="*" />
-                                    </Grid.ColumnDefinitions>
+                <!-- In-bubble action: Card click initiates download or opens file -->
+                <Button Command="{Binding DataContext.OpenOrDownloadFileCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                        CommandParameter="{Binding}"
+                        Cursor="Hand"
+                        Background="Transparent"
+                        BorderThickness="0"
+                        Padding="0"
+                        HorizontalContentAlignment="Stretch"
+                        VerticalContentAlignment="Stretch"
+                        Tag="InteractiveControl">
+                    <Button.Template>
+                        <ControlTemplate TargetType="Button">
+                            <Grid VerticalAlignment="Center">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
 
-                                    <!-- Left 32x32 circular action button -->
-                                    <Border Grid.Column="0"
-                                            Width="32" Height="32"
-                                            CornerRadius="16"
-                                            Background="{DynamicResource SurfaceGlassSubtleBrush}"
-                                            BorderBrush="{DynamicResource SurfaceBorderBrush}"
-                                            BorderThickness="1"
-                                            Margin="0,0,10,0"
-                                            VerticalAlignment="Center">
-                                        <Grid HorizontalAlignment="Center" VerticalAlignment="Center">
-                                            <!-- State 1: Download arrow icon (when not downloaded and not downloading) -->
-                                            <ui:SymbolIcon Symbol="ArrowDownload24"
-                                                           FontSize="16"
-                                                           Foreground="{DynamicResource SystemAccentColorPrimaryBrush}">
-                                                <ui:SymbolIcon.Style>
-                                                    <Style TargetType="ui:SymbolIcon">
-                                                        <Setter Property="Visibility" Value="Visible" />
-                                                        <Style.Triggers>
-                                                            <DataTrigger Binding="{Binding IsDownloaded}" Value="True">
-                                                                <Setter Property="Visibility" Value="Collapsed" />
-                                                            </DataTrigger>
-                                                            <DataTrigger Binding="{Binding IsDownloading}" Value="True">
-                                                                <Setter Property="Visibility" Value="Collapsed" />
-                                                            </DataTrigger>
-                                                        </Style.Triggers>
-                                                    </Style>
-                                                </ui:SymbolIcon.Style>
-                                            </ui:SymbolIcon>
-
-                                            <!-- State 2: Downloading ProgressRing -->
-                                            <ui:ProgressRing Width="18" Height="18"
-                                                             Foreground="{DynamicResource SystemAccentColorPrimaryBrush}"
-                                                             IsIndeterminate="{Binding IsDownloading}"
-                                                             Visibility="{Binding IsDownloading, Converter={StaticResource BoolToVis}}"
-                                                             HorizontalAlignment="Center"
-                                                             VerticalAlignment="Center" />
-
-                                            <!-- State 3: Downloaded document icon -->
-                                            <ui:SymbolIcon Symbol="Document24"
-                                                           FontSize="16"
-                                                           Foreground="{DynamicResource TextPrimaryBrush}">
-                                                <ui:SymbolIcon.Style>
-                                                    <Style TargetType="ui:SymbolIcon">
-                                                        <Setter Property="Visibility" Value="Collapsed" />
-                                                        <Style.Triggers>
-                                                            <DataTrigger Binding="{Binding IsDownloaded}" Value="True">
-                                                                <Setter Property="Visibility" Value="Visible" />
-                                                            </DataTrigger>
-                                                            <DataTrigger Binding="{Binding IsDownloading}" Value="True">
-                                                                <Setter Property="Visibility" Value="Collapsed" />
-                                                            </DataTrigger>
-                                                        </Style.Triggers>
-                                                    </Style>
-                                                </ui:SymbolIcon.Style>
-                                            </ui:SymbolIcon>
-                                        </Grid>
-                                    </Border>
-
-                                    <!-- Middle column: File name and file size display -->
-                                    <StackPanel Grid.Column="1" VerticalAlignment="Center">
-                                        <TextBlock Text="{Binding FileName}"
-                                                   FontWeight="{DynamicResource TypeBodyStrongFontWeight}"
-                                                   FontSize="{DynamicResource TypeBodyFontSize}"
-                                                   Foreground="{DynamicResource TextPrimaryBrush}"
-                                                   TextTrimming="CharacterEllipsis" />
-                                        <TextBlock Text="{Binding FileSizeDisplay}"
-                                                   FontSize="{DynamicResource TypeCaptionFontSize}"
-                                                   Foreground="{DynamicResource TextSecondaryBrush}"
-                                                   Margin="0,2,0,0" />
-                                        <!-- Error message if download failed or too large -->
-                                        <TextBlock Text="{Binding ErrorMessage}"
-                                                   FontSize="{DynamicResource TypeCaptionFontSize}"
-                                                   Foreground="{DynamicResource StatusErrorBrush}"
-                                                   Margin="0,2,0,0">
-                                            <TextBlock.Style>
-                                                <Style TargetType="TextBlock">
-                                                    <Setter Property="Visibility" Value="Collapsed" />
+                                <!-- Left 36x36 circular action button -->
+                                <Border Grid.Column="0"
+                                        Width="36" Height="36"
+                                        CornerRadius="18"
+                                        Background="{DynamicResource SurfaceGlassSubtleBrush}"
+                                        BorderBrush="{DynamicResource SurfaceBorderBrush}"
+                                        BorderThickness="1"
+                                        Margin="0,0,10,0"
+                                        VerticalAlignment="Center">
+                                    <Grid HorizontalAlignment="Center" VerticalAlignment="Center">
+                                        <!-- State 1: Download arrow icon (when not downloaded and not downloading) -->
+                                        <ui:SymbolIcon Symbol="ArrowDownload24"
+                                                       FontSize="16"
+                                                       Foreground="{DynamicResource TextPrimaryBrush}">
+                                            <ui:SymbolIcon.Style>
+                                                <Style TargetType="ui:SymbolIcon">
+                                                    <Setter Property="Visibility" Value="Visible" />
                                                     <Style.Triggers>
-                                                        <DataTrigger Binding="{Binding HasError}" Value="True">
-                                                            <Setter Property="Visibility" Value="Visible" />
+                                                        <DataTrigger Binding="{Binding IsDownloaded}" Value="True">
+                                                            <Setter Property="Visibility" Value="Collapsed" />
+                                                        </DataTrigger>
+                                                        <DataTrigger Binding="{Binding IsDownloading}" Value="True">
+                                                            <Setter Property="Visibility" Value="Collapsed" />
                                                         </DataTrigger>
                                                     </Style.Triggers>
                                                 </Style>
-                                            </TextBlock.Style>
-                                        </TextBlock>
-                                    </StackPanel>
-                                </Grid>
-                            </ControlTemplate>
-                        </Button.Template>
-                    </Button>
+                                            </ui:SymbolIcon.Style>
+                                        </ui:SymbolIcon>
 
-                    <!-- Timestamp (Bottom-Right) -->
-                    <TextBlock Text="{Binding TimeDisplay}"
-                               FontSize="10"
-                               Foreground="{DynamicResource TextSubtleBrush}"
-                               Opacity="0.65"
-                               HorizontalAlignment="Right"
-                               Margin="0,3,0,0"
-                               IsHitTestVisible="False" />
-                </StackPanel>
+                                        <!-- State 2: Downloading ProgressRing -->
+                                        <ui:ProgressRing Width="18" Height="18"
+                                                         Foreground="{DynamicResource TextPrimaryBrush}"
+                                                         IsIndeterminate="{Binding IsDownloading}"
+                                                         Visibility="{Binding IsDownloading, Converter={StaticResource BoolToVis}}"
+                                                         HorizontalAlignment="Center"
+                                                         VerticalAlignment="Center" />
+
+                                        <!-- State 3: Downloaded document icon -->
+                                        <ui:SymbolIcon Symbol="Document24"
+                                                       FontSize="16"
+                                                       Foreground="{DynamicResource TextPrimaryBrush}">
+                                            <ui:SymbolIcon.Style>
+                                                <Style TargetType="ui:SymbolIcon">
+                                                    <Setter Property="Visibility" Value="Collapsed" />
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding IsDownloaded}" Value="True">
+                                                            <Setter Property="Visibility" Value="Visible" />
+                                                        </DataTrigger>
+                                                        <DataTrigger Binding="{Binding IsDownloading}" Value="True">
+                                                            <Setter Property="Visibility" Value="Collapsed" />
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </ui:SymbolIcon.Style>
+                                        </ui:SymbolIcon>
+                                    </Grid>
+                                </Border>
+
+                                <!-- Middle column: File name and file size / timestamp on one line -->
+                                <Grid Grid.Column="1" VerticalAlignment="Center">
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto" />
+                                        <RowDefinition Height="Auto" />
+                                        <RowDefinition Height="Auto" />
+                                    </Grid.RowDefinitions>
+
+                                    <!-- Row 0: File Name -->
+                                    <TextBlock Grid.Row="0"
+                                               Text="{Binding FileName}"
+                                               FontWeight="{DynamicResource TypeBodyStrongFontWeight}"
+                                               FontSize="{DynamicResource TypeBodyFontSize}"
+                                               Foreground="{DynamicResource TextPrimaryBrush}"
+                                               TextTrimming="CharacterEllipsis" />
+
+                                    <!-- Row 1: File Size (Left) and Timestamp (Right) -->
+                                    <Grid Grid.Row="1" Margin="0,3,0,0">
+                                        <TextBlock Text="{Binding FileSizeDisplay}"
+                                                   FontSize="{DynamicResource TypeCaptionFontSize}"
+                                                   Foreground="{DynamicResource TextSecondaryBrush}"
+                                                   HorizontalAlignment="Left"
+                                                   VerticalAlignment="Center" />
+
+                                        <TextBlock Text="{Binding TimeDisplay}"
+                                                   FontSize="10"
+                                                   Foreground="{DynamicResource TextSubtleBrush}"
+                                                   Opacity="0.75"
+                                                   HorizontalAlignment="Right"
+                                                   VerticalAlignment="Center"
+                                                   IsHitTestVisible="False" />
+                                    </Grid>
+
+                                    <!-- Row 2: Error message if download failed or too large -->
+                                    <TextBlock Grid.Row="2"
+                                               Text="{Binding ErrorMessage}"
+                                               FontSize="{DynamicResource TypeCaptionFontSize}"
+                                               Foreground="{DynamicResource StatusErrorBrush}"
+                                               Margin="0,2,0,0">
+                                        <TextBlock.Style>
+                                            <Style TargetType="TextBlock">
+                                                <Setter Property="Visibility" Value="Collapsed" />
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding HasError}" Value="True">
+                                                        <Setter Property="Visibility" Value="Visible" />
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </TextBlock.Style>
+                                    </TextBlock>
+                                </Grid>
+                            </Grid>
+                        </ControlTemplate>
+                    </Button.Template>
+                </Button>
             </Border>
         </Grid>
     </DataTemplate>

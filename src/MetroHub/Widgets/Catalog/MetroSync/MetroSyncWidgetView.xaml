@@ -140,7 +140,7 @@
                           controls:AutoHideScrollBehavior.IsEnabled="True"
                           VerticalScrollBarVisibility="Auto"
                           HorizontalScrollBarVisibility="Disabled"
-                          Padding="20,8,20,8"
+                          Padding="16,6,16,6"
                           Visibility="{Binding IsPaired, Converter={StaticResource BoolToVis}}">
                 <ItemsControl x:Name="FeedItemsControl"
                               Tag="InteractiveControl"

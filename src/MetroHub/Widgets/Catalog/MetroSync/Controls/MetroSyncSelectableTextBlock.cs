@@ -1,5 +1,6 @@
 using System;
 using System.Diagnostics;
+using System.Globalization;
 using System.Text.RegularExpressions;
 using System.Windows;
 using System.Windows.Controls;
@@ -56,6 +57,118 @@ public sealed partial class MetroSyncSelectableTextBlock : RichTextBox
     {
         get => GetValue(LinkCommandParameterProperty);
         set => SetValue(LinkCommandParameterProperty, value);
+    }
+
+    public bool IsSingleLine { get; private set; } = true;
+    public double LastLineWidth { get; private set; }
+
+    protected override Size MeasureOverride(Size constraint)
+    {
+        if (string.IsNullOrEmpty(Text))
+        {
+            IsSingleLine = true;
+            LastLineWidth = 0;
+            return new Size(0, 0);
+        }
+
+        double maxTextWidth = double.IsInfinity(constraint.Width) || constraint.Width <= 0
+            ? 340.0
+            : constraint.Width;
+
+        var typeface = new Typeface(FontFamily, FontStyle, FontWeight, FontStretch);
+        double dpi = 1.0;
+        try { dpi = VisualTreeHelper.GetDpi(this).PixelsPerDip; } catch { }
+
+        var formattedText = new FormattedText(
+            Text,
+            CultureInfo.CurrentCulture,
+            FlowDirection.LeftToRight,
+            typeface,
+            FontSize,
+            Foreground ?? Brushes.White,
+            dpi)
+        {
+            MaxTextWidth = maxTextWidth
+        };
+
+        double lineHeight = formattedText.LineHeight > 0
+            ? formattedText.LineHeight
+            : FontSize * 1.35;
+
+        IsSingleLine = formattedText.Height <= lineHeight * 1.5;
+
+        if (IsSingleLine)
+        {
+            LastLineWidth = formattedText.Width;
+        }
+        else
+        {
+            LastLineWidth = CalculateLastLineWidth(Text, maxTextWidth, typeface, FontSize, dpi, formattedText.Height);
+        }
+
+        double naturalWidth = Math.Min(maxTextWidth, Math.Ceiling(formattedText.Width) + 4.0);
+
+        if (Document != null)
+        {
+            Document.PageWidth = naturalWidth;
+        }
+
+        base.MeasureOverride(new Size(naturalWidth, constraint.Height));
+
+        double finalWidth = naturalWidth;
+        double finalHeight = Math.Max(base.DesiredSize.Height, Math.Ceiling(formattedText.Height));
+
+        return new Size(finalWidth, finalHeight);
+    }
+
+    private static double CalculateLastLineWidth(
+        string text,
+        double maxTextWidth,
+        Typeface typeface,
+        double fontSize,
+        double dpi,
+        double totalHeight)
+    {
+        int guessIndex = text.Length - 1;
+        while (guessIndex > 0)
+        {
+            int prevSpace = text.LastIndexOfAny([' ', '\n', '\r', '\t'], guessIndex - 1);
+            int testIndex = prevSpace > 0 ? prevSpace : 0;
+
+            var sub = new FormattedText(
+                text[..testIndex],
+                CultureInfo.CurrentCulture,
+                FlowDirection.LeftToRight,
+                typeface,
+                fontSize,
+                Brushes.White,
+                dpi)
+            {
+                MaxTextWidth = maxTextWidth
+            };
+
+            if (sub.Height < totalHeight)
+            {
+                string lastLine = text[testIndex..].TrimStart();
+                var lastLineFt = new FormattedText(
+                    lastLine,
+                    CultureInfo.CurrentCulture,
+                    FlowDirection.LeftToRight,
+                    typeface,
+                    fontSize,
+                    Brushes.White,
+                    dpi)
+                {
+                    MaxTextWidth = maxTextWidth
+                };
+                return lastLineFt.Width;
+            }
+
+            if (testIndex == 0) break;
+            guessIndex = testIndex;
+        }
+
+        return maxTextWidth;
     }
 
     public MetroSyncSelectableTextBlock()
@@ -154,9 +267,9 @@ public sealed partial class MetroSyncSelectableTextBlock : RichTextBox
 
             var linkStyle = new Style(typeof(Hyperlink));
             linkStyle.Setters.Add(new Setter(Hyperlink.TextDecorationsProperty, null));
-            if (TryFindResource("SystemAccentColorPrimaryBrush") is Brush accentBrush)
+            if (TryFindResource("TextPrimaryBrush") is Brush textBrush)
             {
-                linkStyle.Setters.Add(new Setter(Hyperlink.ForegroundProperty, accentBrush));
+                linkStyle.Setters.Add(new Setter(Hyperlink.ForegroundProperty, textBrush));
             }
 
             var hoverTrigger = new Trigger { Property = Hyperlink.IsMouseOverProperty, Value = true };
