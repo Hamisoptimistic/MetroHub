@@ -1003,4 +1003,260 @@ public sealed class MetroSyncWidgetViewModelTests
             Assert.Equal("Disconnect", menuItem.Header);
         });
     }
+
+    [Fact]
+    public async Task SaveFileAsCommand_DownloadedFile_CopiesToSelectedDestination()
+    {
+        using var sandbox = new WidgetTestSandbox();
+        var downloadsDir = Path.Combine(sandbox.Root, "Downloads");
+        Directory.CreateDirectory(downloadsDir);
+        var sourceFile = Path.Combine(downloadsDir, "report.pdf");
+        await File.WriteAllTextAsync(sourceFile, "Sample PDF Content");
+
+        var destinationFile = Path.Combine(sandbox.Root, "saved_report.pdf");
+
+        var fileItem = new FilePayloadItem
+        {
+            FileName = "report.pdf",
+            LocalPath = sourceFile,
+            FileSize = 18
+        };
+
+        var tile = CreateTestTile();
+        using var vm = new MetroSyncWidgetViewModel(
+            tile,
+            baseDirectory: sandbox.Root,
+            pickSaveFileAction: (name, filter) => destinationFile);
+
+        await vm.SaveFileAsCommand.ExecuteAsync(fileItem);
+
+        Assert.True(File.Exists(destinationFile));
+        Assert.Equal("Sample PDF Content", await File.ReadAllTextAsync(destinationFile));
+    }
+
+    [Fact]
+    public async Task SaveFileAsCommand_WhenUserCancels_DoesNotCopy()
+    {
+        using var sandbox = new WidgetTestSandbox();
+        var downloadsDir = Path.Combine(sandbox.Root, "Downloads");
+        Directory.CreateDirectory(downloadsDir);
+        var sourceFile = Path.Combine(downloadsDir, "doc.txt");
+        await File.WriteAllTextAsync(sourceFile, "Doc Content");
+
+        var fileItem = new FilePayloadItem
+        {
+            FileName = "doc.txt",
+            LocalPath = sourceFile,
+            FileSize = 11
+        };
+
+        var tile = CreateTestTile();
+        using var vm = new MetroSyncWidgetViewModel(
+            tile,
+            baseDirectory: sandbox.Root,
+            pickSaveFileAction: (name, filter) => null);
+
+        await vm.SaveFileAsCommand.ExecuteAsync(fileItem);
+
+        Assert.True(File.Exists(sourceFile));
+    }
+
+    [Fact]
+    public async Task SaveFileAsCommand_UndownloadedFile_DownloadsAndCopiesToDestination()
+    {
+        await using var server = await FakeTelegramServer.StartAsync();
+        using var http = TelegramHttpTransport.CreateDedicatedClient();
+        var transport = Http(server, http);
+
+        using var sandbox = new WidgetTestSandbox();
+        byte[] expectedBytes = "Network content from telegram"u8.ToArray();
+        server.AddFile("telegram_file_123", expectedBytes);
+
+        var destinationFile = Path.Combine(sandbox.Root, "exported.txt");
+
+        var fileItem = new FilePayloadItem
+        {
+            FileId = "telegram_file_123",
+            FileName = "notes.txt",
+            FileSize = expectedBytes.Length
+        };
+
+        var tile = CreateTestTile();
+        using var vm = new MetroSyncWidgetViewModel(
+            tile,
+            transport: transport,
+            baseDirectory: sandbox.Root,
+            pickSaveFileAction: (name, filter) => destinationFile);
+
+        await vm.SaveFileAsCommand.ExecuteAsync(fileItem);
+
+        Assert.True(File.Exists(destinationFile));
+        Assert.Equal(expectedBytes, await File.ReadAllBytesAsync(destinationFile));
+        Assert.True(fileItem.IsDownloaded);
+    }
+
+    [Fact]
+    public void CopyImageCommand_WithImagePayloadItem_InvokesCopyImageAction()
+    {
+        using var sandbox = new WidgetTestSandbox();
+        BitmapSource? copiedSource = null;
+
+        var bmp = CreateFrozenBitmap(50, 50);
+        var imageItem = new ImagePayloadItem
+        {
+            MessageId = 42,
+            ThumbnailImage = bmp
+        };
+
+        var tile = CreateTestTile();
+        using var vm = new MetroSyncWidgetViewModel(
+            tile,
+            baseDirectory: sandbox.Root,
+            copyImageAction: b => copiedSource = b);
+
+        vm.CopyImageCommand.Execute(imageItem);
+
+        Assert.NotNull(copiedSource);
+        Assert.Equal(50, copiedSource.PixelWidth);
+        Assert.Equal(50, copiedSource.PixelHeight);
+    }
+
+    [Fact]
+    public async Task OpenOrDownloadFileCommand_TogglesCorrectActionBasedOnDownloadedState()
+    {
+        await using var server = await FakeTelegramServer.StartAsync();
+        using var http = TelegramHttpTransport.CreateDedicatedClient();
+        var transport = Http(server, http);
+
+        using var sandbox = new WidgetTestSandbox();
+        byte[] content = "Hello file"u8.ToArray();
+        server.AddFile("file_state_test", content);
+
+        string? openedPath = null;
+        var fileItem = new FilePayloadItem
+        {
+            FileId = "file_state_test",
+            FileName = "state.txt",
+            FileSize = content.Length
+        };
+
+        var tile = CreateTestTile();
+        using var vm = new MetroSyncWidgetViewModel(
+            tile,
+            transport: transport,
+            baseDirectory: sandbox.Root,
+            openFileAction: path => openedPath = path);
+
+        // First click: not downloaded -> downloads
+        Assert.False(fileItem.IsDownloaded);
+        await vm.OpenOrDownloadFileCommand.ExecuteAsync(fileItem);
+        Assert.True(fileItem.IsDownloaded);
+        Assert.Null(openedPath);
+
+        // Second click: downloaded -> opens
+        await vm.OpenOrDownloadFileCommand.ExecuteAsync(fileItem);
+        Assert.NotNull(openedPath);
+        Assert.Equal(fileItem.LocalPath, openedPath);
+    }
+
+    [Fact]
+    public async Task SaveFileAsCommand_WhenDestinationMatchesSource_DoesNotThrow()
+    {
+        using var sandbox = new WidgetTestSandbox();
+        var downloadsDir = Path.Combine(sandbox.Root, "Downloads");
+        Directory.CreateDirectory(downloadsDir);
+        var sourceFile = Path.Combine(downloadsDir, "same.txt");
+        await File.WriteAllTextAsync(sourceFile, "Identical content");
+
+        var fileItem = new FilePayloadItem
+        {
+            FileName = "same.txt",
+            LocalPath = sourceFile,
+            FileSize = 17
+        };
+
+        var tile = CreateTestTile();
+        using var vm = new MetroSyncWidgetViewModel(
+            tile,
+            baseDirectory: sandbox.Root,
+            pickSaveFileAction: (name, filter) => sourceFile);
+
+        await vm.SaveFileAsCommand.ExecuteAsync(fileItem);
+
+        Assert.Null(fileItem.ErrorMessage);
+        Assert.True(File.Exists(sourceFile));
+        Assert.Equal("Identical content", await File.ReadAllTextAsync(sourceFile));
+    }
+
+    [Fact]
+    public async Task SaveFileAsCommand_OversizedUndownloadedFile_SetsLimitErrorMessage()
+    {
+        using var sandbox = new WidgetTestSandbox();
+        var destinationFile = Path.Combine(sandbox.Root, "big_export.zip");
+
+        var fileItem = new FilePayloadItem
+        {
+            FileId = "big_file_id",
+            FileName = "huge.zip",
+            FileSize = 25 * 1024 * 1024 // 25 MB > 20 MB limit
+        };
+
+        var tile = CreateTestTile();
+        using var vm = new MetroSyncWidgetViewModel(
+            tile,
+            baseDirectory: sandbox.Root,
+            pickSaveFileAction: (name, filter) => destinationFile);
+
+        await vm.SaveFileAsCommand.ExecuteAsync(fileItem);
+
+        Assert.Equal("Too large for bot download (20 MB limit)", fileItem.ErrorMessage);
+        Assert.False(File.Exists(destinationFile));
+    }
+
+    [Fact]
+    public async Task SaveFileAsCommand_WithImagePayloadItem_SavesImageFile()
+    {
+        using var sandbox = new WidgetTestSandbox();
+        var destinationFile = Path.Combine(sandbox.Root, "exported_image.jpg");
+        var bmp = CreateFrozenBitmap(64, 64);
+
+        var imageItem = new ImagePayloadItem
+        {
+            MessageId = 88,
+            ThumbnailImage = bmp
+        };
+
+        var tile = CreateTestTile();
+        using var vm = new MetroSyncWidgetViewModel(
+            tile,
+            baseDirectory: sandbox.Root,
+            pickSaveFileAction: (name, filter) => destinationFile);
+
+        await vm.SaveFileAsCommand.ExecuteAsync(imageItem);
+
+        Assert.True(File.Exists(destinationFile));
+        Assert.True(new FileInfo(destinationFile).Length > 0);
+    }
+
+    [Fact]
+    public void CopyLinkCommand_WithTextPayloadItem_InvokesCopyTextActionWithUrl()
+    {
+        using var sandbox = new WidgetTestSandbox();
+        string? copiedText = null;
+
+        var textItem = new TextPayloadItem
+        {
+            Text = "Check this site https://example.com/portal today"
+        };
+
+        var tile = CreateTestTile();
+        using var vm = new MetroSyncWidgetViewModel(
+            tile,
+            baseDirectory: sandbox.Root,
+            copyTextAction: t => copiedText = t);
+
+        vm.CopyLinkCommand.Execute(textItem);
+
+        Assert.Equal("https://example.com/portal", copiedText);
+    }
 }

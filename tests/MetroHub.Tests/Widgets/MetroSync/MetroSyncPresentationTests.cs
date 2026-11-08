@@ -191,13 +191,36 @@ public sealed class MetroSyncPresentationTests
             Assert.NotNull(imageTemplate);
             Assert.NotNull(fileTemplate);
 
-            var textContent = textTemplate.LoadContent();
-            var imageContent = imageTemplate.LoadContent();
-            var fileContent = fileTemplate.LoadContent();
+            var textContent = textTemplate.LoadContent() as Grid;
+            var imageContent = imageTemplate.LoadContent() as Grid;
+            var fileContent = fileTemplate.LoadContent() as Grid;
 
             Assert.NotNull(textContent);
             Assert.NotNull(imageContent);
             Assert.NotNull(fileContent);
+
+            var textBorder = (Border)textContent.Children[0];
+            Assert.NotNull(textBorder.ContextMenu);
+            var textHeaders = textBorder.ContextMenu.Items.OfType<MenuItem>().Select(m => m.Header?.ToString()).ToList();
+            Assert.Contains("Copy text", textHeaders);
+            Assert.Contains("Open link", textHeaders);
+            Assert.Contains("Copy link", textHeaders);
+
+            var imageBorder = (Border)imageContent.Children[0];
+            Assert.NotNull(imageBorder.ContextMenu);
+            var imageHeaders = imageBorder.ContextMenu.Items.OfType<MenuItem>().Select(m => m.Header?.ToString()).ToList();
+            Assert.Contains("Open", imageHeaders);
+            Assert.Contains("Save as...", imageHeaders);
+            Assert.Contains("Copy image", imageHeaders);
+            Assert.Contains("Copy caption", imageHeaders);
+
+            var fileBorder = (Border)fileContent.Children[0];
+            Assert.NotNull(fileBorder.ContextMenu);
+            var fileHeaders = fileBorder.ContextMenu.Items.OfType<MenuItem>().Select(m => m.Header?.ToString()).ToList();
+            Assert.Contains("Open", fileHeaders);
+            Assert.Contains("Show in folder", fileHeaders);
+            Assert.Contains("Save as...", fileHeaders);
+            Assert.Contains("Copy file name", fileHeaders);
         });
     }
 

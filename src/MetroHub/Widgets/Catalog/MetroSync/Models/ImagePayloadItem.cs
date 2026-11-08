@@ -10,6 +10,9 @@ public sealed partial class ImagePayloadItem : MetroSyncMessageItem
     public string? FileId { get; set; }
     public string? Caption { get; set; }
 
+    [JsonIgnore]
+    public bool HasCaption => !string.IsNullOrWhiteSpace(Caption);
+
     [ObservableProperty]
     [property: JsonIgnore]
     private ImageSource? _thumbnailImage;

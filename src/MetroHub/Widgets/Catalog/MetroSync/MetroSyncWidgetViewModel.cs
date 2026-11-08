@@ -54,6 +54,8 @@ public sealed partial class MetroSyncWidgetViewModel : WidgetViewModelBase, IWid
     private readonly Action<string> _openUrlAction;
     private readonly Action<string> _openFileAction;
     private readonly Action<string> _showInFolderAction;
+    private readonly Func<string, string?, string?> _pickSaveFileAction;
+    private readonly Action<BitmapSource> _copyImageAction;
 
     private readonly CancellationTokenSource _lifecycleCts = new();
     private readonly SemaphoreSlim _engineLock = new(1, 1);
@@ -61,6 +63,7 @@ public sealed partial class MetroSyncWidgetViewModel : WidgetViewModelBase, IWid
     private HttpClient? _ownedClient;
     private ITelegramTransport? _transport;
     private MetroSyncDownloader? _downloader;
+    private MetroSyncDownloader? Downloader => _downloader ??= (_transport != null ? new MetroSyncDownloader(_transport, _baseDirectory) : null);
     private MetroSyncOutboundService? _outboundService;
     private ConduitEngine? _engine;
     private Task? _consumerTask;
@@ -120,7 +123,7 @@ public sealed partial class MetroSyncWidgetViewModel : WidgetViewModelBase, IWid
     public event EventHandler? SetupRequested;
 
     public MetroSyncWidgetViewModel(TileModel model)
-        : this(model, null, null, null, null, null, null, null, null, null, null, null, null, null, null)
+        : this(model, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null)
     {
     }
 
@@ -140,6 +143,8 @@ public sealed partial class MetroSyncWidgetViewModel : WidgetViewModelBase, IWid
         Action<string>? openUrlAction = null,
         Action<string>? openFileAction = null,
         Action<string>? showInFolderAction = null,
+        Func<string, string?, string?>? pickSaveFileAction = null,
+        Action<BitmapSource>? copyImageAction = null,
         TimeProvider? timeProvider = null,
         Action? requestSetupDialog = null)
         : base(model)
@@ -176,6 +181,8 @@ public sealed partial class MetroSyncWidgetViewModel : WidgetViewModelBase, IWid
         _openUrlAction = openUrlAction ?? DefaultOpenUrl;
         _openFileAction = openFileAction ?? DefaultOpenFile;
         _showInFolderAction = showInFolderAction ?? DefaultShowInFolder;
+        _pickSaveFileAction = pickSaveFileAction ?? DefaultPickSaveFile;
+        _copyImageAction = copyImageAction ?? DefaultCopyImage;
 
         RequestSetupDialog = requestSetupDialog;
         InitializationTask = InitializeInternalAsync();
@@ -762,7 +769,8 @@ public sealed partial class MetroSyncWidgetViewModel : WidgetViewModelBase, IWid
             return;
         }
 
-        if (_downloader == null)
+        var downloader = Downloader;
+        if (downloader == null)
         {
             RunOnUIThread(() =>
             {
@@ -778,7 +786,7 @@ public sealed partial class MetroSyncWidgetViewModel : WidgetViewModelBase, IWid
 
         try
         {
-            await _downloader.DownloadFileAsync(item, ct: _lifecycleCts.Token).ConfigureAwait(false);
+            await downloader.DownloadFileAsync(item, ct: _lifecycleCts.Token).ConfigureAwait(false);
         }
         catch (FileTooLargeException)
         {
@@ -814,6 +822,18 @@ public sealed partial class MetroSyncWidgetViewModel : WidgetViewModelBase, IWid
         {
             localPath = fileItem.LocalPath;
         }
+        else if (parameter is ImagePayloadItem imageItem)
+        {
+            localPath = imageItem.ThumbnailFilePath;
+            if (string.IsNullOrWhiteSpace(localPath))
+            {
+                var candidate = _thumbnails.GetThumbnailPath(imageItem.MessageId);
+                if (File.Exists(candidate))
+                {
+                    localPath = candidate;
+                }
+            }
+        }
         else if (parameter is string str)
         {
             localPath = str;
@@ -821,13 +841,17 @@ public sealed partial class MetroSyncWidgetViewModel : WidgetViewModelBase, IWid
 
         if (string.IsNullOrWhiteSpace(localPath) || !File.Exists(localPath)) return;
 
-        var downloadsDir = _downloader?.DownloadsDirectory ??
+        var downloadsDir = Downloader?.DownloadsDirectory ??
             Path.Combine(_baseDirectory ?? Path.Combine(AppPaths.AppDataDir, "MetroSync"), "Downloads");
+        var thumbnailsDir = _thumbnails?.ThumbnailsDirectory ??
+            Path.Combine(_baseDirectory ?? Path.Combine(AppPaths.AppDataDir, "MetroSync"), "Thumbnails");
 
         var normalizedTarget = Path.GetFullPath(localPath);
-        var normalizedDir = Path.GetFullPath(downloadsDir).TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar) + Path.DirectorySeparatorChar;
+        var normalizedDownloadsDir = Path.GetFullPath(downloadsDir).TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar) + Path.DirectorySeparatorChar;
+        var normalizedThumbnailsDir = Path.GetFullPath(thumbnailsDir).TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar) + Path.DirectorySeparatorChar;
 
-        if (!normalizedTarget.StartsWith(normalizedDir, StringComparison.OrdinalIgnoreCase))
+        if (!normalizedTarget.StartsWith(normalizedDownloadsDir, StringComparison.OrdinalIgnoreCase) &&
+            !normalizedTarget.StartsWith(normalizedThumbnailsDir, StringComparison.OrdinalIgnoreCase))
         {
             return;
         }
@@ -843,6 +867,18 @@ public sealed partial class MetroSyncWidgetViewModel : WidgetViewModelBase, IWid
         {
             localPath = fileItem.LocalPath;
         }
+        else if (parameter is ImagePayloadItem imageItem)
+        {
+            localPath = imageItem.ThumbnailFilePath;
+            if (string.IsNullOrWhiteSpace(localPath))
+            {
+                var candidate = _thumbnails.GetThumbnailPath(imageItem.MessageId);
+                if (File.Exists(candidate))
+                {
+                    localPath = candidate;
+                }
+            }
+        }
         else if (parameter is string str)
         {
             localPath = str;
@@ -850,18 +886,254 @@ public sealed partial class MetroSyncWidgetViewModel : WidgetViewModelBase, IWid
 
         if (string.IsNullOrWhiteSpace(localPath) || !File.Exists(localPath)) return;
 
-        var downloadsDir = _downloader?.DownloadsDirectory ??
+        var downloadsDir = Downloader?.DownloadsDirectory ??
             Path.Combine(_baseDirectory ?? Path.Combine(AppPaths.AppDataDir, "MetroSync"), "Downloads");
+        var thumbnailsDir = _thumbnails?.ThumbnailsDirectory ??
+            Path.Combine(_baseDirectory ?? Path.Combine(AppPaths.AppDataDir, "MetroSync"), "Thumbnails");
 
         var normalizedTarget = Path.GetFullPath(localPath);
-        var normalizedDir = Path.GetFullPath(downloadsDir).TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar) + Path.DirectorySeparatorChar;
+        var normalizedDownloadsDir = Path.GetFullPath(downloadsDir).TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar) + Path.DirectorySeparatorChar;
+        var normalizedThumbnailsDir = Path.GetFullPath(thumbnailsDir).TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar) + Path.DirectorySeparatorChar;
 
-        if (!normalizedTarget.StartsWith(normalizedDir, StringComparison.OrdinalIgnoreCase))
+        if (!normalizedTarget.StartsWith(normalizedDownloadsDir, StringComparison.OrdinalIgnoreCase) &&
+            !normalizedTarget.StartsWith(normalizedThumbnailsDir, StringComparison.OrdinalIgnoreCase))
         {
             return;
         }
 
         _showInFolderAction(normalizedTarget);
+    }
+
+    [RelayCommand]
+    public async Task OpenOrDownloadFileAsync(FilePayloadItem? item)
+    {
+        if (item == null) return;
+        if (item.IsDownloaded)
+        {
+            OpenFile(item);
+        }
+        else if (!item.IsDownloading)
+        {
+            await DownloadFileAsync(item).ConfigureAwait(false);
+        }
+    }
+
+    [RelayCommand]
+    public async Task SaveFileAsAsync(object? parameter)
+    {
+        if (parameter is FilePayloadItem fileItem)
+        {
+            string defaultName = !string.IsNullOrWhiteSpace(fileItem.FileName)
+                ? MetroSyncDownloader.SanitizeFileName(fileItem.FileName)
+                : "file";
+
+            var destination = _pickSaveFileAction(defaultName, "All files (*.*)|*.*");
+            if (string.IsNullOrWhiteSpace(destination)) return;
+
+            if (fileItem.IsDownloaded && !string.IsNullOrWhiteSpace(fileItem.LocalPath) && File.Exists(fileItem.LocalPath))
+            {
+                try
+                {
+                    SafeCopyFile(fileItem.LocalPath, destination);
+                }
+                catch (Exception ex)
+                {
+                    Safe.Log(ex, "Failed to copy downloaded file to save destination");
+                    RunOnUIThread(() => fileItem.ErrorMessage = "Failed to save file.");
+                }
+                return;
+            }
+
+            if (string.IsNullOrWhiteSpace(fileItem.FileId)) return;
+            if (fileItem.IsDownloading) return;
+
+            if (fileItem.FileSize.HasValue && fileItem.FileSize.Value > MetroSyncDownloader.MaxDownloadSizeBytes)
+            {
+                RunOnUIThread(() => fileItem.ErrorMessage = "Too large for bot download (20 MB limit)");
+                return;
+            }
+
+            var downloader = Downloader;
+            if (downloader == null)
+            {
+                RunOnUIThread(() => fileItem.ErrorMessage = "Downloader unavailable.");
+                return;
+            }
+
+            try
+            {
+                var downloadedPath = await downloader.DownloadFileAsync(fileItem, ct: _lifecycleCts.Token).ConfigureAwait(false);
+                if (File.Exists(downloadedPath))
+                {
+                    SafeCopyFile(downloadedPath, destination);
+                }
+            }
+            catch (FileTooLargeException)
+            {
+                RunOnUIThread(() =>
+                {
+                    fileItem.ErrorMessage = "Too large for bot download (20 MB limit)";
+                    fileItem.IsDownloading = false;
+                });
+            }
+            catch (OperationCanceledException)
+            {
+                RunOnUIThread(() => fileItem.IsDownloading = false);
+            }
+            catch (Exception ex)
+            {
+                RunOnUIThread(() =>
+                {
+                    fileItem.ErrorMessage = "Download failed.";
+                    fileItem.IsDownloading = false;
+                });
+                Safe.Log(ex, "SaveFileAs download failed");
+            }
+        }
+        else if (parameter is ImagePayloadItem imageItem)
+        {
+            string defaultName = $"image_{imageItem.MessageId}.jpg";
+            var destination = _pickSaveFileAction(defaultName, "JPEG Image (*.jpg;*.jpeg)|*.jpg;*.jpeg|All files (*.*)|*.*");
+            if (string.IsNullOrWhiteSpace(destination)) return;
+
+            var localPath = imageItem.ThumbnailFilePath;
+            if (string.IsNullOrWhiteSpace(localPath) || !File.Exists(localPath))
+            {
+                var candidate = _thumbnails.GetThumbnailPath(imageItem.MessageId);
+                if (File.Exists(candidate))
+                {
+                    localPath = candidate;
+                }
+            }
+
+            if (!string.IsNullOrWhiteSpace(localPath) && File.Exists(localPath))
+            {
+                try
+                {
+                    SafeCopyFile(localPath, destination);
+                }
+                catch (Exception ex)
+                {
+                    Safe.Log(ex, "Failed to copy image to save destination");
+                }
+                return;
+            }
+
+            if (imageItem.ThumbnailImage is BitmapSource bmp)
+            {
+                try
+                {
+                    var dir = Path.GetDirectoryName(Path.GetFullPath(destination));
+                    if (!string.IsNullOrEmpty(dir) && !Directory.Exists(dir))
+                    {
+                        Directory.CreateDirectory(dir);
+                    }
+
+                    var encoder = new JpegBitmapEncoder();
+                    encoder.Frames.Add(BitmapFrame.Create(bmp));
+                    using var stream = File.Create(destination);
+                    encoder.Save(stream);
+                }
+                catch (Exception ex)
+                {
+                    Safe.Log(ex, "Failed to encode image to save destination");
+                }
+            }
+        }
+        else if (parameter is string path && File.Exists(path))
+        {
+            string defaultName = Path.GetFileName(path);
+            var destination = _pickSaveFileAction(defaultName, "All files (*.*)|*.*");
+            if (string.IsNullOrWhiteSpace(destination)) return;
+
+            try
+            {
+                SafeCopyFile(path, destination);
+            }
+            catch (Exception ex)
+            {
+                Safe.Log(ex, "Failed to copy file to save destination");
+            }
+        }
+    }
+
+    private static void SafeCopyFile(string source, string destination)
+    {
+        if (string.Equals(Path.GetFullPath(source), Path.GetFullPath(destination), StringComparison.OrdinalIgnoreCase))
+        {
+            return;
+        }
+
+        var dir = Path.GetDirectoryName(Path.GetFullPath(destination));
+        if (!string.IsNullOrEmpty(dir) && !Directory.Exists(dir))
+        {
+            Directory.CreateDirectory(dir);
+        }
+
+        File.Copy(source, destination, overwrite: true);
+    }
+
+    [RelayCommand]
+    public void CopyImage(object? parameter)
+    {
+        BitmapSource? bitmapToCopy = null;
+
+        if (parameter is ImagePayloadItem imageItem)
+        {
+            if (imageItem.ThumbnailImage is BitmapSource bmp)
+            {
+                bitmapToCopy = bmp;
+            }
+            else
+            {
+                var path = imageItem.ThumbnailFilePath;
+                if (string.IsNullOrWhiteSpace(path) || !File.Exists(path))
+                {
+                    var candidate = _thumbnails.GetThumbnailPath(imageItem.MessageId);
+                    if (File.Exists(candidate))
+                    {
+                        path = candidate;
+                    }
+                }
+
+                if (!string.IsNullOrWhiteSpace(path) && File.Exists(path))
+                {
+                    bitmapToCopy = MetroSyncThumbnails.LoadThumbnail(path);
+                }
+            }
+        }
+        else if (parameter is BitmapSource directBmp)
+        {
+            bitmapToCopy = directBmp;
+        }
+
+        if (bitmapToCopy != null)
+        {
+            _copyImageAction(bitmapToCopy);
+        }
+    }
+
+    [RelayCommand]
+    public void CopyLink(object? parameter)
+    {
+        string? url = null;
+        if (parameter is TextPayloadItem textItem)
+        {
+            url = textItem.FirstUrl ?? ExtractFirstUrl(textItem.Text);
+        }
+        else if (parameter is string str)
+        {
+            url = str;
+        }
+        else if (parameter is Uri uri)
+        {
+            url = uri.AbsoluteUri;
+        }
+
+        if (!string.IsNullOrEmpty(url))
+        {
+            _copyTextAction(url);
+        }
     }
 
     [RelayCommand]
@@ -1084,6 +1356,76 @@ public sealed partial class MetroSyncWidgetViewModel : WidgetViewModelBase, IWid
         catch (Exception ex)
         {
             Safe.Log(ex, "Failed to select file in Windows Explorer");
+        }
+    }
+
+    private static string? DefaultPickSaveFile(string defaultFileName, string? filter = null)
+    {
+        if (Thread.CurrentThread.GetApartmentState() == ApartmentState.STA)
+        {
+            return ShowDialogCore(defaultFileName, filter);
+        }
+
+        string? result = null;
+        var thread = new Thread(() =>
+        {
+            result = ShowDialogCore(defaultFileName, filter);
+        });
+        thread.SetApartmentState(ApartmentState.STA);
+        thread.Start();
+        thread.Join();
+        return result;
+
+        static string? ShowDialogCore(string fileName, string? fileFilter)
+        {
+            var ext = Path.GetExtension(fileName);
+            var defaultExt = !string.IsNullOrEmpty(ext) ? ext.TrimStart('.') : "bin";
+            var dialog = new Microsoft.Win32.SaveFileDialog
+            {
+                FileName = fileName,
+                DefaultExt = defaultExt,
+                Filter = fileFilter ?? "All files (*.*)|*.*",
+                OverwritePrompt = true
+            };
+            return dialog.ShowDialog() == true ? dialog.FileName : null;
+        }
+    }
+
+    private static void DefaultCopyImage(BitmapSource image)
+    {
+        if (image == null) return;
+
+        Action copyAction = () =>
+        {
+            for (int i = 0; i < 5; i++)
+            {
+                try
+                {
+                    Clipboard.SetImage(image);
+                    return;
+                }
+                catch (COMException) when (i < 4)
+                {
+                    Thread.Sleep(20);
+                }
+                catch (Exception ex)
+                {
+                    Safe.Log(ex, "Failed to copy image to Windows clipboard");
+                    return;
+                }
+            }
+        };
+
+        var app = Application.Current;
+        var dispatcher = app?.Dispatcher;
+        if (dispatcher != null && !dispatcher.HasShutdownStarted && dispatcher.Thread.IsAlive)
+        {
+            if (dispatcher.CheckAccess()) copyAction();
+            else _ = dispatcher.InvokeAsync(copyAction, DispatcherPriority.Background);
+        }
+        else
+        {
+            copyAction();
         }
     }
 
