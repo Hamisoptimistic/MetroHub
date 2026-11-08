@@ -652,6 +652,111 @@ public sealed class MetroSyncPresentationTests
     }
 
     [Fact]
+    public void MetroSyncBubblePanel_SingleLine_PacksTimestampCloseToTextEvenIfArrangedWider()
+    {
+        WpfTestHost.RunSta(() =>
+        {
+            var panel = new MetroHub.Widgets.Catalog.MetroSync.Controls.MetroSyncBubblePanel();
+            var textBlock = new MetroHub.Widgets.Catalog.MetroSync.Controls.MetroSyncSelectableTextBlock
+            {
+                Text = "This shit right here",
+                FontSize = 14
+            };
+            var timeBlock = new TextBlock
+            {
+                Text = "2:10",
+                FontSize = 10
+            };
+
+            panel.Children.Add(textBlock);
+            panel.Children.Add(timeBlock);
+
+            panel.Measure(new Size(340, 600));
+            // Even if finalSize is 300px, single-line timestamp must stay exactly Spacing (8px) after text
+            panel.Arrange(new Rect(0, 0, 300, panel.DesiredSize.Height));
+
+            double textRight = textBlock.RenderSize.Width;
+            Point timePos = timeBlock.TranslatePoint(new Point(0, 0), panel);
+
+            // Timestamp X should equal textRight + 8.0, eliminating any wide floating gaps
+            Assert.True(Math.Abs(timePos.X - (textRight + 8.0)) < 1.0,
+                $"Expected time at {textRight + 8.0}, but was {timePos.X}");
+        });
+    }
+
+    [Fact]
+    public void MetroSyncBubblePanel_CompositeContainerWithFavicon_MeasuresAndArrangesCorrectly()
+    {
+        WpfTestHost.RunSta(() =>
+        {
+            var panel = new MetroHub.Widgets.Catalog.MetroSync.Controls.MetroSyncBubblePanel();
+
+            var contentGrid = new Grid();
+            contentGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+            contentGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+
+            var faviconBorder = new Border
+            {
+                Width = 18,
+                Height = 18,
+                Margin = new Thickness(0, 2, 8, 0),
+                Visibility = Visibility.Visible
+            };
+            Grid.SetColumn(faviconBorder, 0);
+            contentGrid.Children.Add(faviconBorder);
+
+            var textBlock = new MetroHub.Widgets.Catalog.MetroSync.Controls.MetroSyncSelectableTextBlock
+            {
+                Text = "https://youtube.com",
+                FontSize = 14
+            };
+            Grid.SetColumn(textBlock, 1);
+            contentGrid.Children.Add(textBlock);
+
+            var timeBlock = new TextBlock
+            {
+                Text = "3:09",
+                FontSize = 10
+            };
+
+            panel.Children.Add(contentGrid);
+            panel.Children.Add(timeBlock);
+
+            panel.Measure(new Size(340, 600));
+            Assert.True(panel.DesiredSize.Width < 250);
+
+            panel.Arrange(new Rect(0, 0, panel.DesiredSize.Width, panel.DesiredSize.Height));
+            Assert.True(contentGrid.RenderSize.Width > 0);
+            Assert.True(timeBlock.RenderSize.Width > 0);
+        });
+    }
+
+    [Fact]
+    public void TextPayloadItem_FaviconImage_ObservesPropertyChanges()
+    {
+        var item = new TextPayloadItem { Text = "Visit https://google.com" };
+        Assert.True(item.HasUrl);
+        Assert.Null(item.FaviconImage);
+
+        bool propertyChangedRaised = false;
+        item.PropertyChanged += (s, e) =>
+        {
+            if (e.PropertyName == nameof(TextPayloadItem.FaviconImage))
+            {
+                propertyChangedRaised = true;
+            }
+        };
+
+        var fakeBmp = BitmapSource.Create(
+            1, 1, 96, 96, PixelFormats.Bgr32, null, new byte[4], 4);
+        fakeBmp.Freeze();
+
+        item.FaviconImage = fakeBmp;
+        Assert.True(propertyChangedRaised);
+        Assert.NotNull(item.FaviconImage);
+    }
+
+    [Fact]
     public void MetroSyncSelectableTextBlock_ShrinkWrapsShortTextWidth()
     {
         WpfTestHost.RunSta(() =>
@@ -667,6 +772,26 @@ public sealed class MetroSyncPresentationTests
             // Must NOT stretch to 360px
             Assert.True(tb.DesiredSize.Width < 120, $"Expected shrink-wrap width < 120, but was {tb.DesiredSize.Width}");
             Assert.True(tb.IsSingleLine);
+        });
+    }
+
+    [Fact]
+    public void MetroSyncSelectableTextBlock_PinterestUrl_RendersFullUrlWithoutClipping()
+    {
+        WpfTestHost.RunSta(() =>
+        {
+            var tb = new MetroHub.Widgets.Catalog.MetroSync.Controls.MetroSyncSelectableTextBlock
+            {
+                Text = "https://in.pinterest.com/",
+                FontSize = 14
+            };
+
+            tb.Measure(new Size(340, 600));
+
+            // Must fit on a single line and not wrap prematurely at "https://"
+            Assert.True(tb.IsSingleLine);
+            Assert.True(tb.DesiredSize.Height < 25);
+            Assert.True(tb.DesiredSize.Width > 140 && tb.DesiredSize.Width < 200);
         });
     }
 }

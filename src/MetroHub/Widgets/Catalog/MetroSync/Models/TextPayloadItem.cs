@@ -1,5 +1,7 @@
 using System;
 using System.Text.Json.Serialization;
+using System.Windows.Media;
+using CommunityToolkit.Mvvm.ComponentModel;
 
 namespace MetroHub.Widgets.Catalog.MetroSync.Models;
 
@@ -8,6 +10,10 @@ public sealed partial class TextPayloadItem : MetroSyncMessageItem
     private static readonly char[] PunctuationTrimChars = ['.', ',', ';', '!', '?', '"', '\''];
 
     public string Text { get; set; } = string.Empty;
+
+    [ObservableProperty]
+    [property: JsonIgnore]
+    private ImageSource? _faviconImage;
 
     [JsonIgnore]
     public string? FirstUrl => ExtractFirstUrl(Text);

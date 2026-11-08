@@ -75,6 +75,9 @@ public sealed partial class MetroSyncSelectableTextBlock : RichTextBox
             ? 340.0
             : constraint.Width;
 
+        // RichTextBox has an internal content margin and caret padding (~12px)
+        double textConstraintWidth = Math.Max(0, maxTextWidth - 12.0);
+
         var typeface = new Typeface(FontFamily, FontStyle, FontWeight, FontStretch);
         double dpi = 1.0;
         try { dpi = VisualTreeHelper.GetDpi(this).PixelsPerDip; } catch { }
@@ -88,7 +91,7 @@ public sealed partial class MetroSyncSelectableTextBlock : RichTextBox
             Foreground ?? Brushes.White,
             dpi)
         {
-            MaxTextWidth = maxTextWidth
+            MaxTextWidth = textConstraintWidth
         };
 
         double lineHeight = formattedText.LineHeight > 0
@@ -99,18 +102,18 @@ public sealed partial class MetroSyncSelectableTextBlock : RichTextBox
 
         if (IsSingleLine)
         {
-            LastLineWidth = formattedText.Width;
+            LastLineWidth = formattedText.Width + 12.0;
         }
         else
         {
-            LastLineWidth = CalculateLastLineWidth(Text, maxTextWidth, typeface, FontSize, dpi, formattedText.Height);
+            LastLineWidth = CalculateLastLineWidth(Text, textConstraintWidth, typeface, FontSize, dpi, formattedText.Height) + 12.0;
         }
 
-        double naturalWidth = Math.Min(maxTextWidth, Math.Ceiling(formattedText.Width) + 4.0);
+        double naturalWidth = Math.Min(maxTextWidth, Math.Ceiling(formattedText.Width) + 12.0);
 
         if (Document != null)
         {
-            Document.PageWidth = naturalWidth;
+            Document.PageWidth = double.NaN;
         }
 
         base.MeasureOverride(new Size(naturalWidth, constraint.Height));

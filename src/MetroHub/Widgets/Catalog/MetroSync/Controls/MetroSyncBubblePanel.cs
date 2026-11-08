@@ -49,13 +49,9 @@ public sealed class MetroSyncBubblePanel : Panel
             return contentSize;
         }
 
-        // Case 1: Single line fit (Text and Time on the same line)
-        bool isSingleLine = contentSize.Height <= SingleLineHeightThreshold;
-        if (content is MetroSyncSelectableTextBlock selectableBlock)
-        {
-            isSingleLine = selectableBlock.IsSingleLine;
-        }
+        var (isSingleLine, lastLineWidth) = InspectContent(content);
 
+        // Case 1: Single line fit (Text and Time on the same line)
         if (isSingleLine && (contentSize.Width + Spacing + timeSize.Width <= maxBubbleWidth))
         {
             double width = contentSize.Width + Spacing + timeSize.Width;
@@ -64,12 +60,6 @@ public sealed class MetroSyncBubblePanel : Panel
         }
 
         // Case 2: Multi-line text. Check if the last line has trailing space for the timestamp
-        double lastLineWidth = contentSize.Width;
-        if (content is MetroSyncSelectableTextBlock tb)
-        {
-            lastLineWidth = tb.LastLineWidth;
-        }
-
         if (lastLineWidth + Spacing + timeSize.Width <= maxBubbleWidth)
         {
             double desiredWidth = Math.Min(maxBubbleWidth, Math.Max(contentSize.Width, lastLineWidth + Spacing + timeSize.Width));
@@ -101,29 +91,19 @@ public sealed class MetroSyncBubblePanel : Panel
         Size contentSize = content.DesiredSize;
         Size timeSize = time.DesiredSize;
 
-        bool isSingleLine = contentSize.Height <= SingleLineHeightThreshold;
-        if (content is MetroSyncSelectableTextBlock selectableBlock)
-        {
-            isSingleLine = selectableBlock.IsSingleLine;
-        }
+        var (isSingleLine, lastLineWidth) = InspectContent(content);
 
-        // 1. Single-line arrangement
+        // 1. Single-line arrangement: dock time right next to content with standard Spacing
         if (isSingleLine && (contentSize.Width + Spacing + timeSize.Width <= finalSize.Width + 0.5))
         {
             content.Arrange(new Rect(0, 0, contentSize.Width, finalSize.Height));
-            double timeX = Math.Max(contentSize.Width + Spacing, finalSize.Width - timeSize.Width);
+            double timeX = contentSize.Width + Spacing;
             double timeY = Math.Max(0, finalSize.Height - timeSize.Height);
             time.Arrange(new Rect(timeX, timeY, timeSize.Width, timeSize.Height));
             return finalSize;
         }
 
         // 2. Multi-line arrangement with trailing space on last line
-        double lastLineWidth = contentSize.Width;
-        if (content is MetroSyncSelectableTextBlock tb)
-        {
-            lastLineWidth = tb.LastLineWidth;
-        }
-
         if (lastLineWidth + Spacing + timeSize.Width <= finalSize.Width + 0.5)
         {
             content.Arrange(new Rect(0, 0, contentSize.Width, contentSize.Height));
@@ -140,5 +120,42 @@ public sealed class MetroSyncBubblePanel : Panel
         time.Arrange(new Rect(wrapTimeX, wrapTimeY, timeSize.Width, timeSize.Height));
 
         return finalSize;
+    }
+
+    private static (bool isSingleLine, double lastLineWidth) InspectContent(UIElement content)
+    {
+        if (content is MetroSyncSelectableTextBlock direct)
+        {
+            return (direct.IsSingleLine, direct.LastLineWidth);
+        }
+
+        if (content is Panel p)
+        {
+            double extraWidth = 0;
+            MetroSyncSelectableTextBlock? found = null;
+            foreach (UIElement child in p.Children)
+            {
+                if (child is MetroSyncSelectableTextBlock stb)
+                {
+                    found = stb;
+                }
+                else if (child.Visibility == Visibility.Visible)
+                {
+                    extraWidth += child.DesiredSize.Width;
+                    if (child is FrameworkElement fe)
+                    {
+                        extraWidth += fe.Margin.Left + fe.Margin.Right;
+                    }
+                }
+            }
+
+            if (found != null)
+            {
+                return (found.IsSingleLine, extraWidth + found.LastLineWidth);
+            }
+        }
+
+        bool singleLine = content.DesiredSize.Height <= SingleLineHeightThreshold;
+        return (singleLine, content.DesiredSize.Width);
     }
 }

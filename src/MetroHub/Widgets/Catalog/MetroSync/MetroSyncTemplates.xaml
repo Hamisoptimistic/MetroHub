@@ -14,7 +14,7 @@
         <Grid HorizontalAlignment="Stretch" Margin="0,2,0,2" Tag="InteractiveControl">
             <Border BorderThickness="1"
                     Padding="10,6,10,6"
-                    MaxWidth="360"
+                    MaxWidth="340"
                     Tag="{Binding DataContext, RelativeSource={RelativeSource AncestorType=UserControl}}">
                 <Border.Style>
                     <Style TargetType="Border">
@@ -60,14 +60,71 @@
 
                 <!-- Telegram Desktop Inline / Trailing Bubble Panel -->
                 <controls:MetroSyncBubblePanel Tag="InteractiveControl">
-                    <!-- Selectable Message Text with Clickable Hover-Underline Links -->
-                    <controls:MetroSyncSelectableTextBlock Text="{Binding Text}"
-                                                           LinkCommand="{Binding DataContext.OpenLinkCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
-                                                           LinkCommandParameter="{Binding}"
-                                                           FontSize="{DynamicResource TypeBodyFontSize}"
-                                                           FontFamily="{DynamicResource AppFontFamily}"
-                                                           Foreground="{DynamicResource TextPrimaryBrush}"
-                                                           Tag="InteractiveControl" />
+                    <!-- Content Container (Favicon + Selectable Text) -->
+                    <Grid VerticalAlignment="Center" Tag="InteractiveControl">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+
+                        <!-- Web Favicon Badge (Visible only on messages with links) -->
+                        <Border Grid.Column="0"
+                                Width="18" Height="18"
+                                CornerRadius="3"
+                                Margin="0,0,8,0"
+                                VerticalAlignment="Center"
+                                Visibility="{Binding HasUrl, Converter={StaticResource BoolToVis}}"
+                                Background="Transparent"
+                                IsHitTestVisible="False">
+                            <Grid>
+                                <!-- Fallback Symbol Icon while FaviconImage is null -->
+                                <ui:SymbolIcon Symbol="Globe24"
+                                               FontSize="14"
+                                               Foreground="{DynamicResource TextSubtleBrush}"
+                                               HorizontalAlignment="Center"
+                                               VerticalAlignment="Center">
+                                    <ui:SymbolIcon.Style>
+                                        <Style TargetType="ui:SymbolIcon">
+                                            <Setter Property="Visibility" Value="Collapsed" />
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding FaviconImage}" Value="{x:Null}">
+                                                    <Setter Property="Visibility" Value="Visible" />
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </ui:SymbolIcon.Style>
+                                </ui:SymbolIcon>
+
+                                <!-- High-res Favicon Image -->
+                                <Image Source="{Binding FaviconImage}"
+                                       Width="18" Height="18"
+                                       Stretch="Uniform"
+                                       RenderOptions.BitmapScalingMode="HighQuality">
+                                    <Image.Style>
+                                        <Style TargetType="Image">
+                                            <Setter Property="Visibility" Value="Visible" />
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding FaviconImage}" Value="{x:Null}">
+                                                    <Setter Property="Visibility" Value="Collapsed" />
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </Image.Style>
+                                </Image>
+                            </Grid>
+                        </Border>
+
+                        <!-- Selectable Message Text with Clickable Hover-Underline Links -->
+                        <controls:MetroSyncSelectableTextBlock Grid.Column="1"
+                                                               Text="{Binding Text}"
+                                                               LinkCommand="{Binding DataContext.OpenLinkCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                               LinkCommandParameter="{Binding}"
+                                                               FontSize="{DynamicResource TypeBodyFontSize}"
+                                                               FontFamily="{DynamicResource AppFontFamily}"
+                                                               Foreground="{DynamicResource TextPrimaryBrush}"
+                                                               VerticalAlignment="Center"
+                                                               Tag="InteractiveControl" />
+                    </Grid>
 
                     <!-- Inline / Bottom-Right Timestamp -->
                     <TextBlock Text="{Binding TimeDisplay}"
@@ -85,8 +142,8 @@
     <DataTemplate DataType="{x:Type models:ImagePayloadItem}">
         <Grid HorizontalAlignment="Stretch" Margin="0,2,0,2" Tag="InteractiveControl">
             <Border BorderThickness="1"
-                    Padding="3"
-                    MaxWidth="300"
+                    Padding="4"
+                    MaxWidth="340"
                     Tag="{Binding DataContext, RelativeSource={RelativeSource AncestorType=UserControl}}">
                 <Border.Style>
                     <Style TargetType="Border">
@@ -252,7 +309,7 @@
     <DataTemplate DataType="{x:Type models:FilePayloadItem}">
         <Grid HorizontalAlignment="Stretch" Margin="0,2,0,2" Tag="InteractiveControl">
             <Border BorderThickness="1"
-                    Padding="10,8"
+                    Padding="10,6,10,6"
                     MaxWidth="340"
                     Tag="{Binding DataContext, RelativeSource={RelativeSource AncestorType=UserControl}}">
                 <Border.Style>

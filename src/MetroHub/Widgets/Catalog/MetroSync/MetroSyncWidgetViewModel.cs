@@ -251,6 +251,7 @@ public sealed partial class MetroSyncWidgetViewModel : WidgetViewModelBase, IWid
                     foreach (var item in history)
                     {
                         HydrateThumbnail(item);
+                        HydrateFavicon(item);
                         Items.Add(item);
                     }
                     while (Items.Count > MaxFeedItemCount)
@@ -431,9 +432,59 @@ public sealed partial class MetroSyncWidgetViewModel : WidgetViewModelBase, IWid
         }
     }
 
+    private void HydrateFavicon(MetroSyncMessageItem item)
+    {
+        if (item is not TextPayloadItem textItem || !textItem.HasUrl || string.IsNullOrEmpty(textItem.FirstUrl))
+        {
+            return;
+        }
+
+        if (textItem.FaviconImage != null)
+        {
+            return;
+        }
+
+        string url = textItem.FirstUrl;
+
+        // 1. Instant cache check (0ms local hit)
+        string cachedPath = WebFaviconService.GetCachedIconPath(url);
+        if (!string.IsNullOrEmpty(cachedPath) && File.Exists(cachedPath))
+        {
+            var cachedBmp = MetroSyncThumbnails.LoadThumbnail(cachedPath, 32);
+            if (cachedBmp != null)
+            {
+                textItem.FaviconImage = cachedBmp;
+                return;
+            }
+        }
+
+        // 2. Non-blocking background fetch via WebFaviconService
+        _ = Task.Run(async () =>
+        {
+            try
+            {
+                var result = await WebFaviconService.GetFaviconPathAsync(url, _lifecycleCts.Token).ConfigureAwait(false);
+                string? iconPath = result.IconPath;
+                if (!string.IsNullOrEmpty(iconPath) && File.Exists(iconPath))
+                {
+                    var bmp = MetroSyncThumbnails.LoadThumbnail(iconPath, 32);
+                    if (bmp != null)
+                    {
+                        RunOnUIThread(() => textItem.FaviconImage = bmp);
+                    }
+                }
+            }
+            catch (Exception ex) when (ex is not OperationCanceledException)
+            {
+                Safe.Log(ex, $"Failed to fetch favicon for URL '{url}'");
+            }
+        });
+    }
+
     internal void AddToFeed(MetroSyncMessageItem item)
     {
         HydrateThumbnail(item);
+        HydrateFavicon(item);
         RunOnUIThread(() =>
         {
             Items.Add(item);
