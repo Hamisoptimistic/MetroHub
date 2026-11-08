@@ -360,31 +360,34 @@ public sealed partial class MetroSyncWidgetViewModel : WidgetViewModelBase, IWid
 
                     // Hydrate incoming photo thumbnails: check disk cache first, download if absent
                     if (item is ImagePayloadItem imageItem &&
-                        string.IsNullOrEmpty(imageItem.ThumbnailFilePath) &&
-                        !string.IsNullOrEmpty(imageItem.FileId))
+                        string.IsNullOrEmpty(imageItem.ThumbnailFilePath))
                     {
-                        var cachedPath = _thumbnails.GetThumbnailPath(imageItem.MessageId);
-                        if (File.Exists(cachedPath))
+                        var thumbFileId = imageItem.ThumbnailFileId ?? imageItem.FileId;
+                        if (!string.IsNullOrEmpty(thumbFileId))
                         {
-                            imageItem.ThumbnailFilePath = cachedPath;
-                        }
-                        else if (_transport != null)
-                        {
-                            try
+                            var cachedPath = _thumbnails.GetThumbnailPath(imageItem.MessageId);
+                            if (File.Exists(cachedPath))
                             {
-                                var fileInfo = await _transport.GetFileAsync(imageItem.FileId, ct).ConfigureAwait(false);
-                                if (!string.IsNullOrEmpty(fileInfo.FilePath))
-                                {
-                                    using var ms = new MemoryStream();
-                                    await _transport.DownloadAsync(fileInfo.FilePath, ms, 20 * 1024 * 1024, ct).ConfigureAwait(false);
-                                    ms.Position = 0;
-                                    var thumbPath = await _thumbnails.SaveThumbnailAsync(imageItem.MessageId, ms, ct).ConfigureAwait(false);
-                                    imageItem.ThumbnailFilePath = thumbPath;
-                                }
+                                imageItem.ThumbnailFilePath = cachedPath;
                             }
-                            catch (Exception ex)
+                            else if (_transport != null)
                             {
-                                Safe.Log(ex, "Failed to download thumbnail for incoming Telegram image");
+                                try
+                                {
+                                    var fileInfo = await _transport.GetFileAsync(thumbFileId, ct).ConfigureAwait(false);
+                                    if (!string.IsNullOrEmpty(fileInfo.FilePath))
+                                    {
+                                        using var ms = new MemoryStream();
+                                        await _transport.DownloadAsync(fileInfo.FilePath, ms, 20 * 1024 * 1024, ct).ConfigureAwait(false);
+                                        ms.Position = 0;
+                                        var thumbPath = await _thumbnails.SaveThumbnailAsync(imageItem.MessageId, ms, ct).ConfigureAwait(false);
+                                        imageItem.ThumbnailFilePath = thumbPath;
+                                    }
+                                }
+                                catch (Exception ex)
+                                {
+                                    Safe.Log(ex, "Failed to hydrate incoming photo thumbnail");
+                                }
                             }
                         }
                     }
@@ -814,6 +817,69 @@ public sealed partial class MetroSyncWidgetViewModel : WidgetViewModelBase, IWid
         }
     }
 
+    public async Task<string?> DownloadImageAsync(ImagePayloadItem item, bool openWhenDone = false)
+    {
+        if (item == null || string.IsNullOrWhiteSpace(item.FileId)) return null;
+        if (item.IsDownloading) return null;
+        var downloader = Downloader;
+        if (downloader == null) return null;
+
+        RunOnUIThread(() =>
+        {
+            item.IsDownloading = true;
+            item.DownloadProgress = 0.0;
+            item.ErrorMessage = null;
+        });
+
+        var progress = new Progress<double>(p =>
+        {
+            RunOnUIThread(() => item.DownloadProgress = p);
+        });
+
+        try
+        {
+            string fileName = $"photo_{item.MessageId}.jpg";
+            var path = await downloader.DownloadFileAsync(item.FileId, fileName, declaredFileSize: null, progress: progress, ct: _lifecycleCts.Token).ConfigureAwait(false);
+
+            RunOnUIThread(() =>
+            {
+                item.LocalPath = path;
+                item.IsDownloading = false;
+            });
+
+            if (openWhenDone && File.Exists(path))
+            {
+                RunOnUIThread(() => OpenFile(path));
+            }
+
+            return path;
+        }
+        catch (Exception ex)
+        {
+            RunOnUIThread(() =>
+            {
+                item.IsDownloading = false;
+                item.ErrorMessage = "Download failed.";
+            });
+            Safe.Log(ex, "Failed to download full-resolution image");
+
+            if (openWhenDone)
+            {
+                RunOnUIThread(() =>
+                {
+                    var thumb = item.ThumbnailFilePath ?? _thumbnails.GetThumbnailPath(item.MessageId);
+                    if (File.Exists(thumb))
+                    {
+                        OpenFile(thumb);
+                    }
+                });
+            }
+            return null;
+        }
+    }
+
+    private Task<string?> DownloadAndOpenImageAsync(ImagePayloadItem item) => DownloadImageAsync(item, openWhenDone: true);
+
     [RelayCommand]
     public void OpenFile(object? parameter)
     {
@@ -824,13 +890,25 @@ public sealed partial class MetroSyncWidgetViewModel : WidgetViewModelBase, IWid
         }
         else if (parameter is ImagePayloadItem imageItem)
         {
-            localPath = imageItem.ThumbnailFilePath;
-            if (string.IsNullOrWhiteSpace(localPath))
+            if (imageItem.IsDownloaded && !string.IsNullOrWhiteSpace(imageItem.LocalPath))
             {
-                var candidate = _thumbnails.GetThumbnailPath(imageItem.MessageId);
-                if (File.Exists(candidate))
+                localPath = imageItem.LocalPath;
+            }
+            else if (!string.IsNullOrWhiteSpace(imageItem.FileId) && Downloader != null)
+            {
+                _ = DownloadAndOpenImageAsync(imageItem);
+                return;
+            }
+            else
+            {
+                localPath = imageItem.ThumbnailFilePath;
+                if (string.IsNullOrWhiteSpace(localPath))
                 {
-                    localPath = candidate;
+                    var candidate = _thumbnails.GetThumbnailPath(imageItem.MessageId);
+                    if (File.Exists(candidate))
+                    {
+                        localPath = candidate;
+                    }
                 }
             }
         }
@@ -869,7 +947,9 @@ public sealed partial class MetroSyncWidgetViewModel : WidgetViewModelBase, IWid
         }
         else if (parameter is ImagePayloadItem imageItem)
         {
-            localPath = imageItem.ThumbnailFilePath;
+            localPath = (imageItem.IsDownloaded && !string.IsNullOrWhiteSpace(imageItem.LocalPath))
+                ? imageItem.LocalPath
+                : imageItem.ThumbnailFilePath;
             if (string.IsNullOrWhiteSpace(localPath))
             {
                 var candidate = _thumbnails.GetThumbnailPath(imageItem.MessageId);
@@ -996,6 +1076,39 @@ public sealed partial class MetroSyncWidgetViewModel : WidgetViewModelBase, IWid
             var destination = _pickSaveFileAction(defaultName, "JPEG Image (*.jpg;*.jpeg)|*.jpg;*.jpeg|All files (*.*)|*.*");
             if (string.IsNullOrWhiteSpace(destination)) return;
 
+            // 1. If full resolution image is already downloaded:
+            if (imageItem.IsDownloaded && !string.IsNullOrWhiteSpace(imageItem.LocalPath) && File.Exists(imageItem.LocalPath))
+            {
+                try
+                {
+                    SafeCopyFile(imageItem.LocalPath, destination);
+                    return;
+                }
+                catch (Exception ex)
+                {
+                    Safe.Log(ex, "Failed to copy downloaded image to save destination");
+                }
+            }
+
+            // 2. Download full resolution image if fileId and downloader exist:
+            if (!string.IsNullOrWhiteSpace(imageItem.FileId) && Downloader != null)
+            {
+                var fullPath = await DownloadImageAsync(imageItem, openWhenDone: false).ConfigureAwait(false);
+                if (!string.IsNullOrWhiteSpace(fullPath) && File.Exists(fullPath))
+                {
+                    try
+                    {
+                        SafeCopyFile(fullPath, destination);
+                        return;
+                    }
+                    catch (Exception ex)
+                    {
+                        Safe.Log(ex, "Failed to copy downloaded full image to save destination");
+                    }
+                }
+            }
+
+            // 3. Fallback to thumbnail:
             var localPath = imageItem.ThumbnailFilePath;
             if (string.IsNullOrWhiteSpace(localPath) || !File.Exists(localPath))
             {
@@ -1080,11 +1193,23 @@ public sealed partial class MetroSyncWidgetViewModel : WidgetViewModelBase, IWid
 
         if (parameter is ImagePayloadItem imageItem)
         {
-            if (imageItem.ThumbnailImage is BitmapSource bmp)
+            if (imageItem.IsDownloaded && !string.IsNullOrWhiteSpace(imageItem.LocalPath) && File.Exists(imageItem.LocalPath))
+            {
+                try
+                {
+                    bitmapToCopy = MetroSyncThumbnails.LoadThumbnail(imageItem.LocalPath, maxDimension: 4096);
+                }
+                catch
+                {
+                    // fallback
+                }
+            }
+
+            if (bitmapToCopy == null && imageItem.ThumbnailImage is BitmapSource bmp)
             {
                 bitmapToCopy = bmp;
             }
-            else
+            else if (bitmapToCopy == null)
             {
                 var path = imageItem.ThumbnailFilePath;
                 if (string.IsNullOrWhiteSpace(path) || !File.Exists(path))

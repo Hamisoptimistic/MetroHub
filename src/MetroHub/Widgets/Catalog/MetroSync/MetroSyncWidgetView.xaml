@@ -135,6 +135,7 @@
             <!-- Row 2: Chat Feed (Active When Paired) -->
             <ScrollViewer x:Name="FeedScrollViewer"
                           Grid.Row="2"
+                          Tag="InteractiveControl"
                           Style="{DynamicResource WidgetFloatingScrollViewerStyle}"
                           controls:AutoHideScrollBehavior.IsEnabled="True"
                           VerticalScrollBarVisibility="Auto"
@@ -142,6 +143,7 @@
                           Padding="20,8,20,8"
                           Visibility="{Binding IsPaired, Converter={StaticResource BoolToVis}}">
                 <ItemsControl x:Name="FeedItemsControl"
+                              Tag="InteractiveControl"
                               ItemsSource="{Binding Items}" />
             </ScrollViewer>
 
@@ -280,6 +282,7 @@
 
             <!-- Row 3: Docked Bottom Container (Active When Paired) -->
             <Border Grid.Row="3"
+                    Tag="InteractiveControl"
                     Background="{DynamicResource SurfaceInputWellBrush}"
                     BorderThickness="0"
                     CornerRadius="{DynamicResource ControlCornerRadiusBottom}"

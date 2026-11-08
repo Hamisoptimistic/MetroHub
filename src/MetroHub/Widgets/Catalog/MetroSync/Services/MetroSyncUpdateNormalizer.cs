@@ -152,6 +152,7 @@ public sealed class MetroSyncUpdateNormalizer : IUpdateNormalizer
             }
 
             selectedFileId ??= maxFileId;
+            maxFileId ??= selectedFileId;
 
             if (selectedFileId is not null)
             {
@@ -163,7 +164,8 @@ public sealed class MetroSyncUpdateNormalizer : IUpdateNormalizer
                     MessageId = messageId,
                     Timestamp = timestamp,
                     IsOutgoing = isOutgoing,
-                    FileId = selectedFileId,
+                    ThumbnailFileId = selectedFileId,
+                    FileId = maxFileId,
                     Caption = caption
                 };
             }

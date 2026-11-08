@@ -14,4 +14,9 @@ public abstract partial class MetroSyncMessageItem : ObservableObject
     public long MessageId { get; set; }
     public DateTimeOffset Timestamp { get; set; }
     public bool IsOutgoing { get; set; }
+
+    [JsonIgnore]
+    public string TimeDisplay => Timestamp > DateTimeOffset.MinValue
+        ? Timestamp.ToLocalTime().ToString("t", System.Globalization.CultureInfo.CurrentCulture)
+        : string.Empty;
 }

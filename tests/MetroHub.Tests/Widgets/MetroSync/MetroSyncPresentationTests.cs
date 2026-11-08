@@ -560,4 +560,59 @@ public sealed class MetroSyncPresentationTests
             }
         });
     }
+
+    [Fact]
+    public void MessageItem_TimeDisplay_FormatsLocalTimeCorrectly()
+    {
+        var itemDefault = new TextPayloadItem { Timestamp = DateTimeOffset.MinValue };
+        Assert.Equal(string.Empty, itemDefault.TimeDisplay);
+
+        var dto = new DateTimeOffset(2026, 11, 8, 14, 30, 0, TimeSpan.Zero);
+        var itemWithTime = new TextPayloadItem { Timestamp = dto };
+        Assert.NotEmpty(itemWithTime.TimeDisplay);
+        Assert.Equal(dto.ToLocalTime().ToString("t", System.Globalization.CultureInfo.CurrentCulture), itemWithTime.TimeDisplay);
+    }
+
+    [Fact]
+    public void ImagePayloadItem_IsDownloaded_TracksLocalPathAndError()
+    {
+        using var sandbox = new WidgetTestSandbox();
+        var imageItem = new ImagePayloadItem
+        {
+            FileId = "full_res_1280",
+            ThumbnailFileId = "thumb_320",
+            Caption = "wallpaper"
+        };
+
+        Assert.False(imageItem.IsDownloaded);
+        Assert.False(imageItem.HasError);
+        Assert.True(imageItem.HasCaption);
+
+        var fakePath = Path.Combine(sandbox.Root, "photo_1.jpg");
+        File.WriteAllBytes(fakePath, [0xFF, 0xD8, 0xFF]);
+
+        imageItem.LocalPath = fakePath;
+        Assert.True(imageItem.IsDownloaded);
+
+        imageItem.ErrorMessage = "Failed to download";
+        Assert.True(imageItem.HasError);
+    }
+
+    [Fact]
+    public void MetroSyncSelectableTextBlock_InitializesAsInteractiveWithDocument()
+    {
+        WpfTestHost.RunSta(() =>
+        {
+            var tb = new MetroHub.Widgets.Catalog.MetroSync.Controls.MetroSyncSelectableTextBlock
+            {
+                Text = "Visit https://github.com/microsoft for code!"
+            };
+
+            Assert.True(tb.IsReadOnly);
+            Assert.True(tb.IsDocumentEnabled);
+            Assert.Equal("InteractiveControl", tb.Tag);
+            Assert.NotNull(tb.Document);
+            Assert.NotEmpty(tb.Document.Blocks);
+        });
+    }
 }

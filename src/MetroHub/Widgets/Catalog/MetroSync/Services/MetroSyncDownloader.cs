@@ -35,6 +35,7 @@ public sealed class MetroSyncDownloader
         _transport = transport;
         var baseDir = baseDirectory ?? Path.Combine(AppPaths.AppDataDir, "MetroSync");
         _downloadsDir = Path.Combine(baseDir, "Downloads");
+        Directory.CreateDirectory(_downloadsDir);
     }
 
     /// <summary>

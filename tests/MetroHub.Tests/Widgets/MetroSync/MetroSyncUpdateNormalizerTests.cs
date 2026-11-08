@@ -55,7 +55,8 @@ public sealed class MetroSyncUpdateNormalizerTests
         var item = _normalizer.Normalize(raw, _now);
 
         var imageItem = Assert.IsType<ImagePayloadItem>(item);
-        Assert.Equal("p450", imageItem.FileId);
+        Assert.Equal("p450", imageItem.ThumbnailFileId);
+        Assert.Equal("p1280", imageItem.FileId);
         Assert.Equal("nice pic", imageItem.Caption);
         Assert.False(imageItem.IsOutgoing);
     }
