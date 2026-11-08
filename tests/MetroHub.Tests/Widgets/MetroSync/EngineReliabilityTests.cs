@@ -257,6 +257,22 @@ public sealed class EngineReliabilityTests
     }
 
     [Fact]
+    public async Task InitialPoll_UsesZeroTimeout_ThenLongPolls()
+    {
+        var transport = new ScriptedTransport()
+            .ThenReturn() // poll 1: fast 0s probe, returns empty batch
+            .ThenReturn(); // poll 2: online state reached, parks in long-poll
+        var options = new ConduitEngineOptions { PollTimeoutSeconds = 25 };
+        await using var engine = NewEngine(transport, new InMemoryItemIndex(), options);
+        engine.Start();
+
+        await Eventually.AssertAsync(() => transport.PollCount >= 2, TimeSpan.FromSeconds(5), "2 polls executed");
+        Assert.Equal(EngineState.Online, engine.State);
+        Assert.Equal(0, transport.Timeouts[0]); // initial probe is 0s
+        Assert.Equal(25, transport.Timeouts[1]); // subsequent poll uses configured 25s
+    }
+
+    [Fact]
     public async Task GetMe_ReturnsBotIdentity()
     {
         await using var server = await FakeTelegramServer.StartAsync();

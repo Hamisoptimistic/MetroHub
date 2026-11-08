@@ -99,8 +99,11 @@ public sealed class ConduitEngine : IAsyncDisposable, IDisposable
                     using var watchdog = CancellationTokenSource.CreateLinkedTokenSource(ct);
                     watchdog.CancelAfter(_opt.PollWatchdog);
 
+                    // Use a 0-second fast poll until Online to verify credentials, drain backlog,
+                    // and flip state to Online instantly without blocking on a 25s idle wait.
+                    var timeout = _state == EngineState.Online ? _opt.PollTimeoutSeconds : 0;
                     var batch = await _transport
-                        .GetUpdatesAsync(Volatile.Read(ref _offset), _opt.PollTimeoutSeconds, watchdog.Token)
+                        .GetUpdatesAsync(Volatile.Read(ref _offset), timeout, watchdog.Token)
                         .ConfigureAwait(false);
 
                     foreach (var update in batch)

@@ -67,6 +67,7 @@ public sealed class ScriptedTransport : ITelegramTransport
 {
     private readonly ConcurrentQueue<Func<CancellationToken, Task<IReadOnlyList<RawUpdate>>>> _script = new();
     private readonly List<long> _offsets = new();
+    private readonly List<int> _timeouts = new();
     private int _calls;
 
     public int PollCount => Volatile.Read(ref _calls);
@@ -74,6 +75,11 @@ public sealed class ScriptedTransport : ITelegramTransport
     public IReadOnlyList<long> Offsets
     {
         get { lock (_offsets) return _offsets.ToArray(); }
+    }
+
+    public IReadOnlyList<int> Timeouts
+    {
+        get { lock (_offsets) return _timeouts.ToArray(); }
     }
 
     public ScriptedTransport Then(Func<CancellationToken, Task<IReadOnlyList<RawUpdate>>> step)
@@ -94,7 +100,11 @@ public sealed class ScriptedTransport : ITelegramTransport
     public async Task<IReadOnlyList<RawUpdate>> GetUpdatesAsync(long offset, int timeoutSeconds, CancellationToken ct)
     {
         Interlocked.Increment(ref _calls);
-        lock (_offsets) _offsets.Add(offset);
+        lock (_offsets)
+        {
+            _offsets.Add(offset);
+            _timeouts.Add(timeoutSeconds);
+        }
 
         if (_script.TryDequeue(out var step))
             return await step(ct).ConfigureAwait(false);
