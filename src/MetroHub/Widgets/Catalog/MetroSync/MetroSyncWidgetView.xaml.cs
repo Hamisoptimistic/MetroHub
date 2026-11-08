@@ -14,7 +14,7 @@ namespace MetroHub.Widgets.Catalog.MetroSync;
 
 /// <summary>
 /// Interaction logic for MetroSyncWidgetView.xaml
-/// Supports chat feed with auto-hiding scrollbar, bottom docked input row (Enter sends, Shift+Enter newline),
+/// Supports chat feed with auto-hiding scrollbar, bottom docked container,
 /// and bottom-aware auto-scrolling with clean lifecycle teardown.
 /// </summary>
 public partial class MetroSyncWidgetView : UserControl
@@ -176,11 +176,29 @@ public partial class MetroSyncWidgetView : UserControl
             {
                 vm.SendCommand.Execute(null);
             }
+            return;
+        }
+
+        if (e.Key == Key.V && Keyboard.Modifiers.HasFlag(ModifierKeys.Control))
+        {
+            if (Clipboard.ContainsImage() && !Clipboard.ContainsText())
+            {
+                if (DataContext is MetroSyncWidgetViewModel vm && vm.SendClipboardImageCommand.CanExecute(null))
+                {
+                    e.Handled = true;
+                    vm.SendClipboardImageCommand.Execute(null);
+                }
+            }
         }
     }
 
     private void OnInputTextBoxTextChanged(object sender, TextChangedEventArgs e)
     {
+        if (!string.IsNullOrEmpty(_viewModel?.ErrorMessage))
+        {
+            _viewModel.ErrorMessage = null;
+        }
+
         UpdatePlaceholderVisibility();
     }
 

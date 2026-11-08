@@ -485,4 +485,56 @@ public sealed class MetroSyncPresentationTests
         Assert.False(File.Exists(vm.ProfilePhotoPath));
         Assert.False(vm.IsPaired);
     }
+
+    [Fact]
+    public void MetroSyncWidgetView_InputLayout_IsConfiguredCorrectly()
+    {
+        WpfTestHost.RunSta(() =>
+        {
+            using var sandbox = new WidgetTestSandbox();
+            var tile = new TileModel
+            {
+                Id = Guid.NewGuid().ToString("N"),
+                TargetPath = "metrosync",
+                TileType = TileType.Widget,
+                SpanX = 8,
+                SpanY = 10
+            };
+            using var vm = new MetroSyncWidgetViewModel(tile, baseDirectory: sandbox.Root);
+            var view = new MetroSyncWidgetView
+            {
+                DataContext = vm
+            };
+
+            var window = new Window { Content = view, Width = 400, Height = 600 };
+            window.Show();
+            try
+            {
+                System.Windows.Threading.Dispatcher.CurrentDispatcher.Invoke(() => { }, System.Windows.Threading.DispatcherPriority.Loaded);
+
+                // 1. Verify ErrorToastPill is removed completely
+                Assert.Null(view.FindName("ErrorToastPill"));
+                Assert.Null(view.FindName("ErrorToastText"));
+
+                // 2. Option A layout verification: InputPlaceholder margin = (6,0,0,0), InputTextBox padding = 0
+                // 2. Option A layout verification: InputPlaceholder margin = (3,0,0,0), InputTextBox padding = 0
+                var placeholder = view.FindName("InputPlaceholder") as TextBlock;
+                var textBox = view.FindName("InputTextBox") as TextBox;
+                Assert.NotNull(placeholder);
+                Assert.NotNull(textBox);
+                Assert.Equal(new Thickness(3, 0, 0, 0), placeholder.Margin);
+                Assert.Equal(new Thickness(0), textBox.Padding);
+
+                // 3. Typing in InputTextBox clears any ErrorMessage
+                vm.ErrorMessage = "Some error";
+                textBox.Text = "H";
+                System.Windows.Threading.Dispatcher.CurrentDispatcher.Invoke(() => { }, System.Windows.Threading.DispatcherPriority.Render);
+                Assert.Null(vm.ErrorMessage);
+            }
+            finally
+            {
+                window.Close();
+            }
+        });
+    }
 }

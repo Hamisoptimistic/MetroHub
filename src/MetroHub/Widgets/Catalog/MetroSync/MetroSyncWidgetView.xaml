@@ -29,9 +29,7 @@
                 <RowDefinition Height="Auto" />
                 <!-- Row 2: Chat Feed -->
                 <RowDefinition Height="*" />
-                <!-- Row 3: Hairline Divider -->
-                <RowDefinition Height="Auto" />
-                <!-- Row 4: Bottom Docked Input Row -->
+                <!-- Row 3: Bottom Docked Container -->
                 <RowDefinition Height="Auto" />
             </Grid.RowDefinitions>
 
@@ -279,95 +277,132 @@
                 </StackPanel>
             </Grid>
 
-            <!-- Row 3: Hairline Separator (Active When Paired) -->
-            <Border Grid.Row="3"
-                    Style="{StaticResource WidgetHairlineDividerStyle}"
-                    Visibility="{Binding IsPaired, Converter={StaticResource BoolToVis}}" />
 
-            <!-- Row 4: Docked Bottom Input Row (Active When Paired) -->
-            <Border Grid.Row="4"
+            <!-- Row 3: Docked Bottom Container (Active When Paired) -->
+            <Border Grid.Row="3"
                     Background="{DynamicResource SurfaceInsetWellBrush}"
                     BorderThickness="0"
                     CornerRadius="{DynamicResource ControlCornerRadiusBottom}"
                     SnapsToDevicePixels="True"
-                    Padding="20,8,20,8"
+                    MinHeight="44"
+                    Padding="14,6,14,6"
                     Visibility="{Binding IsPaired, Converter={StaticResource BoolToVis}}">
-                <Grid>
-                    <Grid.RowDefinitions>
-                        <RowDefinition Height="Auto" />
-                        <RowDefinition Height="Auto" />
-                    </Grid.RowDefinitions>
+                <!-- Telegram-Style Input Row -->
+                <Grid VerticalAlignment="Center">
+                    <Grid.ColumnDefinitions>
+                        <!-- Column 0: Attach / Pin Button -->
+                        <ColumnDefinition Width="Auto" />
+                        <!-- Column 1: Invisible Multiline TextBox -->
+                        <ColumnDefinition Width="*" />
+                        <!-- Column 2: Send Button -->
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
 
-                    <!-- Error Text (Inline) -->
-                    <TextBlock Grid.Row="0"
-                               Text="{Binding ErrorMessage}"
-                               Foreground="{DynamicResource StatusErrorBrush}"
-                               FontSize="{DynamicResource TypeCaptionFontSize}"
-                               Margin="0,0,0,6">
-                        <TextBlock.Style>
-                            <Style TargetType="TextBlock">
-                                <Setter Property="Visibility" Value="Visible" />
+                    <!-- Attach / Paste Button -->
+                    <Button Grid.Column="0"
+                            Width="32" Height="32"
+                            Padding="0"
+                            VerticalAlignment="Center"
+                            Command="{Binding SendClipboardImageCommand}"
+                            ToolTip="Paste image from clipboard">
+                        <Button.Style>
+                            <Style TargetType="Button" BasedOn="{StaticResource SubtleButtonStyle}">
+                                <Setter Property="OverridesDefaultStyle" Value="True" />
+                                <Setter Property="Width" Value="32" />
+                                <Setter Property="Height" Value="32" />
+                                <Setter Property="Padding" Value="0" />
+                                <Setter Property="Cursor" Value="Hand" />
+                            </Style>
+                        </Button.Style>
+                        <ui:SymbolIcon Symbol="Attach24"
+                                       FontSize="18"
+                                       Foreground="{DynamicResource TextSecondaryBrush}" />
+                    </Button>
+
+                    <!-- Middle Seamless Input Area -->
+                    <Grid Grid.Column="1" Margin="8,0,8,0" VerticalAlignment="Center">
+                        <!-- Placeholder: positioned 1-2px from the caret matching Telegram Desktop -->
+                        <TextBlock x:Name="InputPlaceholder"
+                                   Text="Write a message…"
+                                   FontSize="{DynamicResource TypeBodyFontSize}"
+                                   FontWeight="{DynamicResource TypeBodyFontWeight}"
+                                   Foreground="{DynamicResource TextSubtleBrush}"
+                                   Opacity="0.55"
+                                   IsHitTestVisible="False"
+                                   VerticalAlignment="Center"
+                                   Margin="3,0,0,0" />
+
+                        <!-- Invisible Multi-line TextBox -->
+                        <TextBox x:Name="InputTextBox"
+                                 Text="{Binding InputText, UpdateSourceTrigger=PropertyChanged}"
+                                 AcceptsReturn="True"
+                                 TextWrapping="Wrap"
+                                 MaxHeight="120"
+                                 VerticalAlignment="Center"
+                                 VerticalScrollBarVisibility="Auto"
+                                 Foreground="{DynamicResource TextPrimaryBrush}"
+                                 CaretBrush="{DynamicResource TextPrimaryBrush}"
+                                 FontSize="{DynamicResource TypeBodyFontSize}"
+                                 FontFamily="{DynamicResource AppFontFamily}"
+                                 Padding="0"
+                                 PreviewKeyDown="OnInputTextBoxPreviewKeyDown"
+                                 TextChanged="OnInputTextBoxTextChanged">
+                            <TextBox.Style>
+                                <Style TargetType="TextBox">
+                                    <Setter Property="OverridesDefaultStyle" Value="True" />
+                                    <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+                                    <Setter Property="Background" Value="Transparent" />
+                                    <Setter Property="BorderThickness" Value="0" />
+                                    <Setter Property="Padding" Value="0" />
+                                    <Setter Property="SnapsToDevicePixels" Value="True" />
+                                    <Setter Property="UseLayoutRounding" Value="True" />
+                                    <Setter Property="Template">
+                                        <Setter.Value>
+                                            <ControlTemplate TargetType="TextBox">
+                                                <Border Background="Transparent"
+                                                        BorderThickness="0"
+                                                        Padding="{TemplateBinding Padding}">
+                                                    <ScrollViewer x:Name="PART_ContentHost"
+                                                                  Focusable="False"
+                                                                  controls:AutoHideScrollBehavior.IsEnabled="True" />
+                                                </Border>
+                                            </ControlTemplate>
+                                        </Setter.Value>
+                                    </Setter>
+                                </Style>
+                            </TextBox.Style>
+                        </TextBox>
+                    </Grid>
+
+                    <!-- Send Button -->
+                    <Button Grid.Column="2"
+                            Width="32" Height="32"
+                            Padding="0"
+                            VerticalAlignment="Center"
+                            Command="{Binding SendCommand}"
+                            ToolTip="Send message (Enter)">
+                        <Button.Style>
+                            <Style TargetType="Button" BasedOn="{StaticResource SubtleButtonStyle}">
+                                <Setter Property="OverridesDefaultStyle" Value="True" />
+                                <Setter Property="Width" Value="32" />
+                                <Setter Property="Height" Value="32" />
+                                <Setter Property="Padding" Value="0" />
+                                <Setter Property="Cursor" Value="Hand" />
                                 <Style.Triggers>
-                                    <DataTrigger Binding="{Binding ErrorMessage}" Value="{x:Null}">
-                                        <Setter Property="Visibility" Value="Collapsed" />
-                                    </DataTrigger>
-                                    <DataTrigger Binding="{Binding ErrorMessage}" Value="">
-                                        <Setter Property="Visibility" Value="Collapsed" />
-                                    </DataTrigger>
+                                    <Trigger Property="IsEnabled" Value="True">
+                                        <Setter Property="Foreground" Value="{DynamicResource SystemAccentColorPrimaryBrush}" />
+                                    </Trigger>
+                                    <Trigger Property="IsEnabled" Value="False">
+                                        <Setter Property="Foreground" Value="{DynamicResource TextSubtleBrush}" />
+                                        <Setter Property="Cursor" Value="Arrow" />
+                                    </Trigger>
                                 </Style.Triggers>
                             </Style>
-                        </TextBlock.Style>
-                    </TextBlock>
-
-                    <!-- Input Row -->
-                    <Grid Grid.Row="1">
-                        <Grid.ColumnDefinitions>
-                            <!-- Column 0: Input Box -->
-                            <ColumnDefinition Width="*" />
-                            <!-- Column 1: Paste Image Button -->
-                            <ColumnDefinition Width="Auto" />
-                            <!-- Column 2: Send Button -->
-                            <ColumnDefinition Width="Auto" />
-                        </Grid.ColumnDefinitions>
-
-                        <!-- Input TextBox with Watermark Placeholder -->
-                        <Grid Grid.Column="0" Margin="0,0,8,0">
-                            <TextBox x:Name="InputTextBox"
-                                     Text="{Binding InputText, UpdateSourceTrigger=PropertyChanged}"
-                                     AcceptsReturn="True"
-                                     MaxHeight="80"
-                                     VerticalAlignment="Center"
-                                     PreviewKeyDown="OnInputTextBoxPreviewKeyDown"
-                                     TextChanged="OnInputTextBoxTextChanged" />
-                            <TextBlock x:Name="InputPlaceholder"
-                                       Text="Type a message…"
-                                       FontSize="{DynamicResource TypeBodyFontSize}"
-                                       FontWeight="{DynamicResource TypeBodyFontWeight}"
-                                       Foreground="{DynamicResource TextSubtleBrush}"
-                                       IsHitTestVisible="False"
-                                       VerticalAlignment="Center"
-                                       Margin="12,0,12,0" />
-                        </Grid>
-
-                        <!-- Paste Image Button -->
-                        <Button Grid.Column="1"
-                                Style="{DynamicResource SubtleButtonStyle}"
-                                Content="Paste Image"
-                                Height="36"
-                                Padding="10,0"
-                                Margin="0,0,8,0"
-                                VerticalAlignment="Center"
-                                Command="{Binding SendClipboardImageCommand}" />
-
-                        <!-- Send Button -->
-                        <Button Grid.Column="2"
-                                Style="{DynamicResource AccentButtonStyle}"
-                                Content="Send"
-                                Height="36"
-                                Padding="16,0"
-                                VerticalAlignment="Center"
-                                Command="{Binding SendCommand}" />
-                    </Grid>
+                        </Button.Style>
+                        <ui:SymbolIcon Symbol="Send24"
+                                       FontSize="18"
+                                       Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" />
+                    </Button>
                 </Grid>
             </Border>
         </Grid>
