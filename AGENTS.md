@@ -1,93 +1,58 @@
 # MetroHub — Agent Notes
 
-Windows desktop live-tile launcher (WPF, `net10.0-windows10.0.19041.0`, SVMs via CommunityToolkit.Mvvm, WPF-UI). One app project + one xunit test project. The owner's detailed standards live in `docs/*.md`; this file carries only what those don't make obvious.
+Windows desktop live-tile launcher (WPF, `net10.0-windows10.0.19041.0`, SVMs via CommunityToolkit.Mvvm, WPF-UI). Single app project + xUnit test project. Detailed standards live in `docs/*.md`.
 
-## Owner rules (non-negotiable)
+## Hard rules (non-negotiable)
 
-- **Never start the app.** Do not run `MetroHub.exe`, `dotnet run`, or `dotnet watch run`. The owner launches and validates manually.
-- **Never edit code without explicit permission.** A question, a "check this", or a clarification request is not permission to change anything.
-- **Never publish while the app is running.** `MetroHub.dll` stays locked and MSBuild fails with MSB3026/MSB3027/MSB3021. Kill it first:
-  `Stop-Process -Name MetroHub -Force -ErrorAction SilentlyContinue`
-- **Strict Subsystem Containment (No Domain Bleed):** Never modify unrelated domain or shell files to implement subsystem logic (e.g. never touch `MainWindow.DragDrop.cs`, Canvas, or Tiles for Shaders, Audio/Radio, or Search). Subsystem features and event hooks MUST remain strictly encapsulated inside their dedicated directory (e.g. `src/MetroHub/Presentation/Shaders/BackdropShaderDriver.cs` for shaders).
-- Reply concisely in simplified technical English. Use Unicode box-drawing text flowcharts only when strictly necessary for complex flows or when explicitly requested (no Mermaid or SVG).
-- `.agents/rules/` docs are partly stale — trust `src/` over them. Known drift: `BUG_FIXING_PROTOCOL.md` §7.2b describes `MediaPlaybackClock`/`MediaSyncTraceLogger`, and `WIDGET_ONBOARDING_CHECKLIST.md` lists `Core/Serialization/MetroHubJsonContext.cs` plus hardcoded DataTemplates; none of these exist anymore (see Widgets below).
+- **Never start the app.** Do not run `MetroHub.exe`, `dotnet run`, or `dotnet watch run`. The owner tests manually.
+- **Never edit code without explicit permission.** A question or clarification request is not permission to edit.
+- **Never publish while the app is running.** Stop the process first to avoid file lock errors (MSB3026).
+- **Strict Subsystem Containment (No Domain Bleed):** Encapsulate feature logic inside its dedicated directory (e.g. `src/MetroHub/Presentation/Shaders/BackdropShaderDriver.cs`). Do not touch unrelated shell or canvas files.
+- Reply concisely in simplified technical English. Use Unicode box-drawing text flowcharts only when strictly necessary (no Mermaid or SVG).
 
-## Code Style & Planning
+## IDE & MCP Workflow
 
-- **Research First:** Search GitHub, WPF-UI, Stack Overflow, and Microsoft official documentation before finalizing plans.
-- **Reuse & Optimize:** Inspect current implementations first. Prioritize reuse of existing controls and services.
-- **Language Standards:** Use C# 14 and latest language features.
-- **No Dead Code:** Clean up dead code immediately; do not keep unused legacy code.
-
-## Visual Studio & MCP Workflow
-
-- **Full Tool Suite Priority:** When Visual Studio is open, ALWAYS prioritize the full suite of `vs-debug-mcp` tools (`vs_*`) for all IDE interactions instead of terminal shell commands:
-  - **Build & Diagnostics:** `vs_run_build`, `vs_get_errors`, `vs_get_output_window_logs`, `vs_get_output_panes`.
-  - **Solution & Workspace:** `vs_get_projects_in_solution`, `vs_get_files_in_project`, `vs_get_solution_configurations`, `vs_set_solution_configuration`.
-  - **Editor Navigation:** `vs_get_active_document`, `vs_navigate_to`.
-  - **Testing Subsystem:** `vs_get_tests`, `vs_run_tests`, `vs_get_test_run_status`, `vs_cancel_test_run`.
-  - **Full Debugger Suite:** `vs_debugger_*` (snapshots, exception info, multi-thread stacks, variables, memory reading, and stepping).
-- **Build Verification:** After making code changes, ALWAYS run `vs_run_build` and check `vs_get_errors` to verify zero compiler errors before reporting completion.
-- **Fast User Validation:** The user launches and validates changes manually using `Ctrl + F5` (Start Without Debugging).
-- **Publishing to Desktop:** Only publish when the user explicitly requests it. Always stop `MetroHub` first, then publish to `C:\Users\HamB\Desktop\MetroHubApp`.
+- **Visual Studio (`vs-debug-mcp`):** When Visual Studio is open, use `vs_run_build` and `vs_get_errors` to verify changes. Do NOT run `dotnet build` or `dotnet publish` during edits.
+- **Validation Cycle:** After build succeeds, STOP and report. The user validates manually with `Ctrl + F5`.
+- **Publishing:** Run `dotnet publish` ONLY when the user explicitly requests it.
+- **Code Intelligence (`roslyn-mcp`):** Use Roslyn tools for symbol search, definition lookup, reference finding, and syntax validation.
+- **Research:** For unfamiliar WPF or WPF-UI APIs, check official documentation before implementation.
 
 ## Commands
 
-- Build app: `dotnet build src\MetroHub\MetroHub.csproj -c Release --nologo -v q`
-- All tests: `dotnet test` (Windows only)
-- One test class: `dotnet test tests/MetroHub.Tests/MetroHub.Tests.csproj --filter "FullyQualifiedName~RadioCatalogTests"`
-- Publish to the owner's run location:
+- Run all tests: `dotnet test` (Windows only)
+- Run one test class: `dotnet test tests/MetroHub.Tests/MetroHub.Tests.csproj --filter "FullyQualifiedName~RadioCatalogTests"`
+- Publish to Desktop (only when explicitly requested):
   ```powershell
   Stop-Process -Name MetroHub -Force -ErrorAction SilentlyContinue
   dotnet publish src\MetroHub\MetroHub.csproj -c Release -o "C:\Users\HamB\Desktop\MetroHubApp" --self-contained false
   ```
-- CI (`.github/workflows/ci.yml`): windows-latest, .NET 10, `dotnet restore` → `dotnet build` → `dotnet test`.
-
-## Layout
-
-- `src/MetroHub/Core` — services/infra (storage, logging, BASS audio, search, Win32 interop). `Core/Common/AppPaths.cs` is the single source for all state paths; production data lives in `%LocalAppData%\MetroHub`.
-- `src/MetroHub/Presentation` — shell (`Views/MainWindow`), canvas `Controls/Canvas/TileControl.*`, dialogs, themes, controllers.
-- `src/MetroHub/Widgets` — `Abstractions/WidgetViewModelBase.cs`, `Catalog/<Name>/` (ViewModel + View + Settings per widget), `Registry/WidgetRegistry.cs` (single source of widget metadata).
-- `tests/MetroHub.Tests` — xunit tests; references the app project.
-- Cut taglines, helper text and secondary labels. If a screen needs them to make sense, fix the layout.
 
 ## Widgets
 
-- New widget = 3 files in `Widgets/Catalog/<Name>/` (ViewModel : `WidgetViewModelBase`, `*WidgetView.xaml`, `*WidgetSettings.cs`), then:
-  1. Add a `WidgetDefinition` (Id, sizes, `ViewType`, factory) in `WidgetRegistry.cs` — `WidgetTemplateSelector` builds views from `ViewType`, so no DataTemplate entry is needed anywhere.
-  2. Add `[JsonSerializable(typeof(<Name>WidgetSettings))]` to `Widgets/Serialization/WidgetJsonContext.cs`. Settings persist through `WidgetSerializer`, which is source-generated only.
-- Context-menu items: implement `IWidgetContextMenuProvider` on the VM; `TileControl.xaml.cs` (Canvas folder) merges them into the shared menu. Tile click / press-down hooks (`LaunchTile`, `AnimatePressDown`) live in that same file.
-- Lifecycle rules are enforced, not optional: override `Dispose(bool)`, stop/null timers, unhook OS events, `.Freeze()` brushes, no `GC.Collect()`/`EmptyWorkingSet()`, never hardcode `IsIndeterminate="True"`. Full checklist: `docs/WIDGET_LIFECYCLE_STANDARDS.md`.
+- Adding a widget requires 3 files in `Widgets/Catalog/<Name>/` (ViewModel, View XAML, Settings), then:
+  1. Register definition in `Widgets/Registry/WidgetRegistry.cs` (TemplateSelector resolves View automatically).
+  2. Register `[JsonSerializable(typeof(<Name>WidgetSettings))]` in `Widgets/Serialization/WidgetJsonContext.cs`.
+- Context menus: implement `IWidgetContextMenuProvider` on the ViewModel. Tile clicks live in `TileControl.xaml.cs`.
+- Lifecycle: follow `docs/WIDGET_LIFECYCLE_STANDARDS.md`. Override `Dispose(bool)`, stop timers, detach events, and freeze brushes.
 
-## Design System & UI Invariants (Full Spec: docs/DESIGN_SYSTEM.md)
+## UI & Design System
 
-When creating or modifying XAML views, widgets, or dialogs, adhere strictly to these rules:
-- **Mandatory Reference:** Read `docs/DESIGN_SYSTEM.md` for exact XML snippets and subpixel layout math before creating new UI.
-- **Scrollbars:** Never show permanent scrollbars. Always set `controls:AutoHideScrollBehavior.IsEnabled="True"`.
-- **Corner Radii Hierarchy:** Window = `0`, Tiles = `2`, Inputs/Hover Rows = `4`, Menus/Dialogs = `8`.
-- **Accent Colors:** Never hardcode hex codes for accents. Always bind to `{DynamicResource SystemAccentColorPrimaryBrush}` and `{DynamicResource SystemAccentColorForegroundBrush}`.
-- **Hairline Dividers:** Never use solid grey. Use 2px hairline `Background="#14FFFFFF"` with `CornerRadius="1"` edge-to-edge.
-- **Docked Bottom Containers:** Use `Background="#14000000"`, `BorderThickness="0"`, `CornerRadius="0,0,2,2"`, and `Padding="20,0,20,0"`.
-- **Typography:** Use `Segoe UI Variable Text` (14px main, 12px tile labels, 18px display headers).
-- **Tile Grid Math:** Unit cell = 60px, gap = 4px (Small: 60x60, Med: 124x124, Wide: 252x124, Large: 252x252).
+- Read `docs/DESIGN_SYSTEM.md` before modifying XAML.
+- Never show permanent scrollbars. Always use `controls:AutoHideScrollBehavior.IsEnabled="True"`.
+- Never hardcode accent colors. Bind to `{DynamicResource SystemAccentColorPrimaryBrush}` and Foreground equivalent.
+- Cut taglines, helper text, and secondary labels. If a view is confusing, fix the layout.
 
 ## Architecture & Concurrency
 
-- **Thread Marshaling:** BASS audio callbacks, Everything search queries, and network listeners run off the UI thread. Any property updates bound to WPF elements must marshal through `Application.Current.Dispatcher.InvokeAsync(...)` to prevent cross-thread exceptions.
-- **Messenger Lifetimes:** Always unregister `WeakReferenceMessenger` handlers and detach OS event hooks (e.g., media/power events) inside `Dispose(bool)` or when deactivated to avoid leaking view models.
-- **Unmanaged Audio Handles:** BASS channels (`HSTREAM`) must be explicitly freed with `Bass.BASS_StreamFree(...)` before reopening or on shutdown; do not rely on GC finalizers.
-- **Bitmap & Brush Memory:** Always set `DecodePixelWidth` on `BitmapImage` to avoid full-resolution RAM bloat, and call `.Freeze()` on all dynamic brushes and icons.
-- **External Search Fallback:** The Everything service (`Voidtools.Everything.Net`) may not be running on user machines; all search calls must catch failures and degrade gracefully without crashing.
+- **Thread Marshaling:** BASS audio callbacks, Everything queries, and background listeners run off-UI. Marshal property updates to the UI thread via `Application.Current.Dispatcher.InvokeAsync(...)`.
+- **Unmanaged Handles:** Free BASS stream handles with `Bass.BASS_StreamFree(...)` explicitly before reopening or on shutdown.
+- **Search Fallback:** The Everything service may not be running. Catch failures and degrade gracefully.
 
-## Testing quirks
+## Testing Quirks & Gotchas
 
-- XAML/view tests must run on an STA thread via `WpfTestHost.RunSta(...)` — it also merges the WPF-UI and app theme dictionaries that XAML loading needs.
-- Tests never touch real app data: `AppPaths` detects testhost and redirects to `%TEMP%\MetroHub_TestSandbox_Default`; use `WidgetTestSandbox` for isolated widget-state directories.
-- Native BASS DLLs are committed in `lib/native/win-x64/` and copied next to the app and test binaries by both csproj files; don't delete or move them or the radio/audio tests fail.
-- `.editorconfig` raises memory/GC/perf analyzers (CA2000, CA1859, S3168, …) to warnings — keep the build warning-clean.
-
-## Gotchas
-
-- Window base classes: the shell `MainWindow` uses `BorderlessFluentWindow` (WS_EX_TOOLWINDOW + `WM_NCACTIVATE` handling). Dialogs must use `Wpf.Ui.Controls.FluentWindow` and wrap their lifetime in `MainWindow.EnterDialogScope()` — inheriting the shell class breaks keyboard focus in dialogs.
-- `.agents/`, `.gemini/`, `.vscode/` are gitignored local-only. Never edit generated/runtime dirs: `bin/`, `obj/`, `publish/`, `dist/`, `logs/`, `diagnostics/`.
-- Perf tooling the owner uses: `tools\metro-top.ps1` (live CPU/RAM TUI) and `tools\analyze_cpu.py` (parses dotnet-trace speedscope JSON).
+- XAML/view tests require an STA thread via `WpfTestHost.RunSta(...)`.
+- Tests redirect state to `%TEMP%\MetroHub_TestSandbox_Default`. Use `WidgetTestSandbox` for widgets.
+- Native BASS DLLs are in `lib/native/win-x64/`. Do not move them.
+- Shell window inherits `BorderlessFluentWindow`. Dialogs must inherit `Wpf.Ui.Controls.FluentWindow` and run inside `MainWindow.EnterDialogScope()`.
+- Protected directories: never edit `bin/`, `obj/`, `publish/`, `dist/`, or `.agents/`.
