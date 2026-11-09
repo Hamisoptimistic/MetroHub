@@ -11,7 +11,7 @@
 
     <!-- 1. Text & Link Payload Template -->
     <DataTemplate DataType="{x:Type models:TextPayloadItem}">
-        <Grid HorizontalAlignment="Stretch" Margin="0,2,0,2" Tag="InteractiveControl">
+        <Grid HorizontalAlignment="Stretch" Margin="0,3,0,3" Tag="InteractiveControl">
             <Border BorderThickness="1"
                     Padding="10,6,10,6"
                     MaxWidth="340"
@@ -19,12 +19,16 @@
                 <Border.Style>
                     <Style TargetType="Border">
                         <Setter Property="HorizontalAlignment" Value="Left" />
+                        <Setter Property="Margin" Value="0,0,40,0" />
                         <Setter Property="Background" Value="{DynamicResource SurfaceGlassBrush}" />
                         <Setter Property="BorderBrush" Value="{DynamicResource SurfaceBorderSubtleBrush}" />
                         <Setter Property="CornerRadius" Value="{DynamicResource ControlCornerRadius}" />
                         <Style.Triggers>
                             <DataTrigger Binding="{Binding IsOutgoing}" Value="True">
                                 <Setter Property="HorizontalAlignment" Value="Right" />
+                                <Setter Property="Margin" Value="40,0,0,0" />
+                                <Setter Property="Background" Value="{DynamicResource SurfaceGlassSubtleBrush}" />
+                                <Setter Property="BorderBrush" Value="{DynamicResource SurfaceBorderBrush}" />
                             </DataTrigger>
                         </Style.Triggers>
                     </Style>
@@ -140,7 +144,7 @@
 
     <!-- 2. Image Payload Template -->
     <DataTemplate DataType="{x:Type models:ImagePayloadItem}">
-        <Grid HorizontalAlignment="Stretch" Margin="0,2,0,2" Tag="InteractiveControl">
+        <Grid HorizontalAlignment="Stretch" Margin="0,3,0,3" Tag="InteractiveControl">
             <Border BorderThickness="1"
                     Padding="4"
                     MaxWidth="340"
@@ -148,12 +152,16 @@
                 <Border.Style>
                     <Style TargetType="Border">
                         <Setter Property="HorizontalAlignment" Value="Left" />
+                        <Setter Property="Margin" Value="0,0,40,0" />
                         <Setter Property="Background" Value="{DynamicResource SurfaceGlassBrush}" />
                         <Setter Property="BorderBrush" Value="{DynamicResource SurfaceBorderSubtleBrush}" />
                         <Setter Property="CornerRadius" Value="{DynamicResource ControlCornerRadius}" />
                         <Style.Triggers>
                             <DataTrigger Binding="{Binding IsOutgoing}" Value="True">
                                 <Setter Property="HorizontalAlignment" Value="Right" />
+                                <Setter Property="Margin" Value="40,0,0,0" />
+                                <Setter Property="Background" Value="{DynamicResource SurfaceGlassSubtleBrush}" />
+                                <Setter Property="BorderBrush" Value="{DynamicResource SurfaceBorderBrush}" />
                             </DataTrigger>
                         </Style.Triggers>
                     </Style>
@@ -205,7 +213,8 @@
                             VerticalContentAlignment="Stretch">
                         <Button.Template>
                             <ControlTemplate TargetType="Button">
-                                <Border CornerRadius="{DynamicResource ControlCornerRadius}"
+                                <Border x:Name="ThumbnailRoot"
+                                        CornerRadius="{DynamicResource ControlCornerRadius}"
                                         ClipToBounds="True"
                                         Background="{DynamicResource SurfaceGlassSubtleBrush}">
                                     <Grid MinHeight="80" MaxHeight="260">
@@ -275,19 +284,27 @@
                                         </Border>
                                     </Grid>
                                 </Border>
+                                <ControlTemplate.Triggers>
+                                    <Trigger Property="IsMouseOver" Value="True">
+                                        <Setter TargetName="ThumbnailRoot" Property="Opacity" Value="0.90" />
+                                    </Trigger>
+                                    <Trigger Property="IsPressed" Value="True">
+                                        <Setter TargetName="ThumbnailRoot" Property="Opacity" Value="0.78" />
+                                    </Trigger>
+                                </ControlTemplate.Triggers>
                             </ControlTemplate>
                         </Button.Template>
                     </Button>
 
                     <!-- Caption Section (Visible only when caption is present) -->
-                    <Border Padding="6,4,6,2"
+                    <Border Padding="6,6,6,2"
                             Visibility="{Binding HasCaption, Converter={StaticResource BoolToVis}}"
                             Tag="InteractiveControl">
                         <controls:MetroSyncBubblePanel Tag="InteractiveControl">
                             <controls:MetroSyncSelectableTextBlock Text="{Binding Caption}"
                                                                    LinkCommand="{Binding DataContext.OpenLinkCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
                                                                    LinkCommandParameter="{Binding}"
-                                                                   FontSize="{DynamicResource TypeCaptionFontSize}"
+                                                                   FontSize="{DynamicResource TypeBodyFontSize}"
                                                                    FontFamily="{DynamicResource AppFontFamily}"
                                                                    Foreground="{DynamicResource TextPrimaryBrush}"
                                                                    Tag="InteractiveControl" />
@@ -307,7 +324,7 @@
 
     <!-- 3. File, Audio, & Video Payload Template -->
     <DataTemplate DataType="{x:Type models:FilePayloadItem}">
-        <Grid HorizontalAlignment="Stretch" Margin="0,2,0,2" Tag="InteractiveControl">
+        <Grid HorizontalAlignment="Stretch" Margin="0,3,0,3" Tag="InteractiveControl">
             <Border BorderThickness="1"
                     Padding="10,6,10,6"
                     MaxWidth="340"
@@ -315,12 +332,16 @@
                 <Border.Style>
                     <Style TargetType="Border">
                         <Setter Property="HorizontalAlignment" Value="Left" />
+                        <Setter Property="Margin" Value="0,0,40,0" />
                         <Setter Property="Background" Value="{DynamicResource SurfaceGlassBrush}" />
                         <Setter Property="BorderBrush" Value="{DynamicResource SurfaceBorderSubtleBrush}" />
                         <Setter Property="CornerRadius" Value="{DynamicResource ControlCornerRadius}" />
                         <Style.Triggers>
                             <DataTrigger Binding="{Binding IsOutgoing}" Value="True">
                                 <Setter Property="HorizontalAlignment" Value="Right" />
+                                <Setter Property="Margin" Value="40,0,0,0" />
+                                <Setter Property="Background" Value="{DynamicResource SurfaceGlassSubtleBrush}" />
+                                <Setter Property="BorderBrush" Value="{DynamicResource SurfaceBorderBrush}" />
                             </DataTrigger>
                         </Style.Triggers>
                     </Style>
@@ -373,7 +394,7 @@
                         Tag="InteractiveControl">
                     <Button.Template>
                         <ControlTemplate TargetType="Button">
-                            <Grid VerticalAlignment="Center">
+                            <Grid x:Name="CardRoot" VerticalAlignment="Center">
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="Auto" />
                                     <ColumnDefinition Width="*" />
@@ -392,7 +413,10 @@
                                         <!-- State 1: Download arrow icon (when not downloaded and not downloading) -->
                                         <ui:SymbolIcon Symbol="ArrowDownload24"
                                                        FontSize="16"
-                                                       Foreground="{DynamicResource TextPrimaryBrush}">
+                                                       Foreground="{DynamicResource TextPrimaryBrush}"
+                                                       HorizontalAlignment="Center"
+                                                       VerticalAlignment="Center"
+                                                       UseLayoutRounding="True">
                                             <ui:SymbolIcon.Style>
                                                 <Style TargetType="ui:SymbolIcon">
                                                     <Setter Property="Visibility" Value="Visible" />
@@ -419,7 +443,10 @@
                                         <!-- State 3: Downloaded document icon -->
                                         <ui:SymbolIcon Symbol="Document24"
                                                        FontSize="16"
-                                                       Foreground="{DynamicResource TextPrimaryBrush}">
+                                                       Foreground="{DynamicResource TextPrimaryBrush}"
+                                                       HorizontalAlignment="Center"
+                                                       VerticalAlignment="Center"
+                                                       UseLayoutRounding="True">
                                             <ui:SymbolIcon.Style>
                                                 <Style TargetType="ui:SymbolIcon">
                                                     <Setter Property="Visibility" Value="Collapsed" />
@@ -453,19 +480,26 @@
                                                Foreground="{DynamicResource TextPrimaryBrush}"
                                                TextTrimming="CharacterEllipsis" />
 
-                                    <!-- Row 1: File Size (Left) and Timestamp (Right) -->
+                                    <!-- Row 1: File Size (Column 0) and Timestamp (Column 1) -->
                                     <Grid Grid.Row="1" Margin="0,3,0,0">
-                                        <TextBlock Text="{Binding FileSizeDisplay}"
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="Auto" />
+                                        </Grid.ColumnDefinitions>
+
+                                        <TextBlock Grid.Column="0"
+                                                   Text="{Binding FileSizeDisplay}"
                                                    FontSize="{DynamicResource TypeCaptionFontSize}"
                                                    Foreground="{DynamicResource TextSecondaryBrush}"
-                                                   HorizontalAlignment="Left"
+                                                   Margin="0,0,12,0"
+                                                   TextTrimming="CharacterEllipsis"
                                                    VerticalAlignment="Center" />
 
-                                        <TextBlock Text="{Binding TimeDisplay}"
+                                        <TextBlock Grid.Column="1"
+                                                   Text="{Binding TimeDisplay}"
                                                    FontSize="10"
                                                    Foreground="{DynamicResource TextSubtleBrush}"
                                                    Opacity="0.75"
-                                                   HorizontalAlignment="Right"
                                                    VerticalAlignment="Center"
                                                    IsHitTestVisible="False" />
                                     </Grid>
@@ -475,6 +509,8 @@
                                                Text="{Binding ErrorMessage}"
                                                FontSize="{DynamicResource TypeCaptionFontSize}"
                                                Foreground="{DynamicResource StatusErrorBrush}"
+                                               TextWrapping="Wrap"
+                                               TextTrimming="CharacterEllipsis"
                                                Margin="0,2,0,0">
                                         <TextBlock.Style>
                                             <Style TargetType="TextBlock">
@@ -489,6 +525,14 @@
                                     </TextBlock>
                                 </Grid>
                             </Grid>
+                            <ControlTemplate.Triggers>
+                                <Trigger Property="IsMouseOver" Value="True">
+                                    <Setter TargetName="CardRoot" Property="Opacity" Value="0.90" />
+                                </Trigger>
+                                <Trigger Property="IsPressed" Value="True">
+                                    <Setter TargetName="CardRoot" Property="Opacity" Value="0.78" />
+                                </Trigger>
+                            </ControlTemplate.Triggers>
                         </ControlTemplate>
                     </Button.Template>
                 </Button>

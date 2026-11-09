@@ -50,6 +50,7 @@
                 <!-- Header Action Button (Bot Avatar Badge when paired, opens Disconnect menu) -->
                 <Button Grid.Column="1"
                         x:Name="HeaderMenuButton"
+                        Width="32" Height="32"
                         HorizontalAlignment="Right"
                         VerticalAlignment="Center"
                         Cursor="Hand"
@@ -57,14 +58,20 @@
                         ToolTip="Options">
                     <Button.Style>
                         <Style TargetType="Button">
+                            <Setter Property="Width" Value="32" />
+                            <Setter Property="Height" Value="32" />
                             <Setter Property="Background" Value="Transparent" />
                             <Setter Property="BorderThickness" Value="0" />
                             <Setter Property="Padding" Value="0" />
                             <Setter Property="Template">
                                 <Setter.Value>
                                     <ControlTemplate TargetType="Button">
-                                        <ContentPresenter HorizontalAlignment="Center"
-                                                          VerticalAlignment="Center" />
+                                        <Border Background="Transparent"
+                                                Width="{TemplateBinding Width}"
+                                                Height="{TemplateBinding Height}">
+                                            <ContentPresenter HorizontalAlignment="Center"
+                                                              VerticalAlignment="Center" />
+                                        </Border>
                                     </ControlTemplate>
                                 </Setter.Value>
                             </Setter>
@@ -183,12 +190,12 @@
                                 <ColumnDefinition Width="32" />
                                 <ColumnDefinition Width="*" />
                             </Grid.ColumnDefinitions>
-                            <ui:FontIcon Grid.Column="0"
-                                         Glyph="&#xE895;"
-                                         FontFamily="Segoe MDL2 Assets"
-                                         FontSize="18"
-                                         Foreground="{DynamicResource TextSecondaryBrush}"
-                                         VerticalAlignment="Center" />
+                            <ui:SymbolIcon Grid.Column="0"
+                                           Symbol="ArrowSync24"
+                                           FontSize="20"
+                                           Foreground="{DynamicResource TextSecondaryBrush}"
+                                           HorizontalAlignment="Center"
+                                           VerticalAlignment="Center" />
                             <StackPanel Grid.Column="1" Margin="8,0,0,0">
                                 <TextBlock Text="Two-Way Sharing"
                                            FontSize="{DynamicResource TypeBodyStrongFontSize}"
@@ -216,12 +223,12 @@
                                 <ColumnDefinition Width="32" />
                                 <ColumnDefinition Width="*" />
                             </Grid.ColumnDefinitions>
-                            <ui:FontIcon Grid.Column="0"
-                                         Glyph="&#xE99A;"
-                                         FontFamily="Segoe MDL2 Assets"
-                                         FontSize="18"
-                                         Foreground="{DynamicResource TextSecondaryBrush}"
-                                         VerticalAlignment="Center" />
+                            <ui:SymbolIcon Grid.Column="0"
+                                           Symbol="Bot24"
+                                           FontSize="20"
+                                           Foreground="{DynamicResource TextSecondaryBrush}"
+                                           HorizontalAlignment="Center"
+                                           VerticalAlignment="Center" />
                             <StackPanel Grid.Column="1" Margin="8,0,0,0">
                                 <TextBlock Text="Your Personal Bot"
                                            FontSize="{DynamicResource TypeBodyStrongFontSize}"
@@ -249,12 +256,12 @@
                                 <ColumnDefinition Width="32" />
                                 <ColumnDefinition Width="*" />
                             </Grid.ColumnDefinitions>
-                            <ui:FontIcon Grid.Column="0"
-                                         Glyph="&#xE724;"
-                                         FontFamily="Segoe MDL2 Assets"
-                                         FontSize="18"
-                                         Foreground="{DynamicResource TextSecondaryBrush}"
-                                         VerticalAlignment="Center" />
+                            <ui:SymbolIcon Grid.Column="0"
+                                           Symbol="Phone24"
+                                           FontSize="20"
+                                           Foreground="{DynamicResource TextSecondaryBrush}"
+                                           HorizontalAlignment="Center"
+                                           VerticalAlignment="Center" />
                             <StackPanel Grid.Column="1" Margin="8,0,0,0">
                                 <TextBlock Text="No Companion App Needed"
                                            FontSize="{DynamicResource TypeBodyStrongFontSize}"
@@ -305,7 +312,7 @@
                     <Button Grid.Column="0"
                             Width="32" Height="32"
                             Padding="0"
-                            VerticalAlignment="Center"
+                            VerticalAlignment="Bottom"
                             Command="{Binding AttachFilesCommand}"
                             ToolTip="Attach files">
                         <Button.Style>
@@ -363,7 +370,7 @@
                                    Opacity="0.55"
                                    IsHitTestVisible="False"
                                    VerticalAlignment="Center"
-                                   Margin="3,0,0,0" />
+                                   Margin="2,0,0,0" />
 
                         <!-- Invisible Multi-line TextBox -->
                         <TextBox x:Name="InputTextBox"
@@ -411,7 +418,7 @@
                     <Button Grid.Column="2"
                             Width="32" Height="32"
                             Padding="0"
-                            VerticalAlignment="Center"
+                            VerticalAlignment="Bottom"
                             Command="{Binding SendCommand}"
                             ToolTip="Send message (Enter)">
                         <Button.Style>

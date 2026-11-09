@@ -113,7 +113,7 @@ public sealed partial class MetroSyncSelectableTextBlock : RichTextBox
 
         if (Document != null)
         {
-            Document.PageWidth = double.NaN;
+            Document.PageWidth = naturalWidth;
         }
 
         base.MeasureOverride(new Size(naturalWidth, constraint.Height));
@@ -270,9 +270,11 @@ public sealed partial class MetroSyncSelectableTextBlock : RichTextBox
 
             var linkStyle = new Style(typeof(Hyperlink));
             linkStyle.Setters.Add(new Setter(Hyperlink.TextDecorationsProperty, null));
-            if (TryFindResource("TextPrimaryBrush") is Brush textBrush)
+            var linkBrush = TryFindResource("SystemAccentColorPrimaryBrush") as Brush
+                            ?? TryFindResource("TextPrimaryBrush") as Brush;
+            if (linkBrush != null)
             {
-                linkStyle.Setters.Add(new Setter(Hyperlink.ForegroundProperty, textBrush));
+                linkStyle.Setters.Add(new Setter(Hyperlink.ForegroundProperty, linkBrush));
             }
 
             var hoverTrigger = new Trigger { Property = Hyperlink.IsMouseOverProperty, Value = true };

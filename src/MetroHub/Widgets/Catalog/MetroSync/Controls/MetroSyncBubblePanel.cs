@@ -106,7 +106,8 @@ public sealed class MetroSyncBubblePanel : Panel
         // 2. Multi-line arrangement with trailing space on last line
         if (lastLineWidth + Spacing + timeSize.Width <= finalSize.Width + 0.5)
         {
-            content.Arrange(new Rect(0, 0, contentSize.Width, contentSize.Height));
+            double arrangeWidth = content is Grid ? Math.Max(contentSize.Width, finalSize.Width) : contentSize.Width;
+            content.Arrange(new Rect(0, 0, arrangeWidth, contentSize.Height));
             double timeX = finalSize.Width - timeSize.Width;
             double timeY = Math.Max(0, contentSize.Height - timeSize.Height);
             time.Arrange(new Rect(timeX, timeY, timeSize.Width, timeSize.Height));
@@ -114,7 +115,8 @@ public sealed class MetroSyncBubblePanel : Panel
         }
 
         // 3. Forced wrap arrangement
-        content.Arrange(new Rect(0, 0, contentSize.Width, contentSize.Height));
+        double wrapContentWidth = content is Grid ? Math.Max(contentSize.Width, finalSize.Width) : contentSize.Width;
+        content.Arrange(new Rect(0, 0, wrapContentWidth, contentSize.Height));
         double wrapTimeX = finalSize.Width - timeSize.Width;
         double wrapTimeY = contentSize.Height + 1.0;
         time.Arrange(new Rect(wrapTimeX, wrapTimeY, timeSize.Width, timeSize.Height));

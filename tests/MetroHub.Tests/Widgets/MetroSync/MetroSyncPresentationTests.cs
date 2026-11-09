@@ -539,13 +539,12 @@ public sealed class MetroSyncPresentationTests
                 Assert.Null(view.FindName("ErrorToastPill"));
                 Assert.Null(view.FindName("ErrorToastText"));
 
-                // 2. Option A layout verification: InputPlaceholder margin = (6,0,0,0), InputTextBox padding = 0
-                // 2. Option A layout verification: InputPlaceholder margin = (3,0,0,0), InputTextBox padding = 0
+                // 2. Option A layout verification: InputPlaceholder margin = (2,0,0,0), InputTextBox padding = 0
                 var placeholder = view.FindName("InputPlaceholder") as TextBlock;
                 var textBox = view.FindName("InputTextBox") as TextBox;
                 Assert.NotNull(placeholder);
                 Assert.NotNull(textBox);
-                Assert.Equal(new Thickness(3, 0, 0, 0), placeholder.Margin);
+                Assert.Equal(new Thickness(2, 0, 0, 0), placeholder.Margin);
                 Assert.Equal(new Thickness(0), textBox.Padding);
 
                 // 3. Typing in InputTextBox clears any ErrorMessage
