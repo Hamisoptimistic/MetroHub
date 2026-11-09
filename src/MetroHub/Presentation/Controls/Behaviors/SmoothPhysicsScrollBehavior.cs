@@ -613,9 +613,7 @@ public static class SmoothPhysicsScrollBehavior
                 content.IsHitTestVisible = false;
                 if (content.CacheMode == null)
                 {
-                    double dpiY = VisualTreeHelper.GetDpi(_scrollViewer).DpiScaleY;
-                    if (dpiY <= 0.0) dpiY = 1.0;
-                    content.CacheMode = new BitmapCache(dpiY) { SnapsToDevicePixels = false, EnableClearType = false };
+                    content.CacheMode = new BitmapCache { RenderAtScale = 1.0, SnapsToDevicePixels = false, EnableClearType = false };
                 }
             }
 
