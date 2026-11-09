@@ -253,7 +253,7 @@ public sealed class WorkspaceManager : INotifyPropertyChanged
         target.IsActive = true;
         ActiveWorkspace = target;
 
-        SaveManifest(sync: true);
+        SaveManifest(sync: false);
 
         WorkspaceChanging?.Invoke(outgoing, target);
         WorkspaceChanged?.Invoke(target);

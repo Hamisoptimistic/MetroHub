@@ -12,7 +12,7 @@ Windows desktop live-tile launcher (WPF, `net10.0-windows10.0.19041.0`, SVMs via
 
 ## IDE & MCP Workflow
 
-- **Visual Studio (`vs-debug-mcp`):** When Visual Studio is open, use `vs_run_build` and `vs_get_errors` to verify changes. Do NOT run `dotnet build` or `dotnet publish` during edits.
+- **Visual Studio (`vs-debug-mcp`):** When Visual Studio is open, use `vs_run_build` and `vs_get_errors` to verify changes. If Visual Studio is closed, use the terminal build command under Commands. Do NOT run `dotnet publish` during edits.
 - **Validation Cycle:** After build succeeds, STOP and report. The user validates manually with `Ctrl + F5`.
 - **Publishing:** Run `dotnet publish` ONLY when the user explicitly requests it.
 - **Code Intelligence (`roslyn-mcp`):** Use Roslyn tools for symbol search, definition lookup, reference finding, and syntax validation.
@@ -20,6 +20,7 @@ Windows desktop live-tile launcher (WPF, `net10.0-windows10.0.19041.0`, SVMs via
 
 ## Commands
 
+- Build app (when VS is closed): `dotnet build src\MetroHub\MetroHub.csproj -c Release --nologo -v q`
 - Run all tests: `dotnet test` (Windows only)
 - Run one test class: `dotnet test tests/MetroHub.Tests/MetroHub.Tests.csproj --filter "FullyQualifiedName~RadioCatalogTests"`
 - Publish to Desktop (only when explicitly requested):
@@ -55,4 +56,4 @@ Windows desktop live-tile launcher (WPF, `net10.0-windows10.0.19041.0`, SVMs via
 - Tests redirect state to `%TEMP%\MetroHub_TestSandbox_Default`. Use `WidgetTestSandbox` for widgets.
 - Native BASS DLLs are in `lib/native/win-x64/`. Do not move them.
 - Shell window inherits `BorderlessFluentWindow`. Dialogs must inherit `Wpf.Ui.Controls.FluentWindow` and run inside `MainWindow.EnterDialogScope()`.
-- Protected directories: never edit `bin/`, `obj/`, `publish/`, `dist/`, or `.agents/`.
+- Protected directories: never edit `bin/`, `obj/`, `publish/`, `dist/`, `logs/`, `diagnostics/`, or `.agents/`.

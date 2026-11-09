@@ -16,7 +16,7 @@ using MetroHub.Widgets.Serialization;
 
 namespace MetroHub.Widgets.Catalog.Photos;
 
-public sealed partial class PhotosWidgetViewModel : WidgetViewModelBase, IWidgetActionHandler, IWidgetContextMenuProvider
+public sealed partial class PhotosWidgetViewModel : WidgetViewModelBase, IWidgetActionHandler, IWidgetContextMenuProvider, IDormancyAware
 {
     private static readonly System.Collections.Frozen.FrozenSet<string> SupportedExtensions = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
     {
@@ -584,6 +584,10 @@ public sealed partial class PhotosWidgetViewModel : WidgetViewModelBase, IWidget
             StartSlideshowTimer();
         }
     }
+
+    public void OnDormant() => Pause();
+
+    public void OnAwakened() => Resume();
 
     protected override void Dispose(bool disposing)
     {

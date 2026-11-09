@@ -235,7 +235,7 @@ public sealed class WorkspaceRecoveryAndPersistenceTests : IDisposable
     }
 
     [Fact]
-    public void SwitchWorkspace_SynchronouslyPersistsActiveWorkspaceIdToDiskWithoutDelay()
+    public void SwitchWorkspace_PersistsActiveWorkspaceIdToDisk()
     {
         // Arrange
         WorkspaceManager.Instance.Initialize();
@@ -247,6 +247,7 @@ public sealed class WorkspaceRecoveryAndPersistenceTests : IDisposable
 
         // Switch back to ws1
         WorkspaceManager.Instance.SwitchWorkspace(ws1.Id);
+        StorageService.Flush();
         Assert.Equal(ws1.Id, WorkspaceManager.Instance.ActiveWorkspace.Id);
 
         string diskJsonWs1 = File.ReadAllText(AppPaths.WorkspacesManifestPath);
@@ -254,8 +255,9 @@ public sealed class WorkspaceRecoveryAndPersistenceTests : IDisposable
 
         // Act: Switch to ws2
         WorkspaceManager.Instance.SwitchWorkspace(ws2.Id);
+        StorageService.Flush();
 
-        // Assert: Disk reflects active ws2 synchronously with zero delay
+        // Assert: Disk reflects active ws2 after background flush
         Assert.True(File.Exists(AppPaths.WorkspacesManifestPath));
         string diskJsonWs2 = File.ReadAllText(AppPaths.WorkspacesManifestPath);
         Assert.Contains($"\"ActiveWorkspaceId\": \"{ws2.Id}\"", diskJsonWs2);

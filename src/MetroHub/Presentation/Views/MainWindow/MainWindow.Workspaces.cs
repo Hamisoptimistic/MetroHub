@@ -112,6 +112,12 @@ public partial class MainWindow
         if (ws == null) return;
         var canvas = GetOrCreateCanvas(ws);
         PrewarmCanvasCache(canvas);
+
+        if (!canvas.IsMeasureValid)
+        {
+            canvas.Visibility = Visibility.Hidden;
+            canvas.UpdateLayout();
+        }
     }
 
     private void PrewarmCanvasCache(WorkspaceCanvasControl canvas)
@@ -131,8 +137,8 @@ public partial class MainWindow
         canvas.CacheMode = new BitmapCache
         {
             RenderAtScale = dpiScale,
-            EnableClearType = true,
-            SnapsToDevicePixels = true
+            EnableClearType = false,
+            SnapsToDevicePixels = false
         };
     }
 
@@ -243,6 +249,19 @@ public partial class MainWindow
         var wm = WorkspaceManager.Instance;
         PrewarmCanvasCache(incomingCanvas);
 
+        if (!incomingCanvas.IsMeasureValid)
+        {
+            incomingCanvas.Visibility = Visibility.Hidden;
+            incomingCanvas.UpdateLayout();
+        }
+
+        double outgoingHeight = CalculateWorkspaceMaxBottom(_activeCanvas?.Workspace ?? target);
+        double incomingHeight = CalculateWorkspaceMaxBottom(target);
+        if (MainCanvasGrid != null)
+        {
+            MainCanvasGrid.MinHeight = Math.Max(MainCanvasGrid.MinHeight, Math.Max(outgoingHeight, incomingHeight));
+        }
+
         if (!_isTransitionAnimating)
         {
             var outgoingCanvas = _activeCanvas ?? incomingCanvas;
@@ -277,9 +296,9 @@ public partial class MainWindow
             _transitionTargetCanvas = incomingCanvas;
             _transitionTargetModel = target;
 
-            StartTransitionLoop();
-
             ApplyWorkspaceData(target, skipCanvasVisibility: true);
+
+            StartTransitionLoop();
         }
         else
         {
@@ -317,6 +336,7 @@ public partial class MainWindow
     {
         if (_isTransitionAnimating) return;
         _isTransitionAnimating = true;
+        TileControl.SetRevealSuppressed(true);
         _lastTransitionTimestamp = Stopwatch.GetTimestamp();
         _lastTransitionRenderTime = TimeSpan.MinValue;
         CompositionTarget.Rendering += OnTransitionRendering;
@@ -329,6 +349,8 @@ public partial class MainWindow
             if (renderingArgs.RenderingTime == _lastTransitionRenderTime) return;
             _lastTransitionRenderTime = renderingArgs.RenderingTime;
         }
+
+        TileControl.SuppressRevealForScrolling();
 
         long now = Stopwatch.GetTimestamp();
         double dt = (now - _lastTransitionTimestamp) / (double)Stopwatch.Frequency;
@@ -371,6 +393,7 @@ public partial class MainWindow
     {
         if (!_isTransitionAnimating) return;
         _isTransitionAnimating = false;
+        TileControl.SetRevealSuppressed(false);
         CompositionTarget.Rendering -= OnTransitionRendering;
 
         var winnerCanvas = _transitionTargetCanvas;
@@ -429,6 +452,7 @@ public partial class MainWindow
     {
         if (!_isTransitionAnimating) return;
         _isTransitionAnimating = false;
+        TileControl.SetRevealSuppressed(false);
         CompositionTarget.Rendering -= OnTransitionRendering;
 
         var fallback = _transitionTargetCanvas ?? _activeCanvas;
@@ -610,6 +634,7 @@ public partial class MainWindow
             var targetWs = workspaces[targetIndex];
             if (targetWs != wm.ActiveWorkspace)
             {
+                wm.RequestPrewarm(targetWs.Id);
                 wm.SwitchWorkspace(targetWs.Id);
                 e.Handled = true;
             }

@@ -20,7 +20,7 @@ namespace MetroHub.Widgets.Catalog.Rover;
 /// Features zero-polling Windows SMTC media playback awareness, single-click trick cycling
 /// across all authentic poses, and realistic sleep/wake mechanics.
 /// </summary>
-public sealed partial class RoverWidgetViewModel : WidgetViewModelBase, IWidgetActionHandler, IWidgetContextMenuProvider
+public sealed partial class RoverWidgetViewModel : WidgetViewModelBase, IWidgetActionHandler, IWidgetContextMenuProvider, IDormancyAware
 {
     [StructLayout(LayoutKind.Sequential)]
     private struct LASTINPUTINFO
@@ -588,6 +588,10 @@ public sealed partial class RoverWidgetViewModel : WidgetViewModelBase, IWidgetA
             _engine.SetStaticPose("Sleeping");
         }
     }
+
+    public void OnDormant() => Pause();
+
+    public void OnAwakened() => Resume();
 
     protected override void LoadSettings(string? settingsJson)
     {
