@@ -19,6 +19,18 @@ Windows desktop live-tile launcher (WPF, `net10.0-windows10.0.19041.0`, SVMs via
 - **Language Standards:** Use C# 14 and latest language features.
 - **No Dead Code:** Clean up dead code immediately; do not keep unused legacy code.
 
+## Visual Studio & MCP Workflow
+
+- **Full Tool Suite Priority:** When Visual Studio is open, ALWAYS prioritize the full suite of `vs-debug-mcp` tools (`vs_*`) for all IDE interactions instead of terminal shell commands:
+  - **Build & Diagnostics:** `vs_run_build`, `vs_get_errors`, `vs_get_output_window_logs`, `vs_get_output_panes`.
+  - **Solution & Workspace:** `vs_get_projects_in_solution`, `vs_get_files_in_project`, `vs_get_solution_configurations`, `vs_set_solution_configuration`.
+  - **Editor Navigation:** `vs_get_active_document`, `vs_navigate_to`.
+  - **Testing Subsystem:** `vs_get_tests`, `vs_run_tests`, `vs_get_test_run_status`, `vs_cancel_test_run`.
+  - **Full Debugger Suite:** `vs_debugger_*` (snapshots, exception info, multi-thread stacks, variables, memory reading, and stepping).
+- **Build Verification:** After making code changes, ALWAYS run `vs_run_build` and check `vs_get_errors` to verify zero compiler errors before reporting completion.
+- **Fast User Validation:** The user launches and validates changes manually using `Ctrl + F5` (Start Without Debugging).
+- **Publishing to Desktop:** Only publish when the user explicitly requests it. Always stop `MetroHub` first, then publish to `C:\Users\HamB\Desktop\MetroHubApp`.
+
 ## Commands
 
 - Build app: `dotnet build src\MetroHub\MetroHub.csproj -c Release --nologo -v q`
