@@ -8,6 +8,8 @@ using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
 using System.Windows.Input;
 using System.Diagnostics;
+using System.Threading;
+using System.Threading.Tasks;
 using System.Windows.Media;
 using System.Windows.Threading;
 using MetroHub.Core.Models;
@@ -82,10 +84,9 @@ public partial class MainWindow
     private WorkspaceModel? _transitionTargetModel;
     private WorkspaceModel? _lastOutgoingWorkspace;
     private double _transitionDpiScale = 1.0;
+    private CancellationTokenSource? _transitionTeardownCts;
 
-    private const double TransitionSpringOmega = 22.0;
-    private const double TransitionRestPosThreshold = 0.5;
-    private const double TransitionRestVelThreshold = 5.0;
+    private const double TransitionSpringOmega = 25.0;
 
     private static double CalculateWorkspaceMaxBottom(WorkspaceModel ws)
     {
@@ -124,22 +125,11 @@ public partial class MainWindow
     private void PrewarmCanvasCache(WorkspaceCanvasControl canvas)
     {
         if (canvas.CacheMode != null) return;
-        double dpiScale = 1.0;
-        try
-        {
-            dpiScale = VisualTreeHelper.GetDpi(this).DpiScaleX;
-            if (dpiScale <= 0) dpiScale = 1.0;
-        }
-        catch
-        {
-            dpiScale = 1.0;
-        }
-
         canvas.CacheMode = new BitmapCache
         {
-            RenderAtScale = dpiScale,
+            RenderAtScale = 1.0,
             EnableClearType = false,
-            SnapsToDevicePixels = true
+            SnapsToDevicePixels = false
         };
     }
 
@@ -298,7 +288,6 @@ public partial class MainWindow
 
             double enterSlotX = direction * slideDistance;
             double enterOffsetY = _baseScrollOffset - target.ScrollOffset;
-            enterOffsetY = Math.Round(enterOffsetY * _transitionDpiScale) / _transitionDpiScale;
             var inTransform = new TranslateTransform(enterSlotX, enterOffsetY);
             incomingCanvas.RenderTransform = inTransform;
             incomingCanvas.Opacity = 1.0;
@@ -330,7 +319,6 @@ public partial class MainWindow
             {
                 double nextSlotX = _targetCameraX + (direction * slideDistance);
                 double enterOffsetY = _baseScrollOffset - target.ScrollOffset;
-                enterOffsetY = Math.Round(enterOffsetY * _transitionDpiScale) / _transitionDpiScale;
                 var inTransform = new TranslateTransform(nextSlotX - _cameraX, enterOffsetY);
                 incomingCanvas.RenderTransform = inTransform;
                 incomingCanvas.Opacity = 1.0;
@@ -355,6 +343,8 @@ public partial class MainWindow
         TileControl.SetRevealSuppressed(true);
         _lastTransitionTimestamp = Stopwatch.GetTimestamp();
         _lastTransitionRenderTime = TimeSpan.MinValue;
+        _transitionTeardownCts?.Cancel();
+        _transitionTeardownCts = null;
         CompositionTarget.Rendering += OnTransitionRendering;
     }
 
@@ -390,8 +380,14 @@ public partial class MainWindow
         _cameraX = _targetCameraX + (displacement + temp) * exp;
         _cameraVelocity = (_cameraVelocity - TransitionSpringOmega * temp) * exp;
 
-        bool isAtRest = Math.Abs(_cameraX - _targetCameraX) < TransitionRestPosThreshold
-                     && Math.Abs(_cameraVelocity) < TransitionRestVelThreshold;
+        // Cutoff thresholds scaled to physical device pixels:
+        // Position threshold: 0.5 physical pixels (imperceptible snap)
+        // Velocity threshold: 5.0 physical pixels/sec (kinetic energy exhausted)
+        double posEpsilon = 0.5 / _transitionDpiScale;
+        double velEpsilon = 5.0 / _transitionDpiScale;
+
+        bool isAtRest = Math.Abs(_cameraX - _targetCameraX) <= posEpsilon
+                     && Math.Abs(_cameraVelocity) <= velEpsilon;
 
         if (isAtRest)
         {
@@ -402,8 +398,10 @@ public partial class MainWindow
         for (int i = 0; i < _activeStrip.Count; i++)
         {
             var item = _activeStrip[i];
-            double rawX = item.SlotX - _cameraX;
-            item.Transform.X = Math.Round(rawX * _transitionDpiScale) / _transitionDpiScale;
+            // Feed raw unrounded subpixel coordinates in flight so GPU hardware bilinear filtering
+            // smoothly interpolates the BitmapCache quad without square-wave stair-stepping.
+            // Snap to exact target position only on the final rest frame.
+            item.Transform.X = isAtRest ? (item.SlotX - _targetCameraX) : (item.SlotX - _cameraX);
         }
 
         if (isAtRest)
@@ -419,56 +417,80 @@ public partial class MainWindow
         TileControl.SetRevealSuppressed(false);
         CompositionTarget.Rendering -= OnTransitionRendering;
 
+        _transitionTeardownCts?.Cancel();
+        _transitionTeardownCts = new CancellationTokenSource();
+        var token = _transitionTeardownCts.Token;
+
         var winnerCanvas = _transitionTargetCanvas;
         var winnerModel = _transitionTargetModel;
-
-        for (int i = 0; i < _activeStrip.Count; i++)
-        {
-            var item = _activeStrip[i];
-            if (item.Canvas != winnerCanvas)
-            {
-                item.Canvas.Visibility = Visibility.Collapsed;
-                item.Canvas.CacheMode = null;
-                item.Canvas.RenderTransform = null;
-            }
-        }
-
+        var stripSnapshot = _activeStrip.ToArray();
         _activeStrip.Clear();
-
-        if (winnerCanvas != null && winnerModel != null)
-        {
-            winnerCanvas.RenderTransform = null;
-            winnerCanvas.Visibility = Visibility.Visible;
-            Panel.SetZIndex(winnerCanvas, 0);
-            _activeCanvas = winnerCanvas;
-
-            double targetMaxBottom = CalculateWorkspaceMaxBottom(winnerModel);
-            if (MainCanvasGrid != null)
-            {
-                MainCanvasGrid.MinHeight = Math.Max(MainCanvasGrid.MinHeight, targetMaxBottom);
-            }
-
-            UpdateCanvasHeight();
-
-            if (ContentScrollViewer != null)
-            {
-                ContentScrollViewer.UpdateLayout();
-                SmoothPhysicsScrollBehavior.ResetOffset(ContentScrollViewer, winnerModel.ScrollOffset);
-            }
-
-            // Restore ClearType on stationary active canvas
-            Dispatcher.BeginInvoke(DispatcherPriority.ContextIdle, () =>
-            {
-                if (!_isTransitionAnimating && _activeCanvas == winnerCanvas)
-                {
-                    winnerCanvas.CacheMode = null;
-                    InvokeOnAwakened(winnerModel.Tiles);
-                }
-            });
-        }
-
         _transitionTargetCanvas = null;
         _transitionTargetModel = null;
+
+        // Phase 2: Defer visual tree cleanup and layout updates to ContextIdle
+        // so the final resting frame presents in <0.5 ms without UI thread freezes.
+        Dispatcher.InvokeAsync(async () =>
+        {
+            if (token.IsCancellationRequested) return;
+
+            for (int i = 0; i < stripSnapshot.Length; i++)
+            {
+                var item = stripSnapshot[i];
+                if (item.Canvas != winnerCanvas)
+                {
+                    item.Canvas.Visibility = Visibility.Collapsed;
+                    item.Canvas.CacheMode = null;
+                    item.Canvas.RenderTransform = null;
+                }
+            }
+
+            if (winnerCanvas != null && winnerModel != null)
+            {
+                winnerCanvas.RenderTransform = null;
+                winnerCanvas.Visibility = Visibility.Visible;
+                Panel.SetZIndex(winnerCanvas, 0);
+                _activeCanvas = winnerCanvas;
+
+                double targetMaxBottom = CalculateWorkspaceMaxBottom(winnerModel);
+                if (MainCanvasGrid != null)
+                {
+                    MainCanvasGrid.MinHeight = Math.Max(MainCanvasGrid.MinHeight, targetMaxBottom);
+                }
+
+                UpdateCanvasHeight();
+
+                if (ContentScrollViewer != null)
+                {
+                    SmoothPhysicsScrollBehavior.ResetOffset(ContentScrollViewer, winnerModel.ScrollOffset);
+                }
+            }
+
+            try
+            {
+                // Phase 3: Grace window before dropping BitmapCache and waking widgets
+                await Task.Delay(100, token);
+            }
+            catch (TaskCanceledException)
+            {
+                return;
+            }
+
+            if (token.IsCancellationRequested) return;
+
+            await Dispatcher.InvokeAsync(() =>
+            {
+                if (token.IsCancellationRequested) return;
+                if (!_isTransitionAnimating && _activeCanvas == winnerCanvas && winnerCanvas != null)
+                {
+                    winnerCanvas.CacheMode = null;
+                    if (winnerModel != null)
+                    {
+                        InvokeOnAwakened(winnerModel.Tiles);
+                    }
+                }
+            }, DispatcherPriority.ApplicationIdle);
+        }, DispatcherPriority.ContextIdle);
     }
 
     internal void CancelWorkspaceTransition()
@@ -477,6 +499,9 @@ public partial class MainWindow
         _isTransitionAnimating = false;
         TileControl.SetRevealSuppressed(false);
         CompositionTarget.Rendering -= OnTransitionRendering;
+
+        _transitionTeardownCts?.Cancel();
+        _transitionTeardownCts = null;
 
         var fallback = _transitionTargetCanvas ?? _activeCanvas;
         var fallbackModel = _transitionTargetModel ?? fallback?.Workspace;
@@ -513,7 +538,6 @@ public partial class MainWindow
             UpdateCanvasHeight();
             if (ContentScrollViewer != null)
             {
-                ContentScrollViewer.UpdateLayout();
                 SmoothPhysicsScrollBehavior.ResetOffset(ContentScrollViewer, fallbackModel.ScrollOffset);
             }
             InvokeOnAwakened(fallbackModel.Tiles);
