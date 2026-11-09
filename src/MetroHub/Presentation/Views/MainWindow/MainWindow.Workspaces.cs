@@ -81,6 +81,7 @@ public partial class MainWindow
     private WorkspaceCanvasControl? _transitionTargetCanvas;
     private WorkspaceModel? _transitionTargetModel;
     private WorkspaceModel? _lastOutgoingWorkspace;
+    private double _transitionDpiScale = 1.0;
 
     private const double TransitionSpringOmega = 22.0;
     private const double TransitionRestPosThreshold = 0.5;
@@ -138,7 +139,7 @@ public partial class MainWindow
         {
             RenderAtScale = dpiScale,
             EnableClearType = false,
-            SnapsToDevicePixels = false
+            SnapsToDevicePixels = true
         };
     }
 
@@ -249,6 +250,18 @@ public partial class MainWindow
         var wm = WorkspaceManager.Instance;
         PrewarmCanvasCache(incomingCanvas);
 
+        try
+        {
+            _transitionDpiScale = VisualTreeHelper.GetDpi(this).DpiScaleX;
+            if (_transitionDpiScale <= 0) _transitionDpiScale = 1.0;
+        }
+        catch
+        {
+            _transitionDpiScale = 1.0;
+        }
+
+        InvokeOnDormant(target.Tiles);
+
         if (!incomingCanvas.IsMeasureValid)
         {
             incomingCanvas.Visibility = Visibility.Hidden;
@@ -285,6 +298,7 @@ public partial class MainWindow
 
             double enterSlotX = direction * slideDistance;
             double enterOffsetY = _baseScrollOffset - target.ScrollOffset;
+            enterOffsetY = Math.Round(enterOffsetY * _transitionDpiScale) / _transitionDpiScale;
             var inTransform = new TranslateTransform(enterSlotX, enterOffsetY);
             incomingCanvas.RenderTransform = inTransform;
             incomingCanvas.Opacity = 1.0;
@@ -316,6 +330,7 @@ public partial class MainWindow
             {
                 double nextSlotX = _targetCameraX + (direction * slideDistance);
                 double enterOffsetY = _baseScrollOffset - target.ScrollOffset;
+                enterOffsetY = Math.Round(enterOffsetY * _transitionDpiScale) / _transitionDpiScale;
                 var inTransform = new TranslateTransform(nextSlotX - _cameraX, enterOffsetY);
                 incomingCanvas.RenderTransform = inTransform;
                 incomingCanvas.Opacity = 1.0;
@@ -328,6 +343,7 @@ public partial class MainWindow
             _transitionTargetCanvas = incomingCanvas;
             _transitionTargetModel = target;
 
+            InvokeOnDormant(target.Tiles);
             ApplyWorkspaceData(target, skipCanvasVisibility: true);
         }
     }
@@ -344,22 +360,28 @@ public partial class MainWindow
 
     private void OnTransitionRendering(object? sender, EventArgs e)
     {
+        double dt;
         if (e is RenderingEventArgs renderingArgs)
         {
             if (renderingArgs.RenderingTime == _lastTransitionRenderTime) return;
+            if (_lastTransitionRenderTime == TimeSpan.MinValue)
+            {
+                dt = 1.0 / 120.0;
+            }
+            else
+            {
+                dt = (renderingArgs.RenderingTime - _lastTransitionRenderTime).TotalSeconds;
+            }
             _lastTransitionRenderTime = renderingArgs.RenderingTime;
         }
-
-        TileControl.SuppressRevealForScrolling();
-
-        long now = Stopwatch.GetTimestamp();
-        double dt = (now - _lastTransitionTimestamp) / (double)Stopwatch.Frequency;
-        _lastTransitionTimestamp = now;
-
-        if (dt <= 0.0001 || dt > 0.05)
+        else
         {
-            dt = 1.0 / 120.0;
+            long now = Stopwatch.GetTimestamp();
+            dt = (now - _lastTransitionTimestamp) / (double)Stopwatch.Frequency;
+            _lastTransitionTimestamp = now;
         }
+
+        dt = Math.Clamp(dt, 0.001, 0.05);
 
         double displacement = _cameraX - _targetCameraX;
         double exp = Math.Exp(-TransitionSpringOmega * dt);
@@ -380,7 +402,8 @@ public partial class MainWindow
         for (int i = 0; i < _activeStrip.Count; i++)
         {
             var item = _activeStrip[i];
-            item.Transform.X = item.SlotX - _cameraX;
+            double rawX = item.SlotX - _cameraX;
+            item.Transform.X = Math.Round(rawX * _transitionDpiScale) / _transitionDpiScale;
         }
 
         if (isAtRest)
@@ -493,6 +516,7 @@ public partial class MainWindow
                 ContentScrollViewer.UpdateLayout();
                 SmoothPhysicsScrollBehavior.ResetOffset(ContentScrollViewer, fallbackModel.ScrollOffset);
             }
+            InvokeOnAwakened(fallbackModel.Tiles);
         }
     }
 
