@@ -103,10 +103,23 @@
                                                       CommandParameter="{Binding}" />
                                     </Border.InputBindings>
                                     <Grid HorizontalAlignment="Stretch" VerticalAlignment="Stretch">
+                                        <!-- Today: Solid Accent Fill -->
+                                        <Border x:Name="TodayFrame"
+                                                Background="{DynamicResource SystemAccentColorPrimaryBrush}"
+                                                BorderThickness="0"
+                                                CornerRadius="{DynamicResource ControlCornerRadius}"
+                                                Margin="1"
+                                                Visibility="Collapsed"
+                                                IsHitTestVisible="False"
+                                                RenderOptions.EdgeMode="Aliased"
+                                                />
+
                                         <!-- Hover Overlay -->
                                         <Border x:Name="HoverOverlay"
                                                 Opacity="0"
                                                 Background="{DynamicResource FluentHoverBrush}"
+                                                CornerRadius="{DynamicResource ControlCornerRadius}"
+                                                Margin="1"
                                                 />
 
                                         <!-- Day Number Text -->
@@ -119,17 +132,6 @@
                                                    FontWeight="{DynamicResource TypeBodyFontWeight}"
                                                    Foreground="{DynamicResource TextDisabledBrush}"
                                                    />
-
-                                        <!-- Today: Universal Accent Border -->
-                                        <Border x:Name="TodayFrame"
-                                                BorderThickness="2"
-                                                BorderBrush="{DynamicResource SystemAccentColorPrimaryBrush}"
-                                                CornerRadius="{DynamicResource ControlCornerRadius}"
-                                                Margin="1"
-                                                Visibility="Collapsed"
-                                                IsHitTestVisible="False"
-                                                RenderOptions.EdgeMode="Aliased"
-                                                />
                                     </Grid>
                                 </Border>
 
@@ -140,10 +142,10 @@
                                         <Setter TargetName="DayLabel" Property="FontWeight" Value="{DynamicResource TypeBodyStrongFontWeight}" />
                                     </DataTrigger>
 
-                                    <!-- Today: Universal 2px Accent Border -->
+                                    <!-- Today: Solid Accent Fill -->
                                     <DataTrigger Binding="{Binding IsToday}" Value="True">
                                         <Setter TargetName="TodayFrame" Property="Visibility" Value="Visible" />
-                                        <Setter TargetName="DayLabel" Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
+                                        <Setter TargetName="DayLabel" Property="Foreground" Value="{DynamicResource SystemAccentColorForegroundBrush}" />
                                         <Setter TargetName="DayLabel" Property="FontWeight" Value="Bold" />
                                     </DataTrigger>
 
