@@ -221,7 +221,6 @@
                                                 Margin="0"
                                                 Visibility="Collapsed"
                                                 IsHitTestVisible="False"
-                                                RenderOptions.EdgeMode="Aliased"
                                                 />
 
                                         <!-- Day Number Label -->

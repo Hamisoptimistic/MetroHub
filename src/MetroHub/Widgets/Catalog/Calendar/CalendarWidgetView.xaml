@@ -111,7 +111,6 @@
                                                 Margin="1"
                                                 Visibility="Collapsed"
                                                 IsHitTestVisible="False"
-                                                RenderOptions.EdgeMode="Aliased"
                                                 />
 
                                         <!-- Hover Overlay -->
