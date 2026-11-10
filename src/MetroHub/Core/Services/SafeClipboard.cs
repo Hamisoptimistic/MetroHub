@@ -1,4 +1,5 @@
 using System;
+using System.IO;
 using System.Runtime.InteropServices;
 using System.Threading;
 using System.Windows;
@@ -158,5 +159,76 @@ public static class SafeClipboard
         }
 
         return null;
+    }
+
+    /// <summary>
+    /// Places an image bitmap and optional file drop item onto the Windows clipboard with retry logic.
+    /// Supports both bitmap pasting (image editors, chat apps) and file drop pasting (Explorer).
+    /// </summary>
+    public static bool TrySetImage(BitmapSource image, string? filePath = null, int maxRetries = DefaultMaxRetries, int initialDelayMs = DefaultInitialDelayMs)
+    {
+        if (image == null) return false;
+
+        var dataObject = new DataObject();
+        dataObject.SetImage(image);
+        if (!string.IsNullOrWhiteSpace(filePath) && File.Exists(filePath))
+        {
+            var dropList = new System.Collections.Specialized.StringCollection { filePath };
+            dataObject.SetFileDropList(dropList);
+        }
+
+        int delayMs = initialDelayMs;
+        for (int attempt = 0; attempt < maxRetries; attempt++)
+        {
+            try
+            {
+                Clipboard.SetDataObject(dataObject, copy: true);
+                return true;
+            }
+            catch (COMException ex) when ((uint)ex.ErrorCode == 0x800401D0) // CLIPBRD_E_CANT_OPEN
+            {
+                if (attempt == maxRetries - 1)
+                {
+                    Safe.Log(ex, "SafeClipboard.TrySetImage: Clipboard locked by external process (CLIPBRD_E_CANT_OPEN). Retries exhausted.");
+                    return false;
+                }
+            }
+            catch (Exception ex)
+            {
+                Safe.Log(ex, "SafeClipboard.TrySetImage: Failed to set clipboard data.");
+                return false;
+            }
+
+            Thread.Sleep(delayMs);
+            delayMs *= 2;
+        }
+
+        return false;
+    }
+
+    /// <summary>
+    /// Decodes an image from disk without locking the file and copies it to the Windows clipboard.
+    /// </summary>
+    public static bool TrySetImageFile(string filePath)
+    {
+        if (string.IsNullOrWhiteSpace(filePath) || !File.Exists(filePath)) return false;
+
+        try
+        {
+            var bmp = new BitmapImage();
+            bmp.BeginInit();
+            bmp.UriSource = new Uri(filePath, UriKind.Absolute);
+            bmp.CacheOption = BitmapCacheOption.OnLoad;
+            bmp.CreateOptions = BitmapCreateOptions.IgnoreImageCache;
+            bmp.EndInit();
+            bmp.Freeze();
+
+            return TrySetImage(bmp, filePath);
+        }
+        catch (Exception ex)
+        {
+            Safe.Log(ex, $"SafeClipboard.TrySetImageFile failed for path: {filePath}");
+            return false;
+        }
     }
 }

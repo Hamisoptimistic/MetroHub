@@ -855,13 +855,14 @@ public partial class TileControl : UserControl, IShaderInputBlocker
         {
             bool isWebUrl = tile.TileType == TileType.WebUrl;
             bool isNote = tile.IsNote;
-            bool isSpecialItem = isWebUrl || isNote;
+            bool isImage = tile.IsImage;
+            bool isSpecialItem = isWebUrl || isNote || isImage;
 
             if (selectedCount <= 1)
             {
                 if (s_editMenuItem != null)
                 {
-                    s_editMenuItem.Visibility = isSpecialItem ? Visibility.Visible : Visibility.Collapsed;
+                    s_editMenuItem.Visibility = (isWebUrl || isNote) ? Visibility.Visible : Visibility.Collapsed;
                     if (isWebUrl) s_editMenuItem.Header = "Edit Web Link...";
                     else if (isNote) s_editMenuItem.Header = "Edit Note...";
                 }
@@ -871,6 +872,7 @@ public partial class TileControl : UserControl, IShaderInputBlocker
                     s_copyLinkOrTextMenuItem.Visibility = isSpecialItem ? Visibility.Visible : Visibility.Collapsed;
                     if (isWebUrl) s_copyLinkOrTextMenuItem.Header = "Copy Link";
                     else if (isNote) s_copyLinkOrTextMenuItem.Header = "Copy Text";
+                    else if (isImage) s_copyLinkOrTextMenuItem.Header = "Copy Image";
                 }
 
                 if (s_singleAppSeparator != null) s_singleAppSeparator.Visibility = Visibility.Visible;
@@ -1390,10 +1392,22 @@ public partial class TileControl : UserControl, IShaderInputBlocker
                     }
                 }
             }
+            else if (tile.IsImage)
+            {
+                string? imagePath = File.Exists(tile.TargetPath) ? tile.TargetPath : (File.Exists(tile.IconPath) ? tile.IconPath : null);
+                if (!string.IsNullOrWhiteSpace(imagePath))
+                {
+                    SafeClipboard.TrySetImageFile(imagePath);
+                }
+                else if (!string.IsNullOrWhiteSpace(tile.TargetPath))
+                {
+                    Clipboard.SetText(tile.TargetPath);
+                }
+            }
         }
         catch (Exception ex)
         {
-            Safe.Log(ex, "TileControl: Failed to copy link or note text to clipboard");
+            Safe.Log(ex, "TileControl: Failed to copy tile content to clipboard");
         }
     }
 }

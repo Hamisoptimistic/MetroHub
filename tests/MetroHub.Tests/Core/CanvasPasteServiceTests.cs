@@ -1187,6 +1187,60 @@ public sealed class CanvasPasteServiceTests : IDisposable
         Assert.Empty(store.Shortcuts);
     }
 
+    [Fact]
+    public void TileModel_IsImage_IdentifiesImageTilesCorrectly()
+    {
+        var imageTile = new TileModel
+        {
+            TargetPath = Path.Combine(AppPaths.PastedImagesDir, "img_123.png"),
+            TileType = TileType.App
+        };
+        Assert.True(imageTile.IsImage);
+
+        var externalJpgTile = new TileModel
+        {
+            TargetPath = @"C:\Users\User\Pictures\photo.jpg",
+            TileType = TileType.App
+        };
+        Assert.True(externalJpgTile.IsImage);
+
+        var noteTile = new TileModel
+        {
+            TargetPath = Path.Combine(AppPaths.PastedNotesDir, "note_123.txt"),
+            TileType = TileType.App
+        };
+        Assert.False(noteTile.IsImage);
+
+        var exeTile = new TileModel
+        {
+            TargetPath = @"C:\Program Files\App\app.exe",
+            TileType = TileType.App
+        };
+        Assert.False(exeTile.IsImage);
+
+        var webUrlTile = new TileModel
+        {
+            TargetPath = "https://example.com/logo.png",
+            TileType = TileType.WebUrl
+        };
+        Assert.False(webUrlTile.IsImage);
+
+        var widgetTile = new TileModel
+        {
+            TargetPath = "media",
+            TileType = TileType.Widget
+        };
+        Assert.False(widgetTile.IsImage);
+    }
+
+    [Fact]
+    public void SafeClipboard_TrySetImageFile_HandlesMissingFileGracefully()
+    {
+        Assert.False(SafeClipboard.TrySetImageFile(null!));
+        Assert.False(SafeClipboard.TrySetImageFile(string.Empty));
+        Assert.False(SafeClipboard.TrySetImageFile(@"C:\non_existent_folder_xyz\missing.png"));
+    }
+
     private sealed class FakeSidebarStore : ISidebarShortcutStore
     {
         private readonly List<SidebarShortcutItem> _items = new();

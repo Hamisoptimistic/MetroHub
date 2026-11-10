@@ -15,7 +15,7 @@ Windows desktop live-tile launcher (WPF, `net10.0-windows10.0.19041.0`, SVMs via
 - **Visual Studio (`vs-debug-mcp`):** When Visual Studio is open, use `vs_run_build` and `vs_get_errors` to verify changes. If Visual Studio is closed, use the terminal build command under Commands. Do NOT run `dotnet publish` during edits.
 - **Validation Cycle:** After build succeeds, STOP and report. The user validates manually with `Ctrl + F5`.
 - **Publishing:** Run `dotnet publish` ONLY when the user explicitly requests it.
-- **Code Intelligence (`roslyn-mcp`):** Use Roslyn tools for symbol search, definition lookup, reference finding, and syntax validation.
+- **Code Intelligence (`roslyn-mcp`):** Primary tool for C# exploration. Always use `roslyn_search_symbols`, `roslyn_find_references`, `roslyn_go_to_definition`, and `roslyn_validate_file` first for C# types, methods, properties, and references. Fall back to `git grep` / PowerShell when Roslyn MCP is offline, unresponsive, or fails to find a symbol, as well as for XAML markup, string literals, and non-C# files.
 - **Research:** For unfamiliar WPF or WPF-UI APIs, check official documentation before implementation.
 
 ## Commands

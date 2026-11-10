@@ -113,6 +113,7 @@ public sealed class TileModel : INotifyPropertyChanged
             {
                 OnPropertyChanged(nameof(IsNote));
                 OnPropertyChanged(nameof(IsPastedAsset));
+                OnPropertyChanged(nameof(IsImage));
                 OnPropertyChanged(nameof(ShowStandardIcon));
                 OnPropertyChanged(nameof(HasWebSource));
                 OnPropertyChanged(nameof(WebSourceIconPath));
@@ -151,6 +152,7 @@ public sealed class TileModel : INotifyPropertyChanged
             if (SetField(ref _tileType, value))
             {
                 OnPropertyChanged(nameof(TileContent));
+                OnPropertyChanged(nameof(IsImage));
             }
         }
     }
@@ -312,6 +314,25 @@ public sealed class TileModel : INotifyPropertyChanged
             {
                 return _targetPath.StartsWith(AppPaths.PastedNotesDir, StringComparison.OrdinalIgnoreCase) &&
                        _targetPath.EndsWith(".txt", StringComparison.OrdinalIgnoreCase);
+            }
+            catch
+            {
+                return false;
+            }
+        }
+    }
+
+    [JsonIgnore]
+    public bool IsImage
+    {
+        get
+        {
+            if (TileType == TileType.Widget || TileType == TileType.WebUrl) return false;
+            if (string.IsNullOrWhiteSpace(_targetPath)) return false;
+            try
+            {
+                return IconExtractorService.IsImageFile(_targetPath) ||
+                       (AppPaths.IsPastedAssetPath(_targetPath) && !IsNote);
             }
             catch
             {
