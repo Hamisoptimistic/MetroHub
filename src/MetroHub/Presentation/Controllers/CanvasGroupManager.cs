@@ -94,8 +94,8 @@ public sealed class CanvasGroupManager
         if (grid == null) return;
         var tiles = _tilesProvider();
         var groups = _groupsProvider();
-        double maxTileBottom = (tiles != null && tiles.Any()) ? tiles.Max(t => t.Y + t.HeightPixels) + 120 : 600;
-        double maxGroupBottom = (groups != null && groups.Any()) ? groups.Max(g => g.Y + 120) : 600;
+        double maxTileBottom = (tiles != null && tiles.Count > 0) ? tiles.Max(t => t.Y + t.HeightPixels) + 120 : 600;
+        double maxGroupBottom = (groups != null && groups.Count > 0) ? groups.Max(g => g.Y + 120) : 600;
         double maxBottom = Math.Max(maxTileBottom, maxGroupBottom);
         var sv = _contentScrollViewerProvider();
         double viewportHeight = sv?.ActualHeight > 0 ? sv.ActualHeight : 600;

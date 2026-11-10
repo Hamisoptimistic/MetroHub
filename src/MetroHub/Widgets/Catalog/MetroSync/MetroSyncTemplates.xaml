@@ -27,8 +27,6 @@
                             <DataTrigger Binding="{Binding IsOutgoing}" Value="True">
                                 <Setter Property="HorizontalAlignment" Value="Right" />
                                 <Setter Property="Margin" Value="40,0,0,0" />
-                                <Setter Property="Background" Value="{DynamicResource SurfaceGlassSubtleBrush}" />
-                                <Setter Property="BorderBrush" Value="{DynamicResource SurfaceBorderBrush}" />
                             </DataTrigger>
                         </Style.Triggers>
                     </Style>
@@ -160,8 +158,6 @@
                             <DataTrigger Binding="{Binding IsOutgoing}" Value="True">
                                 <Setter Property="HorizontalAlignment" Value="Right" />
                                 <Setter Property="Margin" Value="40,0,0,0" />
-                                <Setter Property="Background" Value="{DynamicResource SurfaceGlassSubtleBrush}" />
-                                <Setter Property="BorderBrush" Value="{DynamicResource SurfaceBorderBrush}" />
                             </DataTrigger>
                         </Style.Triggers>
                     </Style>
@@ -340,8 +336,6 @@
                             <DataTrigger Binding="{Binding IsOutgoing}" Value="True">
                                 <Setter Property="HorizontalAlignment" Value="Right" />
                                 <Setter Property="Margin" Value="40,0,0,0" />
-                                <Setter Property="Background" Value="{DynamicResource SurfaceGlassSubtleBrush}" />
-                                <Setter Property="BorderBrush" Value="{DynamicResource SurfaceBorderBrush}" />
                             </DataTrigger>
                         </Style.Triggers>
                     </Style>
