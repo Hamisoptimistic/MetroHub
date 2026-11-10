@@ -29,6 +29,7 @@ public sealed class WorkspaceManager : INotifyPropertyChanged
     private bool _isInitialized;
     private readonly object _flushGate = new();
     private Task? _backgroundFlushTask;
+    private long _manifestSaveSeq;
 
     private ObservableCollection<WorkspaceModel> _workspaces = new();
     public ObservableCollection<WorkspaceModel> Workspaces
@@ -421,7 +422,7 @@ public sealed class WorkspaceManager : INotifyPropertyChanged
             }
             else if (args.PropertyName is nameof(WorkspaceModel.ScrollOffset))
             {
-                SaveManifest(sync: false);
+                ScheduleSaveManifestDebounced(250);
             }
         };
 
@@ -491,6 +492,26 @@ public sealed class WorkspaceManager : INotifyPropertyChanged
         }
     }
 
+    public void ScheduleSaveManifestDebounced(int delayMs = 250)
+    {
+        long seq = Interlocked.Increment(ref _manifestSaveSeq);
+        _ = Task.Run(async () =>
+        {
+            try
+            {
+                await Task.Delay(delayMs).ConfigureAwait(false);
+                if (seq == Volatile.Read(ref _manifestSaveSeq))
+                {
+                    SaveManifest(sync: false);
+                }
+            }
+            catch (Exception ex)
+            {
+                Safe.Log("WorkspaceManager.ScheduleSaveManifestDebounced", ex);
+            }
+        });
+    }
+
     public void ScheduleBackgroundFlush()
     {
         lock (_flushGate)
@@ -533,6 +554,8 @@ public sealed class WorkspaceManager : INotifyPropertyChanged
 
     public void FlushSync()
     {
+        Interlocked.Increment(ref _manifestSaveSeq);
+
         foreach (var ws in Workspaces.ToList())
         {
             if (ws.IsDirty)
@@ -548,6 +571,7 @@ public sealed class WorkspaceManager : INotifyPropertyChanged
 
     public void ResetForTesting()
     {
+        Interlocked.Increment(ref _manifestSaveSeq);
         _isInitialized = false;
         Workspaces = new ObservableCollection<WorkspaceModel>();
         _activeWorkspace = null;

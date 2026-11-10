@@ -284,7 +284,6 @@ public sealed partial class TileControl : UserControl, IShaderInputBlocker
             if (IsVisible)
             {
                 RegisterActiveTile(this);
-                ApplyTileStyle(animate: false);
             }
             else
             {
@@ -531,7 +530,23 @@ public sealed partial class TileControl : UserControl, IShaderInputBlocker
         {
             if (string.IsNullOrWhiteSpace(tile.AccentColor))
             {
-                tile.AccentColor = ColorExtractorService.ExtractAccentColor(tile.IconPath);
+                tile.AccentColor = ColorExtractorService.GetFallbackSystemAccentHex();
+                var iconPath = tile.IconPath;
+                if (!string.IsNullOrWhiteSpace(iconPath))
+                {
+                    _ = Task.Run(() =>
+                    {
+                        var hex = ColorExtractorService.ExtractAccentColor(iconPath);
+                        App.Current?.Dispatcher?.InvokeAsync(() =>
+                        {
+                            if (DataContext == tile)
+                            {
+                                tile.AccentColor = hex;
+                                ApplyTileStyle(animate: true);
+                            }
+                        });
+                    });
+                }
             }
             targetColor = ColorExtractorService.GetTintedColor(tile.AccentColor);
         }

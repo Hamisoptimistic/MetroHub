@@ -1208,12 +1208,4 @@ public sealed partial class SidebarRailControl : UserControl, ISidebarShortcutSt
     {
         SettingsRequested?.Invoke(this, EventArgs.Empty);
     }
-
-    private void OnWorkspaceButtonMouseEnter(object sender, MouseEventArgs e)
-    {
-        if (sender is Button btn && btn.Tag is WorkspaceModel ws)
-        {
-            MetroHub.Presentation.Controllers.WorkspaceManager.Instance.RequestPrewarm(ws.Id);
-        }
-    }
 }

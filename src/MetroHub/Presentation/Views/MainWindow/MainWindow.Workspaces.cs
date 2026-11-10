@@ -414,7 +414,6 @@ public sealed partial class MainWindow
     {
         if (!_isTransitionAnimating) return;
         _isTransitionAnimating = false;
-        TileControl.SetRevealSuppressed(false);
         CompositionTarget.Rendering -= OnTransitionRendering;
 
         _transitionTeardownCts?.Cancel();
@@ -489,6 +488,7 @@ public sealed partial class MainWindow
                         InvokeOnAwakened(winnerModel.Tiles);
                     }
                 }
+                TileControl.SetRevealSuppressed(false);
             }, DispatcherPriority.ApplicationIdle);
         }, DispatcherPriority.ContextIdle);
     }

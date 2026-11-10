@@ -34,6 +34,12 @@ public sealed class StorageService
     private static volatile string? _pendingWorkspacesManifestJson;
     private static readonly ConcurrentDictionary<string, string> _pendingWorkspaceLayouts = new();
     private static readonly ConcurrentDictionary<string, string> _pendingWorkspaceGroups = new();
+    private static long s_manifestSaveSeq;
+    private static long s_manifestSaveSeqApplied;
+    private static readonly ConcurrentDictionary<string, long> s_layoutSaveSeqs = new(StringComparer.OrdinalIgnoreCase);
+    private static readonly ConcurrentDictionary<string, long> s_layoutSaveSeqsApplied = new(StringComparer.OrdinalIgnoreCase);
+    private static readonly ConcurrentDictionary<string, long> s_groupSaveSeqs = new(StringComparer.OrdinalIgnoreCase);
+    private static readonly ConcurrentDictionary<string, long> s_groupSaveSeqsApplied = new(StringComparer.OrdinalIgnoreCase);
     private static readonly object _flushGate = new();
     private static Task? _backgroundFlushTask;
 
@@ -1061,16 +1067,34 @@ public sealed class StorageService
 
     public static void SaveWorkspaces(WorkspacesManifest manifest)
     {
-        try
+        if (manifest == null) return;
+        var clone = new WorkspacesManifest
         {
-            string json = JsonSerializer.Serialize(manifest, JsonOptions);
-            _pendingWorkspacesManifestJson = json;
-            ScheduleBackgroundFlush();
-        }
-        catch (Exception ex)
+            ActiveWorkspaceId = manifest.ActiveWorkspaceId,
+            Workspaces = manifest.Workspaces?.ToList() ?? new List<WorkspaceModel>()
+        };
+        long seq = Interlocked.Increment(ref s_manifestSaveSeq);
+
+        _ = Task.Run(() =>
         {
-            System.Diagnostics.Debug.WriteLine($"[StorageService] SaveWorkspaces failed: {ex.Message}");
-        }
+            try
+            {
+                string json = JsonSerializer.Serialize(clone, JsonOptions);
+                lock (WriteLock)
+                {
+                    if (seq >= Volatile.Read(ref s_manifestSaveSeqApplied))
+                    {
+                        s_manifestSaveSeqApplied = seq;
+                        _pendingWorkspacesManifestJson = json;
+                    }
+                }
+                ScheduleBackgroundFlush();
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"[StorageService] SaveWorkspaces failed: {ex.Message}");
+            }
+        });
     }
 
     public static void SaveWorkspacesSync(WorkspacesManifest manifest)
@@ -1145,16 +1169,31 @@ public sealed class StorageService
 
     public static void SaveWorkspaceLayout(string workspaceId, ObservableCollection<TileModel> tiles)
     {
-        try
+        if (string.IsNullOrWhiteSpace(workspaceId) || tiles == null) return;
+        var snapshot = tiles.ToList();
+        long seq = s_layoutSaveSeqs.AddOrUpdate(workspaceId, 1, (_, current) => current + 1);
+
+        _ = Task.Run(() =>
         {
-            string json = JsonSerializer.Serialize(tiles, JsonOptions);
-            _pendingWorkspaceLayouts[workspaceId] = json;
-            ScheduleBackgroundFlush();
-        }
-        catch (Exception ex)
-        {
-            System.Diagnostics.Debug.WriteLine($"[StorageService] SaveWorkspaceLayout failed for '{workspaceId}': {ex.Message}");
-        }
+            try
+            {
+                string json = JsonSerializer.Serialize(snapshot, JsonOptions);
+                lock (WriteLock)
+                {
+                    long applied = s_layoutSaveSeqsApplied.TryGetValue(workspaceId, out var val) ? val : 0;
+                    if (seq >= applied)
+                    {
+                        s_layoutSaveSeqsApplied[workspaceId] = seq;
+                        _pendingWorkspaceLayouts[workspaceId] = json;
+                    }
+                }
+                ScheduleBackgroundFlush();
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"[StorageService] SaveWorkspaceLayout failed for '{workspaceId}': {ex.Message}");
+            }
+        });
     }
 
     public static void SaveWorkspaceLayoutSync(string workspaceId, ObservableCollection<TileModel> tiles)
@@ -1214,16 +1253,31 @@ public sealed class StorageService
 
     public static void SaveWorkspaceGroups(string workspaceId, ObservableCollection<TileGroupModel> groups)
     {
-        try
+        if (string.IsNullOrWhiteSpace(workspaceId) || groups == null) return;
+        var snapshot = groups.ToList();
+        long seq = s_groupSaveSeqs.AddOrUpdate(workspaceId, 1, (_, current) => current + 1);
+
+        _ = Task.Run(() =>
         {
-            string json = JsonSerializer.Serialize(groups, JsonOptions);
-            _pendingWorkspaceGroups[workspaceId] = json;
-            ScheduleBackgroundFlush();
-        }
-        catch (Exception ex)
-        {
-            System.Diagnostics.Debug.WriteLine($"[StorageService] SaveWorkspaceGroups failed for '{workspaceId}': {ex.Message}");
-        }
+            try
+            {
+                string json = JsonSerializer.Serialize(snapshot, JsonOptions);
+                lock (WriteLock)
+                {
+                    long applied = s_groupSaveSeqsApplied.TryGetValue(workspaceId, out var val) ? val : 0;
+                    if (seq >= applied)
+                    {
+                        s_groupSaveSeqsApplied[workspaceId] = seq;
+                        _pendingWorkspaceGroups[workspaceId] = json;
+                    }
+                }
+                ScheduleBackgroundFlush();
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"[StorageService] SaveWorkspaceGroups failed for '{workspaceId}': {ex.Message}");
+            }
+        });
     }
 
     public static void SaveWorkspaceGroupsSync(string workspaceId, ObservableCollection<TileGroupModel> groups)
