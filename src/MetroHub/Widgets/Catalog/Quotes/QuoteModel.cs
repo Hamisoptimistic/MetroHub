@@ -5,7 +5,7 @@ namespace MetroHub.Widgets.Catalog.Quotes;
 /// <summary>
 /// Model representing a single quote entry.
 /// </summary>
-public class QuoteModel
+public sealed class QuoteModel
 {
     [JsonPropertyName("author")]
     public string Author { get; set; } = string.Empty;

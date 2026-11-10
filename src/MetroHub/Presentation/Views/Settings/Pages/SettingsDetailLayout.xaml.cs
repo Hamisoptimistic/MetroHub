@@ -7,7 +7,7 @@ namespace MetroHub.Presentation.Views.Settings.Pages;
 /// Displays the Left Category Rail and the Right Content Viewport.
 /// Pure MVVM data binding with instant, zero-delay category switching.
 /// </summary>
-public partial class SettingsDetailLayout : UserControl
+public sealed partial class SettingsDetailLayout : UserControl
 {
     public SettingsDetailLayout()
     {

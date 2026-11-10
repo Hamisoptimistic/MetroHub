@@ -10,7 +10,7 @@ namespace MetroHub.Widgets.Catalog.Template;
 /// - Dark Obsidian form panel with Title and Close [X] button
 /// - Escape-key dismissal and screen centering
 /// </summary>
-public partial class TemplateDialog : MetroDialog
+public sealed partial class TemplateDialog : MetroDialog
 {
     public string ResultLabel { get; private set; } = string.Empty;
     public bool ResultIsFeatureEnabled { get; private set; }

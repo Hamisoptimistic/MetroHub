@@ -9,7 +9,7 @@ namespace MetroHub.Presentation.Converters;
 /// Converts a hex color string (e.g. #2563EB) into a frozen WPF SolidColorBrush.
 /// Keeps widget ViewModels free of WPF UI/Media dependencies.
 /// </summary>
-public class StringToBrushConverter : IValueConverter
+public sealed class StringToBrushConverter : IValueConverter
 {
     private static readonly BrushConverter _brushConverter = new();
 

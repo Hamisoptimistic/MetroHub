@@ -21,7 +21,7 @@ namespace MetroHub.Widgets.Catalog.Quotes;
 /// Displays a deterministic daily quote with manual shuffle and clipboard copy features.
 /// Supports Google Fonts (Merriweather) and system typefaces with real-time font and style switching.
 /// </summary>
-public partial class QuotesWidgetViewModel : WidgetViewModelBase, IWidgetActionHandler, IWidgetContextMenuProvider
+public sealed partial class QuotesWidgetViewModel : WidgetViewModelBase, IWidgetActionHandler, IWidgetContextMenuProvider
 {
     private readonly List<QuoteModel> _quotes = new();
     private readonly List<int> _history = new();

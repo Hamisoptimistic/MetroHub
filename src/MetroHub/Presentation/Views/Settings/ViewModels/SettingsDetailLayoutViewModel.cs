@@ -9,7 +9,7 @@ namespace MetroHub.Presentation.Views.Settings.ViewModels;
 /// ViewModel for State 2: Two-Pane Detail Layout Shell.
 /// Coordinates the Left 220px Category Rail and the Right Content Viewport.
 /// </summary>
-public partial class SettingsDetailLayoutViewModel : ObservableObject
+public sealed partial class SettingsDetailLayoutViewModel : ObservableObject
 {
     private readonly SettingsShellViewModel _shell;
 

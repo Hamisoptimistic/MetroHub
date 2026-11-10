@@ -18,7 +18,7 @@ namespace MetroHub.Widgets.Catalog.MetroSync;
 /// Token entry, Polling wait, Confirmation, and Manual User ID entry.
 /// </summary>
 [SuppressMessage("Design", "CA1001:Types that own disposable fields should be disposable", Justification = "WPF Window lifecycle manages disposable fields via OnClosed.")]
-public partial class MetroSyncSetupDialog : MetroDialog
+public sealed partial class MetroSyncSetupDialog : MetroDialog
 {
     private enum SetupVisualState
     {

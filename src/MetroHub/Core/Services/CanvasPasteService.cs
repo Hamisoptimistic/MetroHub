@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Security.Cryptography;
@@ -304,7 +305,7 @@ public static class CanvasPasteService
             // Determine display title from first non-empty line
             string firstLine = text.Split(LineSeparators, StringSplitOptions.RemoveEmptyEntries).FirstOrDefault() ?? string.Empty;
             string title = firstLine.Length > 24
-                ? firstLine.Substring(0, 24).Trim() + "..."
+                ? firstLine[..24].Trim() + "..."
                 : firstLine.Trim();
 
             if (string.IsNullOrWhiteSpace(title))
@@ -375,7 +376,7 @@ public static class CanvasPasteService
         int slashIdx = domainCandidate.IndexOf('/');
         if (slashIdx > 0)
         {
-            domainCandidate = domainCandidate.Substring(0, slashIdx);
+            domainCandidate = domainCandidate[..slashIdx];
         }
         // Accept if explicit http/https, starts with www., or looks like a valid hostname with domain suffix
         bool looksLikeDomain = domainCandidate.Contains('.') &&
@@ -390,8 +391,8 @@ public static class CanvasPasteService
             int dotIdx = domainCandidate.LastIndexOf('.');
             if (dotIdx > 0 && dotIdx < domainCandidate.Length - 1)
             {
-                string ext = domainCandidate.Substring(dotIdx + 1);
-                if (int.TryParse(ext, out _) || IsCommonFileExtension(ext))
+                ReadOnlySpan<char> ext = domainCandidate.AsSpan(dotIdx + 1);
+                if (int.TryParse(ext, CultureInfo.InvariantCulture, out _) || IsCommonFileExtension(ext))
                 {
                     return false;
                 }
@@ -439,7 +440,7 @@ public static class CanvasPasteService
                 string trimmed = line.Trim();
                 if (trimmed.StartsWith("URL=", StringComparison.OrdinalIgnoreCase))
                 {
-                    return trimmed.Substring(4).Trim();
+                    return trimmed[4..].Trim();
                 }
             }
         }
@@ -448,6 +449,6 @@ public static class CanvasPasteService
         return urlFilePath;
     }
 
-    private static bool IsCommonFileExtension(string ext) =>
+    private static bool IsCommonFileExtension(ReadOnlySpan<char> ext) =>
         ext is "txt" or "md" or "doc" or "docx" or "pdf" or "log" or "cs" or "cpp" or "h" or "c" or "py" or "java" or "json" or "xml" or "zip" or "tar" or "gz" or "7z" or "rar" or "exe" or "dll" or "bin" or "png" or "jpg" or "jpeg" or "gif" or "bmp" or "svg";
 }

@@ -11,7 +11,7 @@ namespace MetroHub.Widgets.Catalog.Radio;
 /// Implements seamless border-to-border 4-column station grid, top WidgetTiles category strip,
 /// snappy micro-fade transitions on category change, and bottom Fluent audio player bar.
 /// </summary>
-public partial class RadioWidgetView : UserControl
+public sealed partial class RadioWidgetView : UserControl
 {
     private static readonly QuadraticEase FadeEasing = new() { EasingMode = EasingMode.EaseOut };
 

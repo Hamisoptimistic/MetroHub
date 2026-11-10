@@ -1,4 +1,5 @@
 using System;
+using System.Buffers;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net.NetworkInformation;
@@ -18,6 +19,10 @@ public sealed class EthernetProvider
     private EthernetInfo? _cachedActiveInfo;
     private DateTime _lastCacheTimeUtc = DateTime.MinValue;
     private static readonly TimeSpan CacheTtl = TimeSpan.FromSeconds(30);
+    private static readonly SearchValues<string> s_usbTetherDescKeywords = SearchValues.Create([
+        "remote ndis", "rndis", "apple mobile device", "samsung mobile usb",
+        "google usb", "usb ethernet", "tethering"
+    ], StringComparison.OrdinalIgnoreCase);
 
     public EthernetProvider()
     {
@@ -252,16 +257,8 @@ public sealed class EthernetProvider
 
     public static bool IsUsbTetheringInterface(NetworkInterface nic)
     {
-        string desc = nic.Description.ToLowerInvariant();
-        string name = nic.Name.ToLowerInvariant();
-        return desc.Contains("remote ndis") ||
-               desc.Contains("rndis") ||
-               desc.Contains("apple mobile device") ||
-               desc.Contains("samsung mobile usb") ||
-               desc.Contains("google usb") ||
-               desc.Contains("usb ethernet") ||
-               desc.Contains("tethering") ||
-               name.Contains("tether");
+        return nic.Description.AsSpan().ContainsAny(s_usbTetherDescKeywords) ||
+               nic.Name.Contains("tether", StringComparison.OrdinalIgnoreCase);
     }
 
     private static bool IsCandidatePhysicalEthernet(NetworkInterface nic)

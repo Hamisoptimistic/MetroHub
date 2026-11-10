@@ -12,7 +12,7 @@ using System.Windows.Threading;
 
 namespace MetroHub.Widgets.Catalog.Notepad;
 
-public partial class NotepadWidgetView : UserControl
+public sealed partial class NotepadWidgetView : UserControl
 {
     private bool _isSynchronizing;
     private bool _isDocumentDirty;

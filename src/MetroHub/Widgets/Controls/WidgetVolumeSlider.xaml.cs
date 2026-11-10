@@ -8,7 +8,7 @@ using MetroHub.Presentation.Themes;
 
 namespace MetroHub.Presentation.Controls;
 
-public partial class WidgetVolumeSlider : UserControl
+public sealed partial class WidgetVolumeSlider : UserControl
 {
     private static readonly SolidColorBrush DefaultProgressBrush = ThemeTokens.AccentPrimaryBrush;
 

@@ -1,4 +1,5 @@
 using System;
+using System.Buffers;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net.NetworkInformation;
@@ -27,6 +28,16 @@ public sealed class ThroughputService : IDisposable
     private DateTime _prevSampleTime = DateTime.MinValue;
 
     private const int MaxHistorySamples = 30;
+    private static readonly SearchValues<string> s_virtualNicDescKeywords = SearchValues.Create([
+        "virtual", "hyper-v", "vmware", "virtualbox", "tap-", "vpn",
+        "npcap", "wsl", "pseudo", "bluetooth", "loopback", "tailscale",
+        "zerotier", "wireguard", "wan miniport", "miniport", "lightweight filter", "native mac layer",
+        "kernel debug", "packet scheduler", "multiplexor", "teredo", "isatap",
+        "6to4", "tunnel", "pacer"
+    ], StringComparison.OrdinalIgnoreCase);
+    private static readonly SearchValues<string> s_virtualNicNameKeywords = SearchValues.Create([
+        "vethernet", "wsl", "loopback", "wan miniport", "miniport", "vpn"
+    ], StringComparison.OrdinalIgnoreCase);
     private readonly Queue<ThroughputSample> _history = new(MaxHistorySamples);
 
     public event Action<ThroughputMetrics>? ThroughputUpdated;
@@ -431,20 +442,8 @@ public sealed class ThroughputService : IDisposable
         // Always accept USB tethering interfaces from Android / iPhone
         if (EthernetProvider.IsUsbTetheringInterface(nic)) return false;
 
-        string desc = nic.Description.ToLowerInvariant();
-        string name = nic.Name.ToLowerInvariant();
-
-        return desc.Contains("virtual") || desc.Contains("hyper-v") || desc.Contains("vmware") ||
-               desc.Contains("virtualbox") || desc.Contains("tap-") || desc.Contains("vpn") ||
-               desc.Contains("npcap") || desc.Contains("wsl") || desc.Contains("pseudo") ||
-               desc.Contains("bluetooth") || desc.Contains("loopback") || desc.Contains("tailscale") ||
-               desc.Contains("zerotier") || desc.Contains("wireguard") || desc.Contains("wan miniport") ||
-               desc.Contains("miniport") || desc.Contains("lightweight filter") || desc.Contains("native mac layer") ||
-               desc.Contains("kernel debug") || desc.Contains("packet scheduler") ||
-               desc.Contains("multiplexor") || desc.Contains("teredo") || desc.Contains("isatap") ||
-               desc.Contains("6to4") || desc.Contains("tunnel") || desc.Contains("pacer") ||
-               name.Contains("vethernet") || name.Contains("wsl") || name.Contains("loopback") ||
-               name.Contains("wan miniport") || name.Contains("miniport") || name.Contains("vpn");
+        return nic.Description.AsSpan().ContainsAny(s_virtualNicDescKeywords) ||
+               nic.Name.AsSpan().ContainsAny(s_virtualNicNameKeywords);
     }
 
     private static string? GetDefaultGatewayIp()

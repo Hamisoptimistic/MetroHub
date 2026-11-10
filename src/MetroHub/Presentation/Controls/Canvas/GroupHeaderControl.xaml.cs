@@ -13,7 +13,7 @@ using MetroHub.Presentation.Shaders;
 
 namespace MetroHub.Presentation.Controls;
 
-public partial class GroupHeaderControl : UserControl, IShaderInputBlocker
+public sealed partial class GroupHeaderControl : UserControl, IShaderInputBlocker
 {
     private static readonly Brush LockClosedBrush = ThemeTokens.CreateFrozenBrush(Color.FromArgb(0xF0, 0xFF, 0xFF, 0xFF));
     private static readonly Brush LockOpenBrush = ThemeTokens.CreateFrozenBrush(Color.FromArgb(0x90, 0xFF, 0xFF, 0xFF));

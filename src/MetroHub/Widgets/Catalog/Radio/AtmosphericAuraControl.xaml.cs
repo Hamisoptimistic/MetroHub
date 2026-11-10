@@ -15,7 +15,7 @@ namespace MetroHub.Widgets.Catalog.Radio;
 ///   4. Zero White Blobs: 100% saturated pigments across all layers (no milky pastel stops).
 ///   5. Bass-Only Color Switching: The focal color shifts across the spectrum strictly on authentic kick beats.
 /// </summary>
-public partial class AtmosphericAuraControl : UserControl
+public sealed partial class AtmosphericAuraControl : UserControl
 {
     // ==========================================
     // Visual & Audio Physics Tuning Constants

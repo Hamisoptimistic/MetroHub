@@ -20,7 +20,7 @@ using MetroHub.Widgets;
 
 namespace MetroHub.Presentation.Controls;
 
-public partial class TileControl : UserControl, IShaderInputBlocker
+public sealed partial class TileControl : UserControl, IShaderInputBlocker
 {
     public static readonly RoutedEvent TileActivatedEvent = EventManager.RegisterRoutedEvent(
         nameof(TileActivated), RoutingStrategy.Bubble, typeof(RoutedEventHandler), typeof(TileControl));
@@ -1412,7 +1412,7 @@ public partial class TileControl : UserControl, IShaderInputBlocker
     }
 }
 
-public class TileModifiedEventArgs : RoutedEventArgs
+public sealed class TileModifiedEventArgs : RoutedEventArgs
 {
     public TileModel Tile { get; }
     public int OldSpanX { get; }

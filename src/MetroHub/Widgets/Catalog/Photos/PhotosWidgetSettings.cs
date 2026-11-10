@@ -1,6 +1,6 @@
 namespace MetroHub.Widgets.Catalog.Photos;
 
-public class PhotosWidgetSettings
+public sealed class PhotosWidgetSettings
 {
     public string? FolderPath { get; set; }
     public int IntervalSeconds { get; set; } = 30;

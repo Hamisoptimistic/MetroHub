@@ -13,7 +13,7 @@ using MetroHub.Widgets.Serialization;
 
 namespace MetroHub.Widgets.Catalog.AudioControls;
 
-public partial class AudioDeviceItemViewModel : ObservableObject
+public sealed partial class AudioDeviceItemViewModel : ObservableObject
 {
     public string Id { get; init; } = string.Empty;
     public string Name { get; init; } = string.Empty;

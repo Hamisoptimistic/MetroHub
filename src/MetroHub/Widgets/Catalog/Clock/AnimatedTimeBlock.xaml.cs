@@ -11,7 +11,7 @@ namespace MetroHub.Widgets.Catalog.Clock;
 /// Performs hardware-accelerated dual-layer slide-and-crossfade transitions when text changes.
 /// Eliminates harsh number snapping and provides a fluid, luxury timepiece feel.
 /// </summary>
-public partial class AnimatedTimeBlock : UserControl
+public sealed partial class AnimatedTimeBlock : UserControl
 {
     private bool _isLoaded;
 

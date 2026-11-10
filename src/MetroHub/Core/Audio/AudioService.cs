@@ -1,4 +1,5 @@
 using System;
+using System.Buffers;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -298,52 +299,54 @@ public sealed class AudioService : IDisposable
         return devices;
     }
 
+    private static readonly SearchValues<string> s_lineOutKeywords = SearchValues.Create([
+        "virtual", "cable", "vb-audio", "voicemeeter", "wave link", "sonar", "voicemod", "obs",
+        "line in", "line out", "line-in", "line-out", "aux", "auxiliary", "spdif", "optical",
+        "toslink", "focusrite", "scarlett", "motu", "audient", "behringer", "go xlr", "goxlr",
+        "dac", "fiio", "topping", "sound blaster", "realtek digital"
+    ], StringComparison.OrdinalIgnoreCase);
+
+    private static readonly SearchValues<string> s_headphoneKeywords = SearchValues.Create([
+        "headphone", "earphone", "headset", "earbuds", "airpods", "galaxy buds", "pixel buds",
+        "freebuds", "in-ear", "iem", "arctis", "astro", "kraken", "blackshark", "wh-1000",
+        "wf-1000", "bose qc", "quietcomfort", "momentum", "hyperx", "logitech g", "virtuoso", "linkbuds"
+    ], StringComparison.OrdinalIgnoreCase);
+
+    private static readonly SearchValues<string> s_displayKeywords = SearchValues.Create([
+        "tv", "monitor", "display", "hdmi", "displayport", "dp ", "screen", "projector",
+        "television", "amd high definition", "nvidia high definition", "intel(r) display audio",
+        "bravia", "oled", "qled", "ultragear", "odyssey"
+    ], StringComparison.OrdinalIgnoreCase);
+
+    private static readonly SearchValues<string> s_phoneKeywords = SearchValues.Create([
+        "phone", "handset", "cellular", "link to windows"
+    ], StringComparison.OrdinalIgnoreCase);
+
     internal static string ResolveDeviceIconGlyph(string deviceName, string? deviceDesc = null, EndpointFormFactor? formFactor = null)
     {
-        string text = $"{deviceName} {deviceDesc ?? string.Empty}".ToLowerInvariant();
+        ReadOnlySpan<char> nameSpan = deviceName.AsSpan();
+        ReadOnlySpan<char> descSpan = (deviceDesc ?? string.Empty).AsSpan();
 
         // 1. Virtual Audio, Cables, Interfaces, DACs, Line-Out, AUX, Optical / SPDIF
-        if (text.Contains("virtual") || text.Contains("cable") || text.Contains("vb-audio") ||
-            text.Contains("voicemeeter") || text.Contains("wave link") || text.Contains("sonar") ||
-            text.Contains("voicemod") || text.Contains("obs") || text.Contains("line in") ||
-            text.Contains("line out") || text.Contains("line-in") || text.Contains("line-out") ||
-            text.Contains("aux") || text.Contains("auxiliary") || text.Contains("spdif") ||
-            text.Contains("optical") || text.Contains("toslink") || text.Contains("focusrite") ||
-            text.Contains("scarlett") || text.Contains("motu") || text.Contains("audient") ||
-            text.Contains("behringer") || text.Contains("go xlr") || text.Contains("goxlr") ||
-            text.Contains("dac") || text.Contains("fiio") || text.Contains("topping") ||
-            text.Contains("sound blaster") || text.Contains("realtek digital"))
+        if (nameSpan.ContainsAny(s_lineOutKeywords) || descSpan.ContainsAny(s_lineOutKeywords))
         {
             return "\uE7F7"; // Line-Out / Audio Jack connector glyph (identical to Windows 11 Sound flyout)
         }
 
         // 2. Headphones, Earphones, Headsets, IEMs, Buds
-        if (text.Contains("headphone") || text.Contains("earphone") || text.Contains("headset") ||
-            text.Contains("earbuds") || text.Contains("airpods") || text.Contains("galaxy buds") ||
-            text.Contains("pixel buds") || text.Contains("freebuds") || text.Contains("in-ear") ||
-            text.Contains("iem") || text.Contains("arctis") || text.Contains("astro") ||
-            text.Contains("kraken") || text.Contains("blackshark") || text.Contains("wh-1000") ||
-            text.Contains("wf-1000") || text.Contains("bose qc") || text.Contains("quietcomfort") ||
-            text.Contains("momentum") || text.Contains("hyperx") || text.Contains("logitech g") ||
-            text.Contains("virtuoso") || text.Contains("linkbuds"))
+        if (nameSpan.ContainsAny(s_headphoneKeywords) || descSpan.ContainsAny(s_headphoneKeywords))
         {
             return "\uE7F6"; // Headphones glyph
         }
 
         // 3. Monitor, TV, Screen, HDMI, DisplayPort, Projector
-        if (text.Contains("tv") || text.Contains("monitor") || text.Contains("display") ||
-            text.Contains("hdmi") || text.Contains("displayport") || text.Contains("dp ") ||
-            text.Contains("screen") || text.Contains("projector") || text.Contains("television") ||
-            text.Contains("amd high definition") || text.Contains("nvidia high definition") ||
-            text.Contains("intel(r) display audio") || text.Contains("bravia") || text.Contains("oled") ||
-            text.Contains("qled") || text.Contains("ultragear") || text.Contains("odyssey"))
+        if (nameSpan.ContainsAny(s_displayKeywords) || descSpan.ContainsAny(s_displayKeywords))
         {
             return "\uE7F4"; // Screen/TV/Monitor glyph
         }
 
         // 4. Smartphone / Cellular / Handset Link
-        if (text.Contains("phone") || text.Contains("handset") || text.Contains("cellular") ||
-            text.Contains("link to windows"))
+        if (nameSpan.ContainsAny(s_phoneKeywords) || descSpan.ContainsAny(s_phoneKeywords))
         {
             return "\uE717"; // Phone/Handset glyph
         }

@@ -17,7 +17,7 @@ namespace MetroHub.Presentation.Views.Settings;
 /// - DWM Acrylic (DWMSBT_TRANSIENTWINDOW) composition.
 /// - Titlebar drag movement and Esc key dismissal.
 /// </summary>
-public partial class SettingsWindow : BorderlessFluentWindow
+public sealed partial class SettingsWindow : BorderlessFluentWindow
 {
     private IDisposable? _dialogScope;
     private long _shownTimestamp;

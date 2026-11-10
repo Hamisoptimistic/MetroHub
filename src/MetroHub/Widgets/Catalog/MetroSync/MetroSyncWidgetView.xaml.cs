@@ -17,7 +17,7 @@ namespace MetroHub.Widgets.Catalog.MetroSync;
 /// Supports chat feed with auto-hiding scrollbar, bottom docked container,
 /// and bottom-aware auto-scrolling with clean lifecycle teardown.
 /// </summary>
-public partial class MetroSyncWidgetView : UserControl
+public sealed partial class MetroSyncWidgetView : UserControl
 {
     private MetroSyncWidgetViewModel? _viewModel;
     private bool _isSetupDialogOpen;

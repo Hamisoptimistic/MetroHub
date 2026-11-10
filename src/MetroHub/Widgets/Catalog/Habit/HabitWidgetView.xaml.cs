@@ -8,7 +8,7 @@ namespace MetroHub.Widgets.Catalog.Habit;
 /// Interaction logic for HabitWidgetView.xaml.
 /// Handles keyboard shortcuts on day cells and setup input without violating MVVM.
 /// </summary>
-public partial class HabitWidgetView : UserControl
+public sealed partial class HabitWidgetView : UserControl
 {
     public HabitWidgetView()
     {

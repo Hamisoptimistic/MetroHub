@@ -10,7 +10,7 @@ using MetroHub.Core.Services;
 
 namespace MetroHub;
 
-public partial class MainWindow
+public sealed partial class MainWindow
 {
     private DispatcherTimer? _sidebarIntentTimer;
     private DispatcherTimer? _sidebarGraceTimer;

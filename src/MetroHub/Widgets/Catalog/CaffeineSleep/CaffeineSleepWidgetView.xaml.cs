@@ -7,7 +7,7 @@ namespace MetroHub.Widgets.Catalog.CaffeineSleep;
 /// <summary>
 /// Interaction logic for CaffeineSleepWidgetView.xaml
 /// </summary>
-public partial class CaffeineSleepWidgetView : UserControl
+public sealed partial class CaffeineSleepWidgetView : UserControl
 {
     public CaffeineSleepWidgetView()
     {

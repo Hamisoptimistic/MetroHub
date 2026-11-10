@@ -1,4 +1,5 @@
 using System;
+using System.Buffers;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
@@ -15,6 +16,16 @@ public sealed record WindowsInterfaceStatus(string Name, bool IsAdminEnabled, bo
 public sealed partial class DisconnectService
 {
     private static readonly char[] LineSeparators = ['\r', '\n'];
+    private static readonly SearchValues<string> s_virtualNicDescKeywords = SearchValues.Create([
+        "virtual", "hyper-v", "vmware", "virtualbox", "tap-", "vpn",
+        "npcap", "wsl", "pseudo", "bluetooth", "tailscale", "zerotier",
+        "wireguard", "wan miniport", "miniport", "lightweight filter", "native mac layer",
+        "kernel debug", "packet scheduler", "multiplexor", "teredo", "isatap",
+        "6to4", "tunnel", "pacer"
+    ], StringComparison.OrdinalIgnoreCase);
+    private static readonly SearchValues<string> s_virtualNicNameKeywords = SearchValues.Create([
+        "vethernet", "wsl", "loopback", "wan miniport", "miniport", "vpn"
+    ], StringComparison.OrdinalIgnoreCase);
     private static readonly Lazy<DisconnectService> _instance = new(() => new DisconnectService());
     public static DisconnectService Instance => _instance.Value;
 
@@ -360,27 +371,9 @@ public sealed partial class DisconnectService
                 nic.NetworkInterfaceType == NetworkInterfaceType.Tunnel)
                 continue;
 
-            string desc = nic.Description;
-            string name = nic.Name;
-            string descLower = desc.ToLowerInvariant();
-            string nameLower = name.ToLowerInvariant();
-
             // Filter out virtual / miniports
-            if (descLower.Contains("virtual") || descLower.Contains("hyper-v") || descLower.Contains("vmware") ||
-                descLower.Contains("virtualbox") || descLower.Contains("tap-") || descLower.Contains("vpn") ||
-                descLower.Contains("npcap") || descLower.Contains("wsl") || descLower.Contains("pseudo") ||
-                descLower.Contains("bluetooth") || descLower.Contains("tailscale") || descLower.Contains("zerotier") ||
-                descLower.Contains("wireguard") || descLower.Contains("wan miniport") || descLower.Contains("miniport") ||
-                descLower.Contains("lightweight filter") || descLower.Contains("native mac layer") ||
-                descLower.Contains("kernel debug") || descLower.Contains("packet scheduler") ||
-                descLower.Contains("multiplexor") || descLower.Contains("teredo") || descLower.Contains("isatap") ||
-                descLower.Contains("6to4") || descLower.Contains("tunnel") || descLower.Contains("pacer"))
-            {
-                continue;
-            }
-
-            if (nameLower.Contains("vethernet") || nameLower.Contains("wsl") || nameLower.Contains("loopback") ||
-                nameLower.Contains("wan miniport") || nameLower.Contains("miniport") || nameLower.Contains("vpn"))
+            if (nic.Description.AsSpan().ContainsAny(s_virtualNicDescKeywords) ||
+                nic.Name.AsSpan().ContainsAny(s_virtualNicNameKeywords))
             {
                 continue;
             }
@@ -417,7 +410,7 @@ public sealed partial class DisconnectService
             }
             catch { }
 
-            _persistentHardwareCache[name] = (desc, type, mac);
+            _persistentHardwareCache[nic.Name] = (nic.Description, type, mac);
         }
 
         // 2. Iterate netsh interfaces

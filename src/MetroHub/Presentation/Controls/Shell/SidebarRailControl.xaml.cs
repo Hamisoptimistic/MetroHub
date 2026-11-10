@@ -18,7 +18,7 @@ using MetroHub.Presentation.Shaders;
 
 namespace MetroHub.Presentation.Controls;
 
-public partial class SidebarRailControl : UserControl, ISidebarShortcutStore, IShaderInputBlocker
+public sealed partial class SidebarRailControl : UserControl, ISidebarShortcutStore, IShaderInputBlocker
 {
     public event EventHandler? AppsToggleRequested;
     public event EventHandler? ShortcutsChanged;

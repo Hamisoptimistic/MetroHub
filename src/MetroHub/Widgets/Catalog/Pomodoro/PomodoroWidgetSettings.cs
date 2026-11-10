@@ -4,7 +4,7 @@ namespace MetroHub.Widgets.Catalog.Pomodoro;
 /// Persisted configuration payload for the Pomodoro Widget.
 /// Round-trips cleanly through TileModel.SettingsJson.
 /// </summary>
-public class PomodoroWidgetSettings
+public sealed class PomodoroWidgetSettings
 {
     public int FocusMinutes { get; set; } = 25;
     public int ShortBreakMinutes { get; set; } = 5;

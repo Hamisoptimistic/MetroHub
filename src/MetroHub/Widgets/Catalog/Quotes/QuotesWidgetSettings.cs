@@ -24,7 +24,7 @@ public enum QuoteFontStyleChoice
 /// <summary>
 /// Persisted state settings for the Quotes widget.
 /// </summary>
-public class QuotesWidgetSettings
+public sealed class QuotesWidgetSettings
 {
     public int LastYear { get; set; } = -1;
     public int LastDayOfYear { get; set; } = -1;

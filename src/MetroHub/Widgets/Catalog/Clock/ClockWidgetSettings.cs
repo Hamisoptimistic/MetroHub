@@ -12,7 +12,7 @@ public enum ClockFontFace
 /// <summary>
 /// Persisted configuration payload for the Clock Widget.
 /// </summary>
-public class ClockWidgetSettings
+public sealed class ClockWidgetSettings
 {
     public bool Is24HourFormat { get; set; }
     public ClockFontFace FontFace { get; set; }

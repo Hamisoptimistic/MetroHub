@@ -472,14 +472,14 @@ public static class IconExtractorService
         string stripped = path;
         if (stripped.StartsWith("shell:AppsFolder\\", StringComparison.OrdinalIgnoreCase))
         {
-            stripped = stripped.Substring("shell:AppsFolder\\".Length);
+            stripped = stripped["shell:AppsFolder\\".Length..];
         }
 
         foreach (var kvp in KnownFolderMap)
         {
             if (stripped.StartsWith(kvp.Key, StringComparison.OrdinalIgnoreCase))
             {
-                string remainder = stripped.Substring(kvp.Key.Length).TrimStart('\\', '/');
+                string remainder = stripped[kvp.Key.Length..].TrimStart('\\', '/');
                 string resolved = Path.Combine(kvp.Value, remainder);
                 if (File.Exists(resolved) || Directory.Exists(resolved))
                 {
@@ -493,8 +493,7 @@ public static class IconExtractorService
             int endBrace = stripped.IndexOf('}');
             if (endBrace > 0)
             {
-                string guidStr = stripped.Substring(1, endBrace - 1);
-                if (Guid.TryParse(guidStr, out Guid rfid))
+                if (Guid.TryParse(stripped.AsSpan(1, endBrace - 1), out Guid rfid))
                 {
                     int hr = SHGetKnownFolderPath(rfid, 0, IntPtr.Zero, out IntPtr ppszPath);
                     if (hr == 0 && ppszPath != IntPtr.Zero)
@@ -504,7 +503,7 @@ public static class IconExtractorService
                             string? folderPath = Marshal.PtrToStringUni(ppszPath);
                             if (!string.IsNullOrWhiteSpace(folderPath))
                             {
-                                string remainder = stripped.Substring(endBrace + 1).TrimStart('\\', '/');
+                                string remainder = stripped[(endBrace + 1)..].TrimStart('\\', '/');
                                 string resolved = Path.Combine(folderPath, remainder);
                                 if (File.Exists(resolved) || Directory.Exists(resolved))
                                 {

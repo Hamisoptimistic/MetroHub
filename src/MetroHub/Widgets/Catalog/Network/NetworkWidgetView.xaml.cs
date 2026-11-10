@@ -9,7 +9,7 @@ using System.Windows.Threading;
 
 namespace MetroHub.Widgets.Catalog.Network;
 
-public partial class NetworkWidgetView : UserControl
+public sealed partial class NetworkWidgetView : UserControl
 {
     public static readonly DependencyProperty AnimatedVerticalOffsetProperty =
         DependencyProperty.RegisterAttached(

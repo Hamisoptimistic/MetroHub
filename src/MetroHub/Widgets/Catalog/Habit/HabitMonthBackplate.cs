@@ -8,7 +8,7 @@ namespace MetroHub.Widgets.Catalog.Habit;
 /// Renders the active month background as a single, contiguous Direct3D polygon.
 /// Eliminates all internal sub-pixel seams, overlaps, and grid lines between day cells.
 /// </summary>
-public class HabitMonthBackplate : FrameworkElement
+public sealed class HabitMonthBackplate : FrameworkElement
 {
     public static readonly DependencyProperty FirstDayOffsetProperty =
         DependencyProperty.Register(

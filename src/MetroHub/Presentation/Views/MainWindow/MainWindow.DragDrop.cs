@@ -16,7 +16,7 @@ using ContextMenu = System.Windows.Controls.ContextMenu;
 
 namespace MetroHub;
 
-public partial class MainWindow
+public sealed partial class MainWindow
 {
     private bool _isDragRenderHooked;
     private TimeSpan _lastDragRenderTime;

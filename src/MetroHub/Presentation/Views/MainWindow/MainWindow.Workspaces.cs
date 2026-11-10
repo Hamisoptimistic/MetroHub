@@ -21,7 +21,7 @@ using MetroHub.Presentation.Dialogs;
 
 namespace MetroHub;
 
-public partial class MainWindow
+public sealed partial class MainWindow
 {
     private WorkspaceCanvasControl? _activeCanvas;
     private readonly Dictionary<string, WorkspaceCanvasControl> _canvasPool = new(StringComparer.OrdinalIgnoreCase);

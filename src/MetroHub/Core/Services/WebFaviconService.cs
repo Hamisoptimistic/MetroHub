@@ -82,7 +82,7 @@ public static partial class WebFaviconService
             string host = uri.Host.ToLowerInvariant().TrimEnd('.');
             if (host.StartsWith("www.", StringComparison.Ordinal) && host.Length > 4)
             {
-                host = host.Substring(4);
+                host = host[4..];
             }
 
             return uri.AbsoluteUri;
@@ -368,7 +368,7 @@ public static partial class WebFaviconService
         }
 
         // Check for colon separation if preceded by brand (e.g. "Figma: The Collaborative Interface...")
-        if (trimmed.Contains(": ") && !string.IsNullOrWhiteSpace(brand))
+        if (trimmed.Contains(": ", StringComparison.Ordinal) && !string.IsNullOrWhiteSpace(brand))
         {
             var colonParts = trimmed.Split(": ", 2, StringSplitOptions.TrimEntries);
             if (colonParts.Length == 2)

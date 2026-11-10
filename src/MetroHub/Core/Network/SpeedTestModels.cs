@@ -14,7 +14,7 @@ public enum SpeedTestPhase
     Cancelled
 }
 
-public class SpeedTestProgress
+public sealed class SpeedTestProgress
 {
     public SpeedTestPhase Phase { get; init; }
     public double InstantaneousMbps { get; init; }

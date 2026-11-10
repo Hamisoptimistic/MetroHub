@@ -6,7 +6,7 @@ namespace MetroHub.Presentation.Views.Settings.Pages;
 /// Interaction logic for SidebarPage.xaml.
 /// Represents Pillar 4: Sidebar & Apps settings.
 /// </summary>
-public partial class SidebarPage : UserControl
+public sealed partial class SidebarPage : UserControl
 {
     public SidebarPage()
     {

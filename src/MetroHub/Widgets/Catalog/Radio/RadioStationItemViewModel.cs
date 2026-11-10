@@ -1,4 +1,5 @@
 using System;
+using System.Buffers;
 using CommunityToolkit.Mvvm.ComponentModel;
 using MetroHub.Widgets.Catalog.Radio.Services;
 
@@ -36,18 +37,18 @@ public sealed partial class RadioStationItemViewModel : ObservableObject
         return $"{bitrate} kbps • {format}";
     }
 
+    private static readonly SearchValues<string> s_hlsKeywords = SearchValues.Create([".m3u8", "/hls", "chunklist", "playlist"], StringComparison.OrdinalIgnoreCase);
+    private static readonly SearchValues<string> s_aacKeywords = SearchValues.Create([".aac", "aacp", "mp4a", "/aac"], StringComparison.OrdinalIgnoreCase);
+    private static readonly SearchValues<string> s_oggKeywords = SearchValues.Create([".ogg", ".opus"], StringComparison.OrdinalIgnoreCase);
+
     private static string InferStreamFormat(string? url)
     {
         if (string.IsNullOrWhiteSpace(url)) return "MP3";
-        string lower = url.ToLowerInvariant();
-        if (lower.Contains(".m3u8") || lower.Contains("/hls") || lower.Contains("chunklist") || lower.Contains("playlist"))
-            return "HLS";
-        if (lower.Contains(".aac") || lower.Contains("aacp") || lower.Contains("mp4a") || lower.Contains("/aac"))
-            return "AAC";
-        if (lower.Contains(".flac"))
-            return "FLAC";
-        if (lower.Contains(".ogg") || lower.Contains(".opus"))
-            return "OGG";
+        ReadOnlySpan<char> span = url.AsSpan();
+        if (span.ContainsAny(s_hlsKeywords)) return "HLS";
+        if (span.ContainsAny(s_aacKeywords)) return "AAC";
+        if (span.Contains(".flac", StringComparison.OrdinalIgnoreCase)) return "FLAC";
+        if (span.ContainsAny(s_oggKeywords)) return "OGG";
         return "MP3";
     }
 

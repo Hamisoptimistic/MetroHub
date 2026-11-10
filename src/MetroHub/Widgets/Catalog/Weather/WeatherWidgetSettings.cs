@@ -6,7 +6,7 @@ public enum WeatherBackgroundStyle
     None
 }
 
-public class WeatherWidgetSettings
+public sealed class WeatherWidgetSettings
 {
     public bool IsFahrenheit { get; set; }
     public bool IsAutoLocation { get; set; } = true;

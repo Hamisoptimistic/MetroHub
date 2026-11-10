@@ -1,4 +1,5 @@
 using System;
+using System.Buffers;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
@@ -32,6 +33,12 @@ public sealed class SpeedTestService
         };
         HttpClient.DefaultRequestHeaders.UserAgent.ParseAdd("Mozilla/5.0 (Windows NT 10.0; Win64; x64) MetroHub/1.0");
     }
+
+    private static readonly SearchValues<string> s_busyKeywords = SearchValues.Create(["429", "Too Many Requests"], StringComparison.OrdinalIgnoreCase);
+    private static readonly SearchValues<string> s_noInternetKeywords = SearchValues.Create(["No internet", "Network is unreachable", "NameResolutionFailure", "nodename nor servname"], StringComparison.OrdinalIgnoreCase);
+    private static readonly SearchValues<string> s_timeoutKeywords = SearchValues.Create(["timed out", "Timeout"], StringComparison.OrdinalIgnoreCase);
+    private static readonly SearchValues<string> s_serverErrorKeywords = SearchValues.Create(["500", "502", "503", "504"], StringComparison.OrdinalIgnoreCase);
+    private static readonly SearchValues<string> s_refusedKeywords = SearchValues.Create(["actively refused", "Connection refused"], StringComparison.OrdinalIgnoreCase);
 
     private static string? _cachedServerLocation;
     public static string? CachedServerLocation => _cachedServerLocation;
@@ -708,32 +715,29 @@ public sealed class SpeedTestService
             msg += " " + ex.InnerException.Message;
         }
 
-        if (msg.Contains("429") || msg.Contains("Too Many Requests", StringComparison.OrdinalIgnoreCase))
+        ReadOnlySpan<char> msgSpan = msg.AsSpan();
+
+        if (msgSpan.ContainsAny(s_busyKeywords))
         {
             return "Server busy. Try again in a moment.";
         }
 
-        if (msg.Contains("No internet", StringComparison.OrdinalIgnoreCase) ||
-            msg.Contains("Network is unreachable", StringComparison.OrdinalIgnoreCase) ||
-            msg.Contains("NameResolutionFailure", StringComparison.OrdinalIgnoreCase) ||
-            msg.Contains("nodename nor servname", StringComparison.OrdinalIgnoreCase))
+        if (msgSpan.ContainsAny(s_noInternetKeywords))
         {
             return "No internet connection";
         }
 
-        if (msg.Contains("timed out", StringComparison.OrdinalIgnoreCase) ||
-            msg.Contains("Timeout", StringComparison.OrdinalIgnoreCase))
+        if (msgSpan.ContainsAny(s_timeoutKeywords))
         {
             return "Connection timed out";
         }
 
-        if (msg.Contains("500") || msg.Contains("502") || msg.Contains("503") || msg.Contains("504"))
+        if (msgSpan.ContainsAny(s_serverErrorKeywords))
         {
             return "Server error. Try again shortly.";
         }
 
-        if (msg.Contains("actively refused", StringComparison.OrdinalIgnoreCase) ||
-            msg.Contains("Connection refused", StringComparison.OrdinalIgnoreCase))
+        if (msgSpan.ContainsAny(s_refusedKeywords))
         {
             return "Connection refused. Try again.";
         }

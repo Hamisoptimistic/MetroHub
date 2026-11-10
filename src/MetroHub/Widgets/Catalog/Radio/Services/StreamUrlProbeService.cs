@@ -1,4 +1,5 @@
 using System;
+using System.Buffers;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
@@ -33,6 +34,9 @@ public sealed record StreamProbeResult(
 public sealed partial class StreamUrlProbeService : IDisposable
 {
     private static readonly char[] NewlineSeparators = ['\r', '\n'];
+    private static readonly SearchValues<string> s_playlistContentTypeKeywords = SearchValues.Create([
+        "x-scpls", "mpegurl", "vnd.apple.mpegurl", "x-ms-asf", "xspf"
+    ], StringComparison.OrdinalIgnoreCase);
     private static readonly Lazy<StreamUrlProbeService> _lazyInstance = new(() => new StreamUrlProbeService());
     public static StreamUrlProbeService Instance => _lazyInstance.Value;
 
@@ -241,12 +245,7 @@ public sealed partial class StreamUrlProbeService : IDisposable
                                   uri.AbsolutePath.EndsWith(".m3u8", StringComparison.OrdinalIgnoreCase) ||
                                   uri.AbsolutePath.EndsWith(".asx", StringComparison.OrdinalIgnoreCase) ||
                                   uri.AbsolutePath.EndsWith(".xspf", StringComparison.OrdinalIgnoreCase) ||
-                                  (contentType != null && (
-                                      contentType.Contains("x-scpls") ||
-                                      contentType.Contains("mpegurl") ||
-                                      contentType.Contains("vnd.apple.mpegurl") ||
-                                      contentType.Contains("x-ms-asf") ||
-                                      contentType.Contains("xspf")));
+                                  (contentType != null && contentType.AsSpan().ContainsAny(s_playlistContentTypeKeywords));
 
                 if (isPlaylist)
                 {

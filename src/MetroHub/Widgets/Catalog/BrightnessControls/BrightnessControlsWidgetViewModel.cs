@@ -12,7 +12,7 @@ using MetroHub.Widgets.Serialization;
 
 namespace MetroHub.Widgets.Catalog.BrightnessControls;
 
-public partial class MonitorItemViewModel : ObservableObject
+public sealed partial class MonitorItemViewModel : ObservableObject
 {
     private readonly Action<string, int> _onBrightnessChanged;
     private bool _isUpdatingInternally;

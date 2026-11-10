@@ -1,6 +1,6 @@
 namespace MetroHub.Widgets.Catalog.Network;
 
-public class NetworkWidgetSettings
+public sealed class NetworkWidgetSettings
 {
     public string DefaultTab { get; set; } = "Ethernet";
     public bool UseBitsPerSecond { get; set; } = true;

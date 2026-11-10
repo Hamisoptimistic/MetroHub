@@ -6,7 +6,7 @@ using System.Windows.Media;
 
 namespace MetroHub.Widgets.Catalog.Pomodoro;
 
-public partial class PomodoroWidgetView : UserControl
+public sealed partial class PomodoroWidgetView : UserControl
 {
     private PomodoroWidgetViewModel? _vm;
 

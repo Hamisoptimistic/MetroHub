@@ -705,13 +705,13 @@ public sealed class LocalCompanionService : IDisposable, IAsyncDisposable
         string title = pinRequest.Title?.Trim() ?? string.Empty;
         if (title.Length > 256)
         {
-            title = title.Substring(0, 256);
+            title = title[..256];
         }
 
         string note = pinRequest.Note?.Trim() ?? string.Empty;
         if (note.Length > 4096)
         {
-            note = note.Substring(0, 4096);
+            note = note[..4096];
         }
 
         string sanitizedUrl = !string.IsNullOrEmpty(rawUrl) ? SanitizeUrl(rawUrl) : string.Empty;

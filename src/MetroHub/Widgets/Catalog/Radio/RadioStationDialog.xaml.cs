@@ -1,4 +1,5 @@
 using System;
+using System.Buffers;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
@@ -22,7 +23,7 @@ namespace MetroHub.Presentation.Controls;
 /// Dedicated modal dialog for searching and adding online radio stations or direct stream URLs.
 /// </summary>
 [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1001:Types that own disposable fields should be disposable", Justification = "WPF Window lifecycle manages disposable fields via OnDialogClosed.")]
-public partial class RadioStationDialog : MetroDialog
+public sealed partial class RadioStationDialog : MetroDialog
 {
     private RadioStation? _radioStationResult;
     private CancellationTokenSource? _radioSearchCts;
@@ -207,7 +208,7 @@ public partial class RadioStationDialog : MetroDialog
         {
             if (RadioSearchResultsList.SelectedItem != null)
             {
-                ApplyRadioStation();
+                _ = ApplyRadioStationAsync();
                 e.Handled = true;
             }
         }
@@ -330,7 +331,7 @@ public partial class RadioStationDialog : MetroDialog
         {
             if (PrimaryActionButton.IsEnabled)
             {
-                ApplyRadioStation();
+                _ = ApplyRadioStationAsync();
                 e.Handled = true;
             }
         }
@@ -472,7 +473,7 @@ public partial class RadioStationDialog : MetroDialog
         return _initialRadioCategoryId ?? "ambient";
     }
 
-    private async void ApplyRadioStation()
+    private async Task ApplyRadioStationAsync()
     {
         RadioStation? stationToAdd = null;
         string categoryId = GetSelectedCategoryId();
@@ -562,15 +563,19 @@ public partial class RadioStationDialog : MetroDialog
         }
     }
 
+    private static readonly SearchValues<string> s_codecHlsKeywords = SearchValues.Create(["mpegurl", "m3u8"], StringComparison.OrdinalIgnoreCase);
+    private static readonly SearchValues<string> s_codecOggKeywords = SearchValues.Create(["ogg", "opus"], StringComparison.OrdinalIgnoreCase);
+    private static readonly SearchValues<string> s_codecMp3Keywords = SearchValues.Create(["mpeg", "mp3"], StringComparison.OrdinalIgnoreCase);
+
     private static string? InferCodecFromContentType(string? contentType)
     {
         if (string.IsNullOrWhiteSpace(contentType)) return null;
-        string ct = contentType.ToLowerInvariant();
-        if (ct.Contains("mpegurl") || ct.Contains("m3u8")) return "HLS";
-        if (ct.Contains("aac")) return "AAC";
-        if (ct.Contains("ogg") || ct.Contains("opus")) return "OGG";
-        if (ct.Contains("flac")) return "FLAC";
-        if (ct.Contains("mpeg") || ct.Contains("mp3")) return "MP3";
+        ReadOnlySpan<char> ct = contentType.AsSpan();
+        if (ct.ContainsAny(s_codecHlsKeywords)) return "HLS";
+        if (ct.Contains("aac", StringComparison.OrdinalIgnoreCase)) return "AAC";
+        if (ct.ContainsAny(s_codecOggKeywords)) return "OGG";
+        if (ct.Contains("flac", StringComparison.OrdinalIgnoreCase)) return "FLAC";
+        if (ct.ContainsAny(s_codecMp3Keywords)) return "MP3";
         return null;
     }
 
@@ -588,9 +593,9 @@ public partial class RadioStationDialog : MetroDialog
         _radioProbeCts = null;
     }
 
-    private void OnPrimaryActionButtonClick(object sender, RoutedEventArgs e)
+    private async void OnPrimaryActionButtonClick(object sender, RoutedEventArgs e)
     {
-        ApplyRadioStation();
+        await ApplyRadioStationAsync();
     }
 
     private void OnCloseButtonClick(object sender, RoutedEventArgs e)

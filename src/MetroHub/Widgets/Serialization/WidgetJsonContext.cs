@@ -46,6 +46,6 @@ namespace MetroHub.Widgets.Serialization;
 [JsonSerializable(typeof(MetroHub.Widgets.Catalog.MetroSync.Models.TextPayloadItem))]
 [JsonSerializable(typeof(MetroHub.Widgets.Catalog.MetroSync.Models.ImagePayloadItem))]
 [JsonSerializable(typeof(MetroHub.Widgets.Catalog.MetroSync.Models.FilePayloadItem))]
-public partial class WidgetJsonContext : JsonSerializerContext
+public sealed partial class WidgetJsonContext : JsonSerializerContext
 {
 }

@@ -9,7 +9,7 @@ using System.Windows.Controls;
 /// Left-most and right-most tiles touch the panel boundaries (zero outer padding),
 /// ensuring pixel-perfect alignment with surrounding headers and search controls.
 /// </summary>
-public class SpacedUniformGrid : Panel
+public sealed class SpacedUniformGrid : Panel
 {
     public static readonly DependencyProperty ColumnsProperty =
         DependencyProperty.Register(

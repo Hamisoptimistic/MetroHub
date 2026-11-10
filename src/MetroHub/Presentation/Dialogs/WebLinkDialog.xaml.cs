@@ -15,7 +15,7 @@ namespace MetroHub.Presentation.Dialogs;
 /// Inherits from MetroDialog for automatic acrylic backdrop, window dragging, and styling.
 /// </summary>
 [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1001:Types that own disposable fields should be disposable", Justification = "WPF Window lifecycle manages disposable fields via OnClosed.")]
-public partial class WebLinkDialog : MetroDialog
+public sealed partial class WebLinkDialog : MetroDialog
 {
     private CancellationTokenSource? _debounceCts;
     private CancellationTokenSource? _cycleCts;

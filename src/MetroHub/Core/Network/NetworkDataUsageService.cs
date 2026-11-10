@@ -1,4 +1,5 @@
 using System;
+using System.Buffers;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net.NetworkInformation;
@@ -260,13 +261,17 @@ public sealed class NetworkDataUsageService
         return false;
     }
 
+    private static readonly SearchValues<string> s_virtualNicDescKeywords = SearchValues.Create([
+        "virtual", "hyper-v", "vmware", "virtualbox", "tap-", "vpn", "direct", "pseudo"
+    ], StringComparison.OrdinalIgnoreCase);
+
+    private static readonly SearchValues<string> s_virtualNicNameKeywords = SearchValues.Create([
+        "vethernet", "loopback"
+    ], StringComparison.OrdinalIgnoreCase);
+
     private static bool IsVirtualInterface(NetworkInterface nic)
     {
-        string desc = (nic.Description ?? string.Empty).ToLowerInvariant();
-        string name = (nic.Name ?? string.Empty).ToLowerInvariant();
-        return desc.Contains("virtual") || desc.Contains("hyper-v") || desc.Contains("vmware") ||
-               desc.Contains("virtualbox") || desc.Contains("tap-") || desc.Contains("vpn") ||
-               desc.Contains("direct") || desc.Contains("pseudo") ||
-               name.Contains("vethernet") || name.Contains("loopback");
+        return (nic.Description != null && nic.Description.AsSpan().ContainsAny(s_virtualNicDescKeywords)) ||
+               (nic.Name != null && nic.Name.AsSpan().ContainsAny(s_virtualNicNameKeywords));
     }
 }

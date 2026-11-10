@@ -19,7 +19,7 @@ using Wpf.Ui.Controls;
 
 namespace MetroHub.Widgets.Catalog.Network;
 
-public partial class WifiNetworkItemViewModel : ObservableObject
+public sealed partial class WifiNetworkItemViewModel : ObservableObject
 {
     public string Ssid { get; init; } = string.Empty;
 
@@ -140,7 +140,7 @@ public partial class WifiNetworkItemViewModel : ObservableObject
     public string EyeGlyph => IsPasswordVisible ? "\uED1B" : "\uED1A"; // EyeOff / Eye
 }
 
-public partial class PhysicalAdapterItemViewModel : ObservableObject
+public sealed partial class PhysicalAdapterItemViewModel : ObservableObject
 {
     public string Id { get; init; } = string.Empty;
     public string Name { get; init; } = string.Empty;

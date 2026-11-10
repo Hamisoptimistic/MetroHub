@@ -12,7 +12,7 @@ namespace MetroHub.Widgets.Catalog.Network;
 /// Features a semi-circular 180° track, smooth physics-damped needle and glowing progress arc.
 /// Completely free of text clutter to ensure a cohesive, non-overlapping design.
 /// </summary>
-public class SpeedometerArcControl : FrameworkElement
+public sealed class SpeedometerArcControl : FrameworkElement
 {
     public static readonly DependencyProperty SpeedMbpsProperty =
         DependencyProperty.Register(

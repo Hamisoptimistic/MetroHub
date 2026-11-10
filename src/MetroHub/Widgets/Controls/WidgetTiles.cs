@@ -16,7 +16,7 @@ namespace MetroHub.Widgets;
 /// Modular top tile strip for widgets with continuous Fluent border reveal and hardware-accelerated sliding active indicator.
 /// Inherits from <see cref="Selector"/> for seamless two-way MVVM binding (SelectedValue, SelectedItem, SelectedIndex).
 /// </summary>
-public class WidgetTiles : Selector
+public sealed class WidgetTiles : Selector
 {
     public static readonly DependencyProperty IndicatorHeightProperty =
         DependencyProperty.Register(
@@ -401,7 +401,7 @@ public class WidgetTiles : Selector
 /// Displays an icon, header label, and provides its own dynamic <see cref="IndicatorBrush"/>.
 /// Standardized on the 24px Fluent System Icons grid.
 /// </summary>
-public class WidgetTile : ListBoxItem
+public sealed class WidgetTile : ListBoxItem
 {
     public static readonly DependencyProperty ValueProperty =
         DependencyProperty.Register(

@@ -10,7 +10,7 @@ namespace MetroHub.Presentation.Views.Settings.ViewModels;
 /// <summary>
 /// ViewModel for Pillar 1: General (System & Window Behavior).
 /// </summary>
-public partial class GeneralSettingsViewModel : ObservableObject
+public sealed partial class GeneralSettingsViewModel : ObservableObject
 {
     private readonly SettingsService _settingsService;
     private bool _isInitializing;

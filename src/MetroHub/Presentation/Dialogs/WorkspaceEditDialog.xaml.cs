@@ -5,7 +5,7 @@ using System.Windows.Input;
 
 namespace MetroHub.Presentation.Dialogs;
 
-public partial class WorkspaceEditDialog : MetroDialog
+public sealed partial class WorkspaceEditDialog : MetroDialog
 {
     private string _selectedIconSymbol = "Desktop24";
 

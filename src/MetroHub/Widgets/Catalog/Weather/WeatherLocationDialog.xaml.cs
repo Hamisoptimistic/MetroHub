@@ -21,7 +21,7 @@ namespace MetroHub.Presentation.Controls;
 /// Inherits from MetroDialog for automatic acrylic backdrop, window dragging, and styling.
 /// </summary>
 [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1001:Types that own disposable fields should be disposable", Justification = "WPF Window lifecycle manages disposable fields via OnClosed.")]
-public partial class WeatherLocationDialog : MetroDialog
+public sealed partial class WeatherLocationDialog : MetroDialog
 {
     private WeatherWidgetViewModel? _weatherVm;
     private CancellationTokenSource? _searchCts;

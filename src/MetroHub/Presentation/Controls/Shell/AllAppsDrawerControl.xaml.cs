@@ -38,7 +38,7 @@ namespace MetroHub.Presentation.Controls
         public CatalogItemModel App => app;
     }
 
-    public class SearchItemRowViewModel : ObservableObject, IDisposable
+    public sealed class SearchItemRowViewModel : ObservableObject, IDisposable
     {
         public Candidate Candidate { get; }
         public string DisplayName => Candidate.DisplayName;
@@ -274,7 +274,7 @@ namespace MetroHub.Presentation.Controls
     }
 
     [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1001:Types that own disposable fields should be disposable", Justification = "WPF UserControl lifecycle manages disposable fields via Unloaded event.")]
-    public partial class AllAppsDrawerControl : UserControl, IShaderInputBlocker
+    public sealed partial class AllAppsDrawerControl : UserControl, IShaderInputBlocker
     {
         public event EventHandler<CatalogItemModel>? AppPinRequested;
         public event EventHandler<CatalogItemModel>? AppUnpinRequested;

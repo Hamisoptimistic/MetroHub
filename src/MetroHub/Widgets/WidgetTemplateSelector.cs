@@ -10,7 +10,7 @@ namespace MetroHub.Widgets;
 /// Dynamically resolves DataTemplates for widget ViewModels using declarations in WidgetRegistry.
 /// Eliminates the need to declare hardcoded DataTemplates in TileControl.xaml whenever a new widget is added.
 /// </summary>
-public class WidgetTemplateSelector : DataTemplateSelector
+public sealed class WidgetTemplateSelector : DataTemplateSelector
 {
     private static readonly ConcurrentDictionary<Type, DataTemplate> _templateCache = new();
 

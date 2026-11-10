@@ -8,7 +8,7 @@ namespace MetroHub.Presentation.Views.Settings.ViewModels;
 /// <summary>
 /// ViewModel for Pillar 4: Sidebar & Apps (Navigation Rails & Drawer).
 /// </summary>
-public partial class SidebarSettingsViewModel : ObservableObject
+public sealed partial class SidebarSettingsViewModel : ObservableObject
 {
     private readonly SettingsService _settingsService;
     private bool _isInitializing;

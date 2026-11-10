@@ -9,7 +9,7 @@ namespace MetroHub.Widgets.Catalog.Rover;
 /// Implements high-performance zero-GC frame slicing by updating ImageBrush.Viewbox
 /// on every tick of Rover's 100 ms DispatcherTimer.
 /// </summary>
-public partial class RoverWidgetView : UserControl
+public sealed partial class RoverWidgetView : UserControl
 {
     private RoverWidgetViewModel? _currentViewModel;
 

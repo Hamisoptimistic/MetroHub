@@ -5,7 +5,7 @@ namespace MetroHub.Widgets.Catalog.Template;
 /// Demonstrates source-generated JSON serialization round-trip across app restart.
 /// Any properties added here will be automatically serialized to JSON in TileModel.SettingsJson.
 /// </summary>
-public class TemplateWidgetSettings
+public sealed class TemplateWidgetSettings
 {
     public string Label { get; set; } = "Template Widget";
     public string BoxColor { get; set; } = "#2563EB";

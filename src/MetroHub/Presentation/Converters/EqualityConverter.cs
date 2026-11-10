@@ -8,7 +8,7 @@ namespace MetroHub.Presentation.Converters;
 /// Compares multiple bound values for equality.
 /// Enables centralized DataTriggers comparing ViewModel selection properties against control CommandParameters.
 /// </summary>
-public class EqualityConverter : IMultiValueConverter
+public sealed class EqualityConverter : IMultiValueConverter
 {
     public object Convert(object[] values, Type targetType, object parameter, CultureInfo culture)
     {

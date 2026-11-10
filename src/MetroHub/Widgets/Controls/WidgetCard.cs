@@ -8,7 +8,7 @@ namespace MetroHub.Widgets;
 /// Provides consistent dark background, hairline border, uniform corner radius, and internal padding.
 /// Widget authors only supply interior content inside this shell.
 /// </summary>
-public class WidgetCard : ContentControl
+public sealed class WidgetCard : ContentControl
 {
     public static readonly DependencyProperty CornerRadiusProperty =
         DependencyProperty.Register(

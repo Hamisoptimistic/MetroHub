@@ -11,7 +11,7 @@ namespace MetroHub.Presentation.Views.Settings.Pages;
 /// Interaction logic for Settings State 1 (Home Category Grid).
 /// Implements floating category cards with canvas-style hover reveal fill.
 /// </summary>
-public partial class SettingsHomeView : UserControl
+public sealed partial class SettingsHomeView : UserControl
 {
     private static readonly QuadraticEase RevealEasing = new() { EasingMode = EasingMode.EaseOut };
 

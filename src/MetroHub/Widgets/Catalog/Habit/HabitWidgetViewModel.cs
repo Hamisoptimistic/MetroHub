@@ -22,7 +22,7 @@ namespace MetroHub.Widgets.Catalog.Habit;
 /// Manages month navigation, 42-day grid generation, seamless polygon backplate metrics,
 /// streak calculation with grace period, and debounced persistence.
 /// </summary>
-public partial class HabitWidgetViewModel : WidgetViewModelBase, IWidgetContextMenuProvider
+public sealed partial class HabitWidgetViewModel : WidgetViewModelBase, IWidgetContextMenuProvider
 {
     public override IReadOnlyList<WidgetSize> AllowedSizes => new[]
     {

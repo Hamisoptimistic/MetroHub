@@ -10,7 +10,7 @@ namespace MetroHub.Widgets.Catalog.Calendar;
 /// 30 individual cell borders, internal sub-pixel seams, overlaps, and horizontal/vertical
 /// grid lines are completely eliminated.
 /// </summary>
-public class CalendarMonthBackplate : FrameworkElement
+public sealed class CalendarMonthBackplate : FrameworkElement
 {
     public static readonly DependencyProperty FirstDayOffsetProperty =
         DependencyProperty.Register(

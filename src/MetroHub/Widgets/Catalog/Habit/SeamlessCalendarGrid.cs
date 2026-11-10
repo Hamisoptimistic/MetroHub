@@ -10,7 +10,7 @@ namespace MetroHub.Widgets.Catalog.Habit;
 /// Precalculates cumulative integer physical pixel boundaries across rows and columns using device DPI,
 /// mathematically eliminating sub-pixel rasterization gaps and overlaps between adjacent cells.
 /// </summary>
-public class SeamlessCalendarGrid : Panel
+public sealed class SeamlessCalendarGrid : Panel
 {
     public static readonly DependencyProperty RowsProperty =
         DependencyProperty.Register(

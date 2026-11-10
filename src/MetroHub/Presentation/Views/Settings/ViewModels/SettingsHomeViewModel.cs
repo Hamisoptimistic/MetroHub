@@ -18,7 +18,7 @@ public sealed class SettingsCategoryItem
 /// ViewModel for State 1: Settings Home Category Grid.
 /// Exposes the 6 high-level categories and navigation command.
 /// </summary>
-public partial class SettingsHomeViewModel : ObservableObject
+public sealed partial class SettingsHomeViewModel : ObservableObject
 {
     private readonly SettingsShellViewModel? _shell;
 

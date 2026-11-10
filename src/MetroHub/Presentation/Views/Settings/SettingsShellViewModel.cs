@@ -7,7 +7,7 @@ namespace MetroHub.Presentation.Views.Settings;
 /// Shell coordinator ViewModel for MetroHub Settings.
 /// Manages CurrentView navigation between State 1 (Home) and State 2 (Detail).
 /// </summary>
-public partial class SettingsShellViewModel : ObservableObject
+public sealed partial class SettingsShellViewModel : ObservableObject
 {
     [ObservableProperty]
     private object _currentView;

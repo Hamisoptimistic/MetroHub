@@ -276,7 +276,7 @@ public sealed partial class MediaWidgetViewModel : WidgetViewModelBase, IWidgetC
 
         LoadSettings(model.SettingsJson);
 
-        InitializeMediaControllerAsync();
+        _ = InitializeMediaControllerAsync();
     }
 
     private void OnModelPropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
@@ -298,7 +298,7 @@ public sealed partial class MediaWidgetViewModel : WidgetViewModelBase, IWidgetC
         }
     }
 
-    private async void InitializeMediaControllerAsync()
+    private async Task InitializeMediaControllerAsync()
     {
         try
         {
@@ -561,22 +561,22 @@ public sealed partial class MediaWidgetViewModel : WidgetViewModelBase, IWidgetC
         // Strip redundant browser suffixes like " - YouTube"
         if (cleanTitle.EndsWith(" - YouTube", StringComparison.OrdinalIgnoreCase))
         {
-            cleanTitle = cleanTitle.Substring(0, cleanTitle.Length - " - YouTube".Length).Trim();
+            cleanTitle = cleanTitle[..^" - YouTube".Length].Trim();
         }
 
         // Clean YouTube Music "- Topic" suffix from artist name (e.g. "Deftones - Topic" -> "Deftones")
         string rawArtist = cleanArtist;
         if (cleanArtist.EndsWith(" - Topic", StringComparison.OrdinalIgnoreCase))
         {
-            cleanArtist = cleanArtist.Substring(0, cleanArtist.Length - " - Topic".Length).Trim();
+            cleanArtist = cleanArtist[..^" - Topic".Length].Trim();
         }
         else if (cleanArtist.EndsWith("- Topic", StringComparison.OrdinalIgnoreCase))
         {
-            cleanArtist = cleanArtist.Substring(0, cleanArtist.Length - "- Topic".Length).Trim();
+            cleanArtist = cleanArtist[..^"- Topic".Length].Trim();
         }
 
         // If artist is empty but title has " - ", split artist and track name (common on YouTube/browser streams)
-        if (string.IsNullOrWhiteSpace(cleanArtist) && cleanTitle.Contains(" - "))
+        if (string.IsNullOrWhiteSpace(cleanArtist) && cleanTitle.Contains(" - ", StringComparison.Ordinal))
         {
             var parts = cleanTitle.Split(ArtistTrackSeparators, 2, StringSplitOptions.RemoveEmptyEntries);
             if (parts.Length == 2)

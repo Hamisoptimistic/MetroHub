@@ -1,6 +1,6 @@
 namespace MetroHub.Widgets.Catalog.BrightnessControls;
 
-public class BrightnessControlsWidgetSettings
+public sealed class BrightnessControlsWidgetSettings
 {
     public bool IsLinked { get; set; } = true;
     public bool IsNightMode { get; set; }

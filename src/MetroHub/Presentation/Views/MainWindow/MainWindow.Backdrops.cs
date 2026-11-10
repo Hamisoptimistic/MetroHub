@@ -14,7 +14,7 @@ using MetroHub.Presentation.Themes;
 
 namespace MetroHub;
 
-public partial class MainWindow
+public sealed partial class MainWindow
 {
     private BackdropManager? _backdropManager;
     public BackdropManager BackdropManager => _backdropManager ??= new BackdropManager(

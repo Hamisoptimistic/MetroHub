@@ -12,7 +12,7 @@ using MetroHub.Presentation.Views;
 
 namespace MetroHub.Presentation.Dialogs;
 
-public partial class NoteViewerDialog : MetroDialog
+public sealed partial class NoteViewerDialog : MetroDialog
 {
     private static readonly char[] WordSeparators = [' ', '\r', '\n', '\t'];
     private readonly TileModel? _tile;

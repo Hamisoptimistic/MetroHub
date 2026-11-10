@@ -9,7 +9,7 @@ using MenuItem = System.Windows.Controls.MenuItem;
 
 namespace MetroHub;
 
-public partial class MainWindow
+public sealed partial class MainWindow
 {
     private CanvasGroupManager? _canvasGroupManager;
     public CanvasGroupManager CanvasGroupManager => _canvasGroupManager ??= new CanvasGroupManager(

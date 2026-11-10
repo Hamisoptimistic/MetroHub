@@ -1,6 +1,7 @@
 using System;
 using System.Buffers;
 using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
 using System.Windows;
 using System.Windows.Media;
@@ -196,27 +197,24 @@ public static class ColorExtractorService
     {
         if (!string.IsNullOrWhiteSpace(hexColor))
         {
-            try
+            ReadOnlySpan<char> span = hexColor.AsSpan().TrimStart('#');
+            if (span.Length == 6)
             {
-                string cleanHex = hexColor.TrimStart('#');
-                if (cleanHex.Length == 6)
+                if (byte.TryParse(span.Slice(0, 2), NumberStyles.HexNumber, CultureInfo.InvariantCulture, out byte r) &&
+                    byte.TryParse(span.Slice(2, 2), NumberStyles.HexNumber, CultureInfo.InvariantCulture, out byte g) &&
+                    byte.TryParse(span.Slice(4, 2), NumberStyles.HexNumber, CultureInfo.InvariantCulture, out byte b))
                 {
-                    byte r = Convert.ToByte(cleanHex.Substring(0, 2), 16);
-                    byte g = Convert.ToByte(cleanHex.Substring(2, 2), 16);
-                    byte b = Convert.ToByte(cleanHex.Substring(4, 2), 16);
-                    return Color.FromArgb(alpha, r, g, b);
-                }
-                else if (cleanHex.Length == 8)
-                {
-                    byte r = Convert.ToByte(cleanHex.Substring(2, 2), 16);
-                    byte g = Convert.ToByte(cleanHex.Substring(4, 2), 16);
-                    byte b = Convert.ToByte(cleanHex.Substring(6, 2), 16);
                     return Color.FromArgb(alpha, r, g, b);
                 }
             }
-            catch (Exception)
+            else if (span.Length == 8)
             {
-                // Ignored: Fall through to neutral glass fallback for invalid hex formats
+                if (byte.TryParse(span.Slice(2, 2), NumberStyles.HexNumber, CultureInfo.InvariantCulture, out byte r) &&
+                    byte.TryParse(span.Slice(4, 2), NumberStyles.HexNumber, CultureInfo.InvariantCulture, out byte g) &&
+                    byte.TryParse(span.Slice(6, 2), NumberStyles.HexNumber, CultureInfo.InvariantCulture, out byte b))
+                {
+                    return Color.FromArgb(alpha, r, g, b);
+                }
             }
         }
 

@@ -9,7 +9,7 @@ using MetroHub.Widgets.Messaging;
 
 namespace MetroHub.Widgets.Catalog.Photos;
 
-public partial class PhotosWidgetView : UserControl
+public sealed partial class PhotosWidgetView : UserControl
 {
     private PhotosWidgetViewModel? _vm;
     private int _motionProfileIndex;

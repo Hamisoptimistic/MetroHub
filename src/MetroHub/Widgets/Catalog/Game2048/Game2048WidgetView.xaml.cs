@@ -14,7 +14,7 @@ namespace MetroHub.Widgets.Catalog.Game2048;
 /// GPU-accelerated RenderTransform canvas game view with smooth cubic sliding and merge/spawn animations.
 /// Adheres strictly to MetroHub UI, performance, and lifecycle standards.
 /// </summary>
-public partial class Game2048WidgetView : UserControl
+public sealed partial class Game2048WidgetView : UserControl
 {
     private const double BoardPadding = 8.0;
     private const double TileStep = 98.0; // 90px tile + 8px gap

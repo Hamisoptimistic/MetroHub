@@ -12,11 +12,11 @@ namespace MetroHub.Presentation.Messaging;
 // Query Messages (Synchronous Request-Response via WeakReferenceMessenger)
 // ─────────────────────────────────────────────────────────────
 
-public class QuerySelectedTilesMessage : RequestMessage<IReadOnlyList<TileModel>> { }
+public sealed class QuerySelectedTilesMessage : RequestMessage<IReadOnlyList<TileModel>> { }
 
-public class QueryGroupsMessage : RequestMessage<IReadOnlyList<TileGroupModel>> { }
+public sealed class QueryGroupsMessage : RequestMessage<IReadOnlyList<TileGroupModel>> { }
 
-public class QuerySidebarRailMessage : RequestMessage<SidebarRailControl?> { }
+public sealed class QuerySidebarRailMessage : RequestMessage<SidebarRailControl?> { }
 
 // ─────────────────────────────────────────────────────────────
 // Tile Command Messages
@@ -48,7 +48,7 @@ public record ShaderActiveChangedMessage(bool IsActive);
 
 public record GroupFlashLockedMessage(TileGroupModel Group);
 
-public class GroupRenameMessage : RequestMessage<bool>
+public sealed class GroupRenameMessage : RequestMessage<bool>
 {
     public TileGroupModel Group { get; }
     public string NewTitle { get; }
@@ -62,7 +62,7 @@ public class GroupRenameMessage : RequestMessage<bool>
 
 public record GroupStartDragMessage(TileGroupModel Group, MouseEventArgs MouseArgs);
 
-public class GroupToggleLockMessage : RequestMessage<bool>
+public sealed class GroupToggleLockMessage : RequestMessage<bool>
 {
     public TileGroupModel Group { get; }
 

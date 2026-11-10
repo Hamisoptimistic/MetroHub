@@ -3,7 +3,7 @@ using System.Windows.Data;
 
 namespace MetroHub.Presentation.Converters;
 
-public class TileSpanToPixelsConverter : IValueConverter
+public sealed class TileSpanToPixelsConverter : IValueConverter
 {
     // Base unit = 64px step (56px card + 8px gap)
     public int GridStep { get; set; } = 64;

@@ -12,7 +12,7 @@ using MetroHub.Presentation.Themes;
 namespace MetroHub;
 
 [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1001:Types that own disposable fields should be disposable", Justification = "WPF Application lifecycle manages disposable fields via OnExit.")]
-public partial class App : Application
+public sealed partial class App : Application
 {
     public const string AppUserModelId = "MetroHub.Launcher";
     private EventWaitHandle? _wakeEvent;

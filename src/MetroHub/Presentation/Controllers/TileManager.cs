@@ -1403,7 +1403,7 @@ public sealed class TileManager
             await File.WriteAllTextAsync(noteFilePath, request.Note!, Encoding.UTF8, ct).ConfigureAwait(false);
 
             string firstLine = request.Note!.Split(LineSeparators, StringSplitOptions.RemoveEmptyEntries).FirstOrDefault() ?? string.Empty;
-            string snippetTitle = firstLine.Length > 24 ? firstLine.Substring(0, 24).Trim() + "..." : firstLine.Trim();
+            string snippetTitle = firstLine.Length > 24 ? firstLine[..24].Trim() + "..." : firstLine.Trim();
             displayTitle = !string.IsNullOrWhiteSpace(request.Title) && !request.Title.Equals("null", StringComparison.OrdinalIgnoreCase)
                 ? request.Title
                 : (!string.IsNullOrWhiteSpace(snippetTitle) ? snippetTitle : $"Note {DateTime.Now:yyyy-MM-dd HH.mm}");

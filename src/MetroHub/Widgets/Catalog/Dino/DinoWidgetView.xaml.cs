@@ -13,7 +13,7 @@ namespace MetroHub.Widgets.Catalog.Dino;
 /// Vector-rendered Canvas game view updating at monitor refresh rate via ViewModel.FrameTick.
 /// Operates with zero per-frame visual element allocations and instant response.
 /// </summary>
-public partial class DinoWidgetView : UserControl
+public sealed partial class DinoWidgetView : UserControl
 {
     private DinoWidgetViewModel? _viewModel;
     private readonly Path[] _obstaclePaths = new Path[4];

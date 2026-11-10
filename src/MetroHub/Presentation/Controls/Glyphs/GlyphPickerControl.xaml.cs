@@ -12,7 +12,7 @@ namespace MetroHub.Presentation.Controls;
 /// <summary>
 /// Lean, tactile icon picker strip displaying curated standard Fluent vector icons.
 /// </summary>
-public partial class GlyphPickerControl : UserControl
+public sealed partial class GlyphPickerControl : UserControl
 {
     private bool _isUpdatingInternally;
     private readonly List<IconTileItem> _icons =

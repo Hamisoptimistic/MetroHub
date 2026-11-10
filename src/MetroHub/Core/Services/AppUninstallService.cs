@@ -107,8 +107,8 @@ public static class AppUninstallService
             int quoteEnd = cmd.IndexOf('\"', 1);
             if (quoteEnd > 0)
             {
-                fileName = cmd.Substring(1, quoteEnd - 1);
-                args = cmd.Substring(quoteEnd + 1).Trim();
+                fileName = cmd[1..quoteEnd];
+                args = cmd[(quoteEnd + 1)..].Trim();
             }
             else
             {
@@ -120,8 +120,8 @@ public static class AppUninstallService
             int spaceIdx = cmd.IndexOf(' ');
             if (spaceIdx > 0 && !File.Exists(cmd))
             {
-                fileName = cmd.Substring(0, spaceIdx);
-                args = cmd.Substring(spaceIdx + 1).Trim();
+                fileName = cmd[..spaceIdx];
+                args = cmd[(spaceIdx + 1)..].Trim();
             }
             else
             {

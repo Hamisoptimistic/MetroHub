@@ -8,7 +8,7 @@ namespace MetroHub.Widgets.Catalog.Habit;
 /// Lightweight ViewModel representing a single day cell in the monthly habit matrix.
 /// Pure data-driven state with zero UI brush allocations.
 /// </summary>
-public partial class HabitDayViewModel : ObservableObject
+public sealed partial class HabitDayViewModel : ObservableObject
 {
     public DateTime Date { get; }
     public int DateKey { get; }

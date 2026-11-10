@@ -7,7 +7,7 @@ namespace MetroHub.Widgets.Catalog.Calendar;
 /// <summary>
 /// Observable ViewModel representing a single day cell within the 42-day calendar matrix.
 /// </summary>
-public partial class CalendarDayViewModel : ObservableObject
+public sealed partial class CalendarDayViewModel : ObservableObject
 {
     public DateTime Date { get; }
 
