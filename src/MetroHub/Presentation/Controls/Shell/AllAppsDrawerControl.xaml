@@ -401,21 +401,6 @@
     </UserControl.Resources>
 
     <Grid>
-        <!-- Right Edge Soft Drop Shadow: Casts strictly to the right onto canvas tiles, zero shader effect, zero black backbuffer, zero left shadow -->
-        <Border Width="24"
-                HorizontalAlignment="Right"
-                Margin="0,0,-24,0"
-                IsHitTestVisible="False">
-            <Border.Background>
-                <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
-                    <GradientStop Color="#45000000" Offset="0" />
-                    <GradientStop Color="#20000000" Offset="0.35" />
-                    <GradientStop Color="#0A000000" Offset="0.75" />
-                    <GradientStop Color="#00000000" Offset="1" />
-                </LinearGradientBrush>
-            </Border.Background>
-        </Border>
-
         <!-- Main Drawer Container: NO BORDER, Transparent Background allowing Main Window's Acrylic Obsidian to shine through -->
         <Border x:Name="DrawerContainer"
                 Background="Transparent"
