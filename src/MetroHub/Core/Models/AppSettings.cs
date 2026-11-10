@@ -40,6 +40,7 @@ public sealed class AppSettings
     public bool EnableGroupOpenAllButton { get; set; } = true;
     public RecentItemsViewMode RecentViewMode { get; set; } = RecentItemsViewMode.Grid;
     public DrawerDensity DrawerDensity { get; set; } = DrawerDensity.Relaxed;
+    public bool OpenDrawerOnSearchHover { get; set; }
     public SearchSettings Search { get; set; } = new();
 }
 

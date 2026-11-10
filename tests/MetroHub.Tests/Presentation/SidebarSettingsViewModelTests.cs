@@ -17,6 +17,7 @@ public class SidebarSettingsViewModelTests
         Assert.Equal(SettingsService.Instance.Current.ShowAddShortcutButton, vm.ShowAddShortcutButton);
         Assert.Equal(SettingsService.Instance.Current.ShowPowerButton, vm.ShowPowerButton);
         Assert.Equal(SettingsService.Instance.Current.ShowRecentApps, vm.ShowRecentApps);
+        Assert.Equal(SettingsService.Instance.Current.OpenDrawerOnSearchHover, vm.OpenDrawerOnSearchHover);
         Assert.Contains("Grid", vm.RecentLayouts);
         Assert.Contains("List", vm.RecentLayouts);
         Assert.Contains("Relaxed", vm.DrawerDensities);
@@ -33,6 +34,7 @@ public class SidebarSettingsViewModelTests
         bool initialAdd = vm.ShowAddShortcutButton;
         bool initialPower = vm.ShowPowerButton;
         bool initialRecent = vm.ShowRecentApps;
+        bool initialHover = vm.OpenDrawerOnSearchHover;
         string initialLayout = vm.SelectedRecentLayout;
         string initialDensity = vm.SelectedDrawerDensity;
 
@@ -59,6 +61,10 @@ public class SidebarSettingsViewModelTests
             vm.ShowRecentApps = !initialRecent;
             Assert.Equal(!initialRecent, SettingsService.Instance.Current.ShowRecentApps);
 
+            // Toggle Open Drawer On Search Hover
+            vm.OpenDrawerOnSearchHover = !initialHover;
+            Assert.Equal(!initialHover, SettingsService.Instance.Current.OpenDrawerOnSearchHover);
+
             // Change Recent Apps Layout
             vm.SelectedRecentLayout = "List";
             Assert.Equal(RecentItemsViewMode.List, SettingsService.Instance.Current.RecentViewMode);
@@ -80,6 +86,7 @@ public class SidebarSettingsViewModelTests
             vm.ShowAddShortcutButton = initialAdd;
             vm.ShowPowerButton = initialPower;
             vm.ShowRecentApps = initialRecent;
+            vm.OpenDrawerOnSearchHover = initialHover;
             vm.SelectedRecentLayout = initialLayout;
             vm.SelectedDrawerDensity = initialDensity;
         }

@@ -104,6 +104,26 @@
                    Foreground="{DynamicResource TextPrimaryBrush}"
                    Margin="0,16,0,8" />
 
+        <!-- Card: Open on Hover -->
+        <ui:CardControl>
+            <ui:CardControl.Icon>
+                <ui:SymbolIcon Symbol="Search24" FontSize="18" />
+            </ui:CardControl.Icon>
+            <ui:CardControl.Header>
+                <StackPanel>
+                    <TextBlock Text="Open on Hover"
+                               FontSize="{DynamicResource TypeBodyFontSize}"
+                               FontWeight="{DynamicResource TypeBodyStrongFontWeight}"
+                               Foreground="{DynamicResource TextPrimaryBrush}" />
+                    <TextBlock Text="Open the All apps drawer when hovering over the search icon"
+                               FontSize="{DynamicResource TypeCaptionFontSize}"
+                               Foreground="{DynamicResource TextSecondaryBrush}"
+                               Margin="0,2,0,0" />
+                </StackPanel>
+            </ui:CardControl.Header>
+            <ui:ToggleSwitch IsChecked="{Binding OpenDrawerOnSearchHover, Mode=TwoWay}" />
+        </ui:CardControl>
+
         <!-- Card 5: Recent Apps -->
         <ui:CardControl>
             <ui:CardControl.Icon>

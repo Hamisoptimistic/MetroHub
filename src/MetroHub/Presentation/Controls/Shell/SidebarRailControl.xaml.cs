@@ -8,6 +8,7 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
 using System.Windows.Input;
+using System.Windows.Threading;
 using Microsoft.Win32;
 using System.Windows.Media.Animation;
 using MetroHub.Core.Models;
@@ -21,6 +22,7 @@ namespace MetroHub.Presentation.Controls;
 public sealed partial class SidebarRailControl : UserControl, ISidebarShortcutStore, IShaderInputBlocker
 {
     public event EventHandler? AppsToggleRequested;
+    public event EventHandler? AppsOpenRequested;
     public event EventHandler? ShortcutsChanged;
     public event EventHandler<string?>? AddWebLinkRequested;
     public event EventHandler? SettingsRequested;
@@ -31,6 +33,7 @@ public sealed partial class SidebarRailControl : UserControl, ISidebarShortcutSt
     IReadOnlyList<SidebarShortcutItem> ISidebarShortcutStore.Shortcuts => Shortcuts;
 
     private AppSettings? _settings;
+    private DispatcherTimer? _searchHoverTimer;
     private Point _dragStartPoint;
     private SidebarShortcutItem? _draggedItem;
     private bool _isDragging;
@@ -43,6 +46,7 @@ public sealed partial class SidebarRailControl : UserControl, ISidebarShortcutSt
     {
         InitializeComponent();
         ShortcutsItemsControl.ItemsSource = Shortcuts;
+        Unloaded += (s, e) => _searchHoverTimer?.Stop();
         MetroHub.Presentation.Controllers.WorkspaceManager.Instance.WorkspaceChanged += OnWorkspaceChanged;
         InstalledAppsService.AppsCatalogChanged += freshApps =>
         {
@@ -81,6 +85,15 @@ public sealed partial class SidebarRailControl : UserControl, ISidebarShortcutSt
             AddShortcutButton.Visibility = s.ShowAddShortcutButton ? Visibility.Visible : Visibility.Collapsed;
         if (PowerButton != null)
             PowerButton.Visibility = s.ShowPowerButton ? Visibility.Visible : Visibility.Collapsed;
+        UpdateAppsToggleToolTip();
+    }
+
+    private void UpdateAppsToggleToolTip()
+    {
+        if (AppsToggleButton == null) return;
+        var s = _settings ?? SettingsService.Instance.Current;
+        bool shouldShow = s is { OpenDrawerOnSearchHover: false } && AppsToggleButton.Tag is not "Active";
+        ToolTipService.SetIsEnabled(AppsToggleButton, shouldShow);
     }
 
     public void InitializeSettings(AppSettings settings)
@@ -103,12 +116,50 @@ public sealed partial class SidebarRailControl : UserControl, ISidebarShortcutSt
         if (AppsToggleButton != null)
         {
             AppsToggleButton.Tag = isActive ? "Active" : null;
+            UpdateAppsToggleToolTip();
         }
     }
 
     private void OnAppsToggleClick(object sender, RoutedEventArgs e)
     {
+        _searchHoverTimer?.Stop();
+        UpdateAppsToggleToolTip();
         AppsToggleRequested?.Invoke(this, EventArgs.Empty);
+    }
+
+    private void OnAppsToggleMouseEnter(object sender, MouseEventArgs e)
+    {
+        var settings = _settings ?? SettingsService.Instance.Current;
+        if (!settings.OpenDrawerOnSearchHover || AppsToggleButton?.Tag is "Active")
+        {
+            return;
+        }
+
+        UpdateAppsToggleToolTip();
+
+        if (_searchHoverTimer == null)
+        {
+            _searchHoverTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(180) };
+            _searchHoverTimer.Tick += (s, _) =>
+            {
+                _searchHoverTimer.Stop();
+                if (AppsToggleButton != null && AppsToggleButton.IsMouseOver && AppsToggleButton.Tag is not "Active")
+                {
+                    AppsOpenRequested?.Invoke(this, EventArgs.Empty);
+                }
+            };
+        }
+        else
+        {
+            _searchHoverTimer.Stop();
+        }
+
+        _searchHoverTimer.Start();
+    }
+
+    private void OnAppsToggleMouseLeave(object sender, MouseEventArgs e)
+    {
+        _searchHoverTimer?.Stop();
     }
 
     private bool _isWorkspacesFolderExpanded;

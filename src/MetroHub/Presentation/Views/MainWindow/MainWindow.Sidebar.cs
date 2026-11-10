@@ -297,6 +297,15 @@ public sealed partial class MainWindow
         AllAppsDrawer?.Toggle();
     }
 
+    private void OnSidebarAppsOpenRequested(object? sender, EventArgs e)
+    {
+        if (IsDialogOpen) return;
+        if (AllAppsDrawer != null && !AllAppsDrawer.IsOpen)
+        {
+            AllAppsDrawer.Open();
+        }
+    }
+
     private void OnDrawerOpened(object? sender, EventArgs e)
     {
         ShowSidebarRail();

@@ -275,7 +275,9 @@
             <Button x:Name="AppsToggleButton"
                     Style="{StaticResource RailButtonStyle}"
                     ToolTip="All apps and search"
-                    Click="OnAppsToggleClick">
+                    Click="OnAppsToggleClick"
+                    MouseEnter="OnAppsToggleMouseEnter"
+                    MouseLeave="OnAppsToggleMouseLeave">
                 <TextBlock Text="&#xF78B;"
                            FontFamily="{DynamicResource AppIconFontFamily}"
                            FontSize="20"

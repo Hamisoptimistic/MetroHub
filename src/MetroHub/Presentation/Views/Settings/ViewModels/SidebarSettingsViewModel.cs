@@ -39,6 +39,9 @@ public sealed partial class SidebarSettingsViewModel : ObservableObject
 
     public ObservableCollection<string> DrawerDensities { get; } = ["Relaxed", "Compact"];
 
+    [ObservableProperty]
+    private bool _openDrawerOnSearchHover;
+
     public SidebarSettingsViewModel(SettingsService? settingsService = null)
     {
         _settingsService = settingsService ?? SettingsService.Instance;
@@ -54,6 +57,7 @@ public sealed partial class SidebarSettingsViewModel : ObservableObject
             _showRecentApps = current.ShowRecentApps;
             _selectedRecentLayout = current.RecentViewMode == RecentItemsViewMode.List ? "List" : "Grid";
             _selectedDrawerDensity = current.DrawerDensity == DrawerDensity.Compact ? "Compact" : "Relaxed";
+            _openDrawerOnSearchHover = current.OpenDrawerOnSearchHover;
         }
         finally
         {
@@ -112,6 +116,13 @@ public sealed partial class SidebarSettingsViewModel : ObservableObject
         var density = value == "Compact" ? DrawerDensity.Compact : DrawerDensity.Relaxed;
         _settingsService.Current.DrawerDensity = density;
         _settingsService.NotifyChanged(nameof(AppSettings.DrawerDensity));
+    }
+
+    partial void OnOpenDrawerOnSearchHoverChanged(bool value)
+    {
+        if (_isInitializing) return;
+        _settingsService.Current.OpenDrawerOnSearchHover = value;
+        _settingsService.NotifyChanged(nameof(AppSettings.OpenDrawerOnSearchHover));
     }
 }
 
