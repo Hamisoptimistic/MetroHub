@@ -34,6 +34,10 @@ public sealed partial class Game2048WidgetViewModel : WidgetViewModelBase, IWidg
     [ObservableProperty]
     private bool _keepPlaying;
 
+    [ObservableProperty]
+    [NotifyCanExecuteChangedFor(nameof(UndoCommand))]
+    private bool _canUndo;
+
     public Game2048Engine Engine => _engine;
 
     public override IReadOnlyList<WidgetSize> AllowedSizes { get; } = new[]
@@ -70,6 +74,17 @@ public sealed partial class Game2048WidgetViewModel : WidgetViewModelBase, IWidg
         SaveSettings();
     }
 
+    [RelayCommand(CanExecute = nameof(CanUndo))]
+    public void Undo()
+    {
+        if (_engine.Undo())
+        {
+            SyncFromEngine();
+            BoardChanged?.Invoke();
+            SaveSettings();
+        }
+    }
+
     [RelayCommand]
     public void ContinueAfterWin()
     {
@@ -94,6 +109,7 @@ public sealed partial class Game2048WidgetViewModel : WidgetViewModelBase, IWidg
         IsGameOver = _engine.IsGameOver;
         HasWon = _engine.HasWon && !_engine.KeepPlaying;
         KeepPlaying = _engine.KeepPlaying;
+        CanUndo = _engine.CanUndo;
     }
 
     protected override void LoadSettings(string? json)
@@ -121,6 +137,9 @@ public sealed partial class Game2048WidgetViewModel : WidgetViewModelBase, IWidg
 
     public IEnumerable<Control> GetContextMenuItems()
     {
+        var undoItem = WidgetMenu.Item("Undo", SymbolRegular.ArrowUndo24, Undo);
+        undoItem.IsEnabled = CanUndo;
+        yield return undoItem;
         yield return WidgetMenu.Item("New Game", SymbolRegular.ArrowReset24, RestartGame);
         yield return WidgetMenu.Item("Reset Best Score", SymbolRegular.Delete24, ResetHighScore);
     }

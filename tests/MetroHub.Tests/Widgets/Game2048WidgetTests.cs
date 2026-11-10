@@ -181,6 +181,125 @@ public class Game2048WidgetTests
     }
 
     [Fact]
+    public void Engine_Undo_RestoresPreviousBoardAndScore()
+    {
+        var engine = new Game2048Engine();
+        var grid = new List<int>(16)
+        {
+            2, 2, 0, 0,
+            0, 0, 0, 0,
+            0, 0, 0, 0,
+            0, 0, 0, 0
+        };
+
+        engine.LoadState(grid, currentScore: 10, bestScore: 50);
+        Assert.False(engine.CanUndo);
+
+        bool moved = engine.Move(MoveDirection.Left);
+        Assert.True(moved);
+        Assert.True(engine.CanUndo);
+        Assert.Equal(14, engine.Score);
+
+        bool undone = engine.Undo();
+        Assert.True(undone);
+        Assert.False(engine.CanUndo);
+        Assert.Equal(10, engine.Score);
+
+        var restoredGrid = engine.ExportGrid();
+        Assert.Equal(2, restoredGrid[0]);
+        Assert.Equal(2, restoredGrid[1]);
+        Assert.Equal(0, restoredGrid[2]);
+        Assert.Equal(0, restoredGrid[3]);
+    }
+
+    [Fact]
+    public void Engine_Undo_MultiStepWorksCorrectly()
+    {
+        var engine = new Game2048Engine();
+        var initialGrid = engine.ExportGrid();
+        int initialScore = engine.Score;
+
+        int successfulMoves = 0;
+        foreach (var dir in new[] { MoveDirection.Left, MoveDirection.Down, MoveDirection.Right, MoveDirection.Up })
+        {
+            if (engine.Move(dir))
+            {
+                successfulMoves++;
+            }
+        }
+
+        Assert.True(successfulMoves > 0);
+        Assert.Equal(successfulMoves, engine.UndoHistoryCount);
+
+        for (int i = 0; i < successfulMoves; i++)
+        {
+            Assert.True(engine.Undo());
+        }
+
+        Assert.False(engine.CanUndo);
+        Assert.Equal(initialScore, engine.Score);
+        Assert.Equal(initialGrid, engine.ExportGrid());
+    }
+
+    [Fact]
+    public void Engine_Undo_ClearsGameOverState()
+    {
+        var engine = new Game2048Engine();
+        // A board with only 1 empty space at [3, 3] and 2 at [3, 2].
+        // Sliding Right will slide the 2 into [3, 3], leaving 0 moves available.
+        var grid = new List<int>
+        {
+            2, 4, 2, 4,
+            4, 2, 4, 2,
+            2, 4, 2, 4,
+            4, 2, 2, 0
+        };
+
+        engine.LoadState(grid, currentScore: 100, bestScore: 500);
+        Assert.False(engine.IsGameOver);
+
+        bool moved = engine.Move(MoveDirection.Right);
+        Assert.True(moved);
+
+        // If game is over, undoing should revert IsGameOver to false
+        if (engine.IsGameOver)
+        {
+            Assert.True(engine.Undo());
+            Assert.False(engine.IsGameOver);
+        }
+    }
+
+    [Fact]
+    public void ViewModel_UndoCommand_TracksCanUndoAndRestores()
+    {
+        var tile = new TileModel { Id = "test_undo_2048", TargetPath = "game_2048" };
+        using var vm = new Game2048WidgetViewModel(tile);
+
+        vm.Engine.LoadState(new List<int>
+        {
+            2, 2, 0, 0,
+            0, 0, 0, 0,
+            0, 0, 0, 0,
+            0, 0, 0, 0
+        }, currentScore: 0, bestScore: 100);
+
+        Assert.False(vm.CanUndo);
+        Assert.False(vm.UndoCommand.CanExecute(null));
+
+        vm.Move(MoveDirection.Left);
+
+        Assert.True(vm.CanUndo);
+        Assert.True(vm.UndoCommand.CanExecute(null));
+        Assert.Equal(4, vm.Score);
+
+        vm.UndoCommand.Execute(null);
+
+        Assert.False(vm.CanUndo);
+        Assert.False(vm.UndoCommand.CanExecute(null));
+        Assert.Equal(0, vm.Score);
+    }
+
+    [Fact]
     public void View_InstantiatesAndRendersInSta()
     {
         WpfTestHost.RunSta(() =>

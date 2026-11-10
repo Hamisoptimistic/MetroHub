@@ -497,6 +497,10 @@ public sealed partial class Game2048WidgetView : UserControl
             case Key.R:
                 _viewModel.RestartGame();
                 break;
+            case Key.U:
+            case Key.Z:
+                _viewModel.UndoCommand.Execute(null);
+                break;
             default:
                 handled = false;
                 break;

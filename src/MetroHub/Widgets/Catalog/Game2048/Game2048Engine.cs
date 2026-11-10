@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.CompilerServices;
 
 namespace MetroHub.Widgets.Catalog.Game2048;
 
@@ -10,6 +11,42 @@ public enum MoveDirection
     Right,
     Up,
     Down
+}
+
+[InlineArray(GridLength)]
+public struct GridBuffer
+{
+    public const int GridLength = 16;
+    private int _element0;
+}
+
+public readonly struct GameStateSnapshot
+{
+    public GridBuffer Grid { get; }
+    public int Score { get; }
+    public bool HasWon { get; }
+    public bool KeepPlaying { get; }
+
+    public GameStateSnapshot(GridBuffer grid, int score, bool hasWon, bool keepPlaying)
+    {
+        Grid = grid;
+        Score = score;
+        HasWon = hasWon;
+        KeepPlaying = keepPlaying;
+    }
+
+    public static GameStateSnapshot Capture(TilePiece?[,] grid, int score, bool hasWon, bool keepPlaying)
+    {
+        GridBuffer buffer = default;
+        for (int r = 0; r < Game2048Engine.GridSize; r++)
+        {
+            for (int c = 0; c < Game2048Engine.GridSize; c++)
+            {
+                buffer[r * Game2048Engine.GridSize + c] = grid[r, c]?.Value ?? 0;
+            }
+        }
+        return new GameStateSnapshot(buffer, score, hasWon, keepPlaying);
+    }
 }
 
 public sealed class TilePiece
@@ -41,14 +78,20 @@ public sealed class TilePiece
 public sealed class Game2048Engine
 {
     public const int GridSize = 4;
+    public const int MaxUndoHistory = 64;
+
     private readonly TilePiece?[,] _grid = new TilePiece?[GridSize, GridSize];
     private readonly List<TilePiece> _allTiles = new(32);
+    private readonly List<GameStateSnapshot> _undoHistory = new(MaxUndoHistory);
 
     public int Score { get; private set; }
     public int BestScore { get; set; }
     public bool IsGameOver { get; private set; }
     public bool HasWon { get; private set; }
     public bool KeepPlaying { get; set; }
+
+    public bool CanUndo => _undoHistory.Count > 0;
+    public int UndoHistoryCount => _undoHistory.Count;
 
     public IReadOnlyList<TilePiece> Tiles => _allTiles;
 
@@ -59,6 +102,7 @@ public sealed class Game2048Engine
 
     public void Reset()
     {
+        _undoHistory.Clear();
         Array.Clear(_grid, 0, _grid.Length);
         _allTiles.Clear();
         Score = 0;
@@ -80,6 +124,7 @@ public sealed class Game2048Engine
             return;
         }
 
+        _undoHistory.Clear();
         Array.Clear(_grid, 0, _grid.Length);
         _allTiles.Clear();
         Score = currentScore;
@@ -131,6 +176,8 @@ public sealed class Game2048Engine
     {
         if (IsGameOver) return false;
 
+        var snapshot = GameStateSnapshot.Capture(_grid, Score, HasWon, KeepPlaying);
+
         // Clean up previous merged/disposed tiles
         for (int i = _allTiles.Count - 1; i >= 0; i--)
         {
@@ -175,6 +222,12 @@ public sealed class Game2048Engine
 
         if (hasMoved)
         {
+            if (_undoHistory.Count >= MaxUndoHistory)
+            {
+                _undoHistory.RemoveAt(0);
+            }
+            _undoHistory.Add(snapshot);
+
             SpawnTile();
             CheckGameOver();
 
@@ -187,6 +240,38 @@ public sealed class Game2048Engine
         }
 
         return false;
+    }
+
+    public bool Undo()
+    {
+        if (_undoHistory.Count == 0) return false;
+
+        var snapshot = _undoHistory[^1];
+        _undoHistory.RemoveAt(_undoHistory.Count - 1);
+
+        Array.Clear(_grid, 0, _grid.Length);
+        _allTiles.Clear();
+        Score = snapshot.Score;
+        HasWon = snapshot.HasWon;
+        KeepPlaying = snapshot.KeepPlaying;
+        IsGameOver = false;
+
+        for (int r = 0; r < GridSize; r++)
+        {
+            for (int c = 0; c < GridSize; c++)
+            {
+                int val = snapshot.Grid[r * GridSize + c];
+                if (val > 0)
+                {
+                    var piece = new TilePiece(r, c, val, isNew: false);
+                    _grid[r, c] = piece;
+                    _allTiles.Add(piece);
+                }
+            }
+        }
+
+        CheckGameOver();
+        return true;
     }
 
     private bool SlideLine(int startR, int startC, int dr, int dc)
