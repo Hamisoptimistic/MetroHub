@@ -19,7 +19,7 @@
     <widgets:WidgetCard Padding="0" Background="Transparent">
         <Grid x:Name="RootLayout" Background="Transparent" ClipToBounds="True">
             <Grid.RowDefinitions>
-                <!-- Row 0: Top Header (Title + Scores + Micro Reset) -->
+                <!-- Row 0: Top Header (Title + Scores + Action Buttons) -->
                 <RowDefinition Height="50" />
                 <!-- Row 1: Universal 1px Hairline Divider -->
                 <RowDefinition Height="Auto" />
@@ -43,34 +43,42 @@
                            Foreground="{DynamicResource TextPrimaryBrush}"
                            VerticalAlignment="Center" />
 
-                <!-- Center: Score & Best Readouts -->
+                <!-- Center: Score & Best Readouts (Option A: Clean Inline Center-Aligned) -->
                 <StackPanel Grid.Column="0" Grid.ColumnSpan="3"
                             Orientation="Horizontal"
                             HorizontalAlignment="Center"
                             VerticalAlignment="Center">
                     <!-- Score -->
-                    <TextBlock VerticalAlignment="Center">
-                        <Run Text="SCORE "
-                             FontSize="{DynamicResource TypeCaptionFontSize}"
-                             FontWeight="{DynamicResource TypeBodyStrongFontWeight}"
-                             Foreground="{DynamicResource TextMutedBrush}" /><Run Text="{Binding Score}"
-                             FontSize="{DynamicResource TypeHeaderFontSize}"
-                             FontWeight="{DynamicResource TypeSubtitleFontWeight}"
-                             Foreground="{DynamicResource TextPrimaryBrush}"
-                             Typography.NumeralAlignment="Tabular" />
-                    </TextBlock>
+                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                        <TextBlock Text="SCORE"
+                                   FontSize="{DynamicResource TypeHeaderFontSize}"
+                                   FontWeight="{DynamicResource TypeBodyStrongFontWeight}"
+                                   Foreground="{DynamicResource TextMutedBrush}"
+                                   VerticalAlignment="Center"
+                                   Margin="0,0,6,0" />
+                        <TextBlock Text="{Binding Score}"
+                                   FontSize="{DynamicResource TypeHeaderFontSize}"
+                                   FontWeight="{DynamicResource TypeSubtitleFontWeight}"
+                                   Foreground="{DynamicResource TextPrimaryBrush}"
+                                   Typography.NumeralAlignment="Tabular"
+                                   VerticalAlignment="Center" />
+                    </StackPanel>
 
                     <!-- Best -->
-                    <TextBlock VerticalAlignment="Center" Margin="20,0,0,0">
-                        <Run Text="BEST "
-                             FontSize="{DynamicResource TypeCaptionFontSize}"
-                             FontWeight="{DynamicResource TypeBodyStrongFontWeight}"
-                             Foreground="{DynamicResource TextMutedBrush}" /><Run Text="{Binding BestScore}"
-                             FontSize="{DynamicResource TypeHeaderFontSize}"
-                             FontWeight="{DynamicResource TypeSubtitleFontWeight}"
-                             Foreground="{DynamicResource TextPrimaryBrush}"
-                             Typography.NumeralAlignment="Tabular" />
-                    </TextBlock>
+                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="24,0,0,0">
+                        <TextBlock Text="BEST"
+                                   FontSize="{DynamicResource TypeHeaderFontSize}"
+                                   FontWeight="{DynamicResource TypeBodyStrongFontWeight}"
+                                   Foreground="{DynamicResource TextMutedBrush}"
+                                   VerticalAlignment="Center"
+                                   Margin="0,0,6,0" />
+                        <TextBlock Text="{Binding BestScore}"
+                                   FontSize="{DynamicResource TypeHeaderFontSize}"
+                                   FontWeight="{DynamicResource TypeSubtitleFontWeight}"
+                                   Foreground="{DynamicResource TextPrimaryBrush}"
+                                   Typography.NumeralAlignment="Tabular"
+                                   VerticalAlignment="Center" />
+                    </StackPanel>
                 </StackPanel>
 
                 <!-- Right: Action Buttons (Undo + New Game) -->
@@ -84,6 +92,8 @@
                             Margin="0,0,6,0">
                         <ui:SymbolIcon Symbol="ArrowUndo24"
                                        FontSize="14"
+                                       HorizontalAlignment="Center"
+                                       VerticalAlignment="Center"
                                        Foreground="{DynamicResource TextSecondaryBrush}" />
                     </Button>
                     <Button Style="{StaticResource WidgetMicroButtonStyle}"
@@ -92,6 +102,8 @@
                             VerticalAlignment="Center">
                         <ui:SymbolIcon Symbol="ArrowReset24"
                                        FontSize="14"
+                                       HorizontalAlignment="Center"
+                                       VerticalAlignment="Center"
                                        Foreground="{DynamicResource TextSecondaryBrush}" />
                     </Button>
                 </StackPanel>
