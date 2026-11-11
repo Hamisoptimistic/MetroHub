@@ -56,7 +56,6 @@ docs/ARCHITECTURE_SIMPLE_FLOW.html
 tools/arch-map/
 tools/pocket-conduit/
 docs/arch-map/
-.editorconfig
 docs/
 
 # Extension release archives & store upload assets

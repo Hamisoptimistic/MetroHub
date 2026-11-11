@@ -1,0 +1,48 @@
+root = true
+
+[*.cs]
+# -------------------------------------------------------------
+# Suppress High-Risk, Signature-Breaking, and Pure Noise Rules
+# -------------------------------------------------------------
+# Breaks public Action<T> subscriptions across solution
+dotnet_diagnostic.MA0046.severity = none
+
+# Breaks WPF XAML ObservableCollection/List data bindings
+dotnet_diagnostic.MA0016.severity = none
+
+# Breaks regex unnamed capture groups and lookaheads
+dotnet_diagnostic.MA0009.severity = none
+
+# Unnecessary struct layout noise for managed structs
+dotnet_diagnostic.MA0008.severity = none
+
+# Dangerous in desktop WPF UI thread context
+dotnet_diagnostic.MA0004.severity = none
+
+# Arbitrary 60-line method length limit
+dotnet_diagnostic.MA0051.severity = none
+
+# File name must match type name (prevents grouping small records/enums)
+dotnet_diagnostic.MA0048.severity = none
+
+# -------------------------------------------------------------
+# Genuine Defect, Bug Risk, and Performance Rules (Enforced)
+# -------------------------------------------------------------
+dotnet_diagnostic.MA0055.severity = warning
+dotnet_diagnostic.MA0134.severity = warning
+dotnet_diagnostic.RCS1075.severity = warning
+dotnet_diagnostic.MA0011.severity = warning
+dotnet_diagnostic.MA0025.severity = warning
+# Stylistic string equality set to suggestion (keeps clean == operators)
+dotnet_diagnostic.MA0006.severity = suggestion
+dotnet_diagnostic.MA0002.severity = warning
+dotnet_diagnostic.MA0023.severity = warning
+dotnet_diagnostic.CA1822.severity = warning
+dotnet_diagnostic.MA0015.severity = warning
+dotnet_diagnostic.MA0021.severity = warning
+dotnet_diagnostic.MA0099.severity = warning
+dotnet_diagnostic.MA0140.severity = warning
+dotnet_diagnostic.MA0147.severity = warning
+dotnet_diagnostic.MA0158.severity = warning
+dotnet_diagnostic.MA0169.severity = warning
+dotnet_diagnostic.CA1725.severity = warning
