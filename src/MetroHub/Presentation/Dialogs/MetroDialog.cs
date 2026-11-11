@@ -159,7 +159,7 @@ public class MetroDialog : BorderlessFluentWindow
 
     private void OnMetroDialogLoaded(object sender, RoutedEventArgs e)
     {
-        Dispatcher.InvokeAsync(() =>
+        _ = Dispatcher.InvokeAsync(() =>
         {
             if (IsDismissing) return;
             var target = InitialFocusedElement ?? FindFirstFocusableInput(this);
@@ -257,7 +257,7 @@ public class MetroDialog : BorderlessFluentWindow
         base.OnDeactivated(e);
         if (EnableLightDismiss && Environment.TickCount64 - _shownTimestamp >= 200 && !IsDismissing && !_isClosing && IsLoaded)
         {
-            Dispatcher.InvokeAsync(() =>
+            _ = Dispatcher.InvokeAsync(() =>
             {
                 if (!IsDismissing && !_isClosing && IsLoaded)
                 {
@@ -381,7 +381,7 @@ public class MetroDialog : BorderlessFluentWindow
                         bool isInside = x >= rect.Left && x <= rect.Right && y >= rect.Top && y <= rect.Bottom;
                         if (!isInside)
                         {
-                            Dispatcher.InvokeAsync(DismissDialog);
+                            _ = Dispatcher.InvokeAsync(DismissDialog);
                         }
                     }
                 }

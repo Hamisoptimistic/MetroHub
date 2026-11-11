@@ -378,7 +378,7 @@ public static class PastedAssetCleanupService
             if (File.Exists(timestampPath))
             {
                 string raw = File.ReadAllText(timestampPath).Trim();
-                if (long.TryParse(raw, out long binaryVal))
+                if (long.TryParse(raw, CultureInfo.InvariantCulture, out long binaryVal))
                 {
                     var lastRun = DateTime.FromBinary(binaryVal);
                     if (DateTime.UtcNow - lastRun < interval)

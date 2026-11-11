@@ -42,8 +42,8 @@ public sealed class EverythingSearchSource : ISearchSource, IDisposable
 
     private readonly IEverythingClient? _client;
     private readonly int _maxResults;
-    private readonly object _stateLock = new();
-    private readonly object _queueLock = new();
+    private readonly Lock _stateLock = new();
+    private readonly Lock _queueLock = new();
     private readonly AutoResetEvent _workSignal = new(false);
     private readonly Thread _workerThread;
 

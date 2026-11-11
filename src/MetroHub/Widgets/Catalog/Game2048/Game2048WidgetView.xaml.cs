@@ -354,7 +354,7 @@ public sealed partial class Game2048WidgetView : UserControl
 
     private static readonly SolidColorBrush FgLight = FreezeBrush("#FFFFFFFF");
     private static readonly Dictionary<int, SolidColorBrush> s_glassBrushCache = new();
-    private static readonly object s_brushLock = new();
+    private static readonly Lock s_brushLock = new();
 
     private static SolidColorBrush FreezeBrush(string hex)
     {

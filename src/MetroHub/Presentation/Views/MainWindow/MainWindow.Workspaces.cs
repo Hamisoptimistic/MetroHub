@@ -122,7 +122,7 @@ public sealed partial class MainWindow
         }
     }
 
-    private void PrewarmCanvasCache(WorkspaceCanvasControl canvas)
+    private static void PrewarmCanvasCache(WorkspaceCanvasControl canvas)
     {
         if (canvas.CacheMode != null) return;
         canvas.CacheMode = new BitmapCache
@@ -429,7 +429,7 @@ public sealed partial class MainWindow
 
         // Phase 2: Defer visual tree cleanup and layout updates to ContextIdle
         // so the final resting frame presents in <0.5 ms without UI thread freezes.
-        Dispatcher.InvokeAsync(async () =>
+        _ = Dispatcher.InvokeAsync(async () =>
         {
             if (token.IsCancellationRequested) return;
 

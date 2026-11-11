@@ -181,7 +181,7 @@ public sealed class TelegramHttpTransport : ITelegramTransport
     {
         ArgumentOutOfRangeException.ThrowIfZero(chatId);
         ArgumentException.ThrowIfNullOrWhiteSpace(text);
-        ArgumentOutOfRangeException.ThrowIfGreaterThan(text.Length, 4096);
+        ArgumentOutOfRangeException.ThrowIfGreaterThan(text.Length, 4096, nameof(text));
 
         var url = $"{_apiRoot}sendMessage";
         var payload = new { chat_id = chatId, text };

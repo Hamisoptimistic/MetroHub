@@ -30,7 +30,7 @@ public sealed record ProcessSnapshotEntry(int Pid, string ProcessName, DateTime 
 /// </summary>
 public static class RunningSnapshot
 {
-    private static readonly object _lock = new();
+    private static readonly Lock _lock = new();
     private static long _lastWindowScanTicks;
     private static long _lastProcessScanTicks;
     private static List<WindowSnapshotEntry> _cachedWindows = new();

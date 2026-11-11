@@ -263,7 +263,7 @@ public sealed class WidgetTiles : Selector
     private void OnLoaded(object sender, RoutedEventArgs e)
     {
         SyncSelectionFromValue(SelectedValue);
-        Dispatcher.InvokeAsync(() => UpdateIndicator(animate: false), DispatcherPriority.Loaded);
+        _ = Dispatcher.InvokeAsync(() => UpdateIndicator(animate: false), DispatcherPriority.Loaded);
     }
 
     private void OnTilesMouseMove(object sender, MouseEventArgs e)
@@ -331,7 +331,7 @@ public sealed class WidgetTiles : Selector
             }
             else
             {
-                Dispatcher.InvokeAsync(() => UpdateIndicator(false), DispatcherPriority.Loaded);
+                _ = Dispatcher.InvokeAsync(() => UpdateIndicator(false), DispatcherPriority.Loaded);
                 return;
             }
         }

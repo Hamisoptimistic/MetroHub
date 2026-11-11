@@ -133,7 +133,7 @@ public sealed partial class MetroSyncWidgetView : UserControl
 
             if (isNearBottom || hasOutgoing)
             {
-                Dispatcher.InvokeAsync(() =>
+                _ = Dispatcher.InvokeAsync(() =>
                 {
                     FeedScrollViewer?.ScrollToBottom();
                 }, DispatcherPriority.Loaded);

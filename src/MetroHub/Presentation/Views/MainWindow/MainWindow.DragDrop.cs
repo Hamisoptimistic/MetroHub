@@ -1159,7 +1159,7 @@ public sealed partial class MainWindow
                     {
                         if (!isWidget && !isNote)
                         {
-                            Dispatcher.InvokeAsync(async () =>
+                            _ = Dispatcher.InvokeAsync(async () =>
                             {
                                 await Task.Delay(500);
                                 _isLaunchingTile = false;
@@ -1201,7 +1201,7 @@ public sealed partial class MainWindow
             var snap = LayoutHistoryService.ParseSnapshot(_preDragLayoutSnapshot);
             if (snap != null)
             {
-                var dict = snap.Tiles.ToDictionary(t => t.Id);
+                var dict = snap.Tiles.ToDictionary(t => t.Id, StringComparer.Ordinal);
                 foreach (var t in Tiles)
                 {
                     if (dict.TryGetValue(t.Id, out var orig))
@@ -1225,7 +1225,7 @@ public sealed partial class MainWindow
 
                 if (snap.Groups != null && snap.Groups.Count > 0)
                 {
-                    var gDict = snap.Groups.ToDictionary(g => g.Id);
+                    var gDict = snap.Groups.ToDictionary(g => g.Id, StringComparer.Ordinal);
                     foreach (var g in Groups)
                     {
                         if (gDict.TryGetValue(g.Id, out var origG))

@@ -352,7 +352,7 @@ public sealed partial class HabitWidgetViewModel : WidgetViewModelBase, IWidgetC
         var dispatcher = Application.Current?.Dispatcher;
         if (dispatcher != null && !dispatcher.CheckAccess())
         {
-            dispatcher.InvokeAsync(ApplyDateRollover);
+            _ = dispatcher.InvokeAsync(ApplyDateRollover);
         }
         else
         {

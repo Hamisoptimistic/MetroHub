@@ -12,7 +12,7 @@ namespace MetroHub.Core.Services.Catalog;
 public static class CatalogService
 {
     private static readonly List<ICatalogProvider> _providers = new();
-    private static readonly object _lock = new();
+    private static readonly Lock _lock = new();
 
     static CatalogService()
     {

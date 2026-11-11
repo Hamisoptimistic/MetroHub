@@ -100,8 +100,8 @@ public sealed class UniversalSearchUiTests
     [Fact]
     public void IconExtractorService_ExtensionFlyweightCache_ReusesExactSameInstance()
     {
-        var icon1 = IconExtractorService.GetFileOrExtensionIcon(@"C:\test1.docx", isFolder: false);
-        var icon2 = IconExtractorService.GetFileOrExtensionIcon(@"D:\path\test2.docx", isFolder: false);
+        var icon1 = IconExtractorService.GetFileOrExtensionIcon(@"C:\test1.txt", isFolder: false);
+        var icon2 = IconExtractorService.GetFileOrExtensionIcon(@"D:\path\test2.txt", isFolder: false);
 
         Assert.NotNull(icon1);
         Assert.NotNull(icon2);

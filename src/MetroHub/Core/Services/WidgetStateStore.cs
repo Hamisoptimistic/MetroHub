@@ -49,7 +49,7 @@ public sealed class WidgetStateStore : IWidgetStateStore
     /// <summary>Process-wide default instance (plain file IO, no UI dependencies).</summary>
     public static WidgetStateStore Default { get; } = new();
 
-    private static readonly object Gate = new();
+    private static readonly Lock Gate = new();
     private static readonly Encoding Utf8NoBom = new UTF8Encoding(encoderShouldEmitUTF8Identifier: false);
 
     private readonly string? _customRootDir;
@@ -138,7 +138,7 @@ public sealed class WidgetStateStore : IWidgetStateStore
             foreach (string file in Directory.EnumerateFiles(dir, "*.json"))
             {
                 string stem = Path.GetFileNameWithoutExtension(file);
-                if (knownTileIds.Contains(stem)) continue;
+                if (knownTileIds.Contains(stem, StringComparer.OrdinalIgnoreCase)) continue;
                 Delete(widgetId, stem);
             }
 

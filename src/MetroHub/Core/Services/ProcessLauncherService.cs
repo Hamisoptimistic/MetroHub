@@ -14,7 +14,7 @@ namespace MetroHub.Core.Services;
 /// </summary>
 public static class ProcessLauncherService
 {
-    private static readonly object _launchLock = new();
+    private static readonly Lock _launchLock = new();
     private static string? _lastLaunchKey;
     private static DateTime _lastLaunchTime = DateTime.MinValue;
 

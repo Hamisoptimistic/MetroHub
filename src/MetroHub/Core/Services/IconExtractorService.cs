@@ -363,17 +363,27 @@ public static class IconExtractorService
                     }
                 }));
 
-                task.ContinueWith(t =>
+                _ = task.ContinueWith(t =>
                 {
-                    if (t.IsCompletedSuccessfully && t.Result is { } peIcon)
+                    try
                     {
-                        AddToPerFileCache(fullPath, peIcon);
-                        if (!cancellationToken.IsCancellationRequested)
+                        if (t.IsCompletedSuccessfully && t.Result is { } peIcon)
                         {
-                            onAsyncIconLoaded(peIcon);
+                            AddToPerFileCache(fullPath, peIcon);
+                            if (!cancellationToken.IsCancellationRequested)
+                            {
+                                onAsyncIconLoaded(peIcon);
+                            }
                         }
                     }
-                    _inFlightTasks.TryRemove(new System.Collections.Generic.KeyValuePair<string, Task<BitmapSource?>>(fullPath, task));
+                    catch (Exception ex)
+                    {
+                        Safe.Log("IconExtractorService.ContinueWith", ex);
+                    }
+                    finally
+                    {
+                        _inFlightTasks.TryRemove(new System.Collections.Generic.KeyValuePair<string, Task<BitmapSource?>>(fullPath, task));
+                    }
                 }, TaskScheduler.Default);
             }
 
@@ -635,7 +645,7 @@ public static class IconExtractorService
             else
             {
                 // Background sweep: Purge orphaned legacy v1-v4 cache files from earlier versions
-                Task.Run(() =>
+                _ = Task.Run(() =>
                 {
                     try
                     {
@@ -652,7 +662,10 @@ public static class IconExtractorService
                             try { f.Delete(); } catch { }
                         }
                     }
-                    catch { }
+                    catch (Exception ex)
+                    {
+                        Safe.Log("IconExtractorService.CacheSweep", ex);
+                    }
                 });
             }
         }

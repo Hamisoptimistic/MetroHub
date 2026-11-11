@@ -106,7 +106,7 @@ public sealed class CatalogItemModel : INotifyPropertyChanged
     public static void PrewarmMemoryCache(IEnumerable<CatalogItemModel> items, int maxItems = 24)
     {
         if (items == null) return;
-        Task.Run(() =>
+        _ = Task.Run(() =>
         {
             var itemList = items.Where(i => !string.IsNullOrWhiteSpace(i.TargetPath)).Take(maxItems).ToList();
             if (itemList.Count == 0) return;
@@ -122,7 +122,7 @@ public sealed class CatalogItemModel : INotifyPropertyChanged
                         if (item._icon != memImg)
                         {
                             item._icon = memImg;
-                            App.Current?.Dispatcher?.InvokeAsync(() => item.OnPropertyChanged(nameof(Icon)),
+                            _ = App.Current?.Dispatcher?.InvokeAsync(() => item.OnPropertyChanged(nameof(Icon)),
                                 System.Windows.Threading.DispatcherPriority.Background);
                         }
                         return;
@@ -148,12 +148,15 @@ public sealed class CatalogItemModel : INotifyPropertyChanged
                         if (img != null && item._icon != img)
                         {
                             item._icon = img;
-                            App.Current?.Dispatcher?.InvokeAsync(() => item.OnPropertyChanged(nameof(Icon)),
+                            _ = App.Current?.Dispatcher?.InvokeAsync(() => item.OnPropertyChanged(nameof(Icon)),
                                 System.Windows.Threading.DispatcherPriority.Background);
                         }
                     }
                 }
-                catch { }
+                catch (Exception ex)
+                {
+                    Safe.Log("CatalogItemModel.PrewarmMemoryCache", ex);
+                }
             });
         });
     }
@@ -219,7 +222,7 @@ public sealed class CatalogItemModel : INotifyPropertyChanged
 
     private void LoadIconInBackground()
     {
-        Task.Run(() =>
+        _ = Task.Run(() =>
         {
             try
             {
@@ -227,7 +230,7 @@ public sealed class CatalogItemModel : INotifyPropertyChanged
 
                 if (_memoryIconCache.TryGetValue(_targetPath, out var memImg))
                 {
-                    App.Current?.Dispatcher?.InvokeAsync(() =>
+                    _ = App.Current?.Dispatcher?.InvokeAsync(() =>
                     {
                         Icon = memImg;
                     }, System.Windows.Threading.DispatcherPriority.Normal);
@@ -253,14 +256,17 @@ public sealed class CatalogItemModel : INotifyPropertyChanged
                     var bi = GetOrCreateBitmapImage(cached, _targetPath);
                     if (bi != null)
                     {
-                        App.Current?.Dispatcher?.InvokeAsync(() =>
+                        _ = App.Current?.Dispatcher?.InvokeAsync(() =>
                         {
                             Icon = bi;
                         }, System.Windows.Threading.DispatcherPriority.Normal);
                     }
                 }
             }
-            catch { }
+            catch (Exception ex)
+            {
+                Safe.Log("CatalogItemModel.LoadIconInBackground", ex);
+            }
             finally
             {
                 _isIconLoading = false;

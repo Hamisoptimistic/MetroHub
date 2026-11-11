@@ -23,7 +23,7 @@ public sealed class WeatherLocationService
     private static JsonSerializerOptions s_jsonOptions => WeatherService.JsonOptions;
 
     private readonly Dictionary<string, IReadOnlyList<GeoResult>> _queryCache = new(50, StringComparer.OrdinalIgnoreCase);
-    private readonly object _cacheLock = new();
+    private readonly Lock _cacheLock = new();
 
     private WeatherLocationService() { }
 

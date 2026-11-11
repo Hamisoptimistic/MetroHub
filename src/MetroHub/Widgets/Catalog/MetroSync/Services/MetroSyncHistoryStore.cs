@@ -30,7 +30,7 @@ public sealed class MetroSyncHistoryStore : IItemIndex, IDisposable
     private readonly string _historyPath;
     private readonly string _statePath;
     private readonly SemaphoreSlim _gate = new(1, 1);
-    private readonly object _indexLock = new();
+    private readonly Lock _indexLock = new();
     private readonly HashSet<long> _seenUpdateIds = new();
     private readonly HashSet<long> _seenMessageIds = new();
     private bool _isIndexLoaded;

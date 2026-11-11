@@ -214,7 +214,7 @@ namespace MetroHub.Presentation.Controls
                         }
                         else
                         {
-                            dispatcher.InvokeAsync(() =>
+                            _ = dispatcher.InvokeAsync(() =>
                             {
                                 if (!IsStale()) Icon = updatedIcon;
                             }, System.Windows.Threading.DispatcherPriority.Background);
@@ -257,7 +257,7 @@ namespace MetroHub.Presentation.Controls
                 }
                 else
                 {
-                    dispatcher.InvokeAsync(() =>
+                    _ = dispatcher.InvokeAsync(() =>
                     {
                         if (!IsStale()) NotifyIconProperties();
                     }, System.Windows.Threading.DispatcherPriority.Background);
@@ -434,7 +434,7 @@ namespace MetroHub.Presentation.Controls
             {
                 if (prop is nameof(AppSettings.RecentViewMode) or nameof(AppSettings.ShowRecentApps) or nameof(AppSettings.DrawerDensity))
                 {
-                    Dispatcher.InvokeAsync(() =>
+                    _ = Dispatcher.InvokeAsync(() =>
                     {
                         var s = SettingsService.Instance.Current;
                         RecentViewMode = s.RecentViewMode;
@@ -610,7 +610,7 @@ namespace MetroHub.Presentation.Controls
             }
 
             var result = new List<DrawerItem>(orderedApps.Count + groups.Count);
-            foreach (var group in groups.OrderBy(g => g.Key == "#" ? "!" : g.Key))
+            foreach (var group in groups.OrderBy(g => g.Key == "#" ? "!" : g.Key, StringComparer.Ordinal))
             {
                 result.Add(new DrawerGroupHeader(group.Key));
                 foreach (var app in group.Value)
@@ -796,7 +796,7 @@ namespace MetroHub.Presentation.Controls
 
         internal void OnSearchSnapshotUpdated(SearchSnapshot snapshot)
         {
-            Dispatcher.BeginInvoke(System.Windows.Threading.DispatcherPriority.Normal, () =>
+            _ = Dispatcher.BeginInvoke(System.Windows.Threading.DispatcherPriority.Normal, () =>
             {
                 if (string.IsNullOrWhiteSpace(SearchBox.Text) || snapshot.IsEmpty)
                 {
@@ -1305,7 +1305,7 @@ namespace MetroHub.Presentation.Controls
                 }
                 else
                 {
-                    Dispatcher.BeginInvoke(System.Windows.Threading.DispatcherPriority.Loaded, new Action(() =>
+                    _ = Dispatcher.BeginInvoke(System.Windows.Threading.DispatcherPriority.Loaded, new Action(() =>
                     {
                         var container = RecentSuggestionsListBox.ItemContainerGenerator.ContainerFromIndex(index) as ListBoxItem;
                         container?.Focus();
@@ -1474,7 +1474,7 @@ namespace MetroHub.Presentation.Controls
                 }
                 else
                 {
-                    Dispatcher.BeginInvoke(System.Windows.Threading.DispatcherPriority.Loaded, new Action(() =>
+                    _ = Dispatcher.BeginInvoke(System.Windows.Threading.DispatcherPriority.Loaded, new Action(() =>
                     {
                         var container = SearchResultsListBox.ItemContainerGenerator.ContainerFromIndex(index) as ListBoxItem;
                         container?.Focus();
@@ -1987,7 +1987,7 @@ namespace MetroHub.Presentation.Controls
 
             contextMenu.IsOpen = true;
 
-            Dispatcher.BeginInvoke(System.Windows.Threading.DispatcherPriority.Input, new Action(() =>
+            _ = Dispatcher.BeginInvoke(System.Windows.Threading.DispatcherPriority.Input, new Action(() =>
             {
                 if (contextMenu.Items.Count > 0 && contextMenu.Items[0] is MenuItem firstItem)
                 {
@@ -2084,7 +2084,7 @@ namespace MetroHub.Presentation.Controls
                     menu.IsOpen = false;
                     e.Handled = true;
 
-                    Dispatcher.BeginInvoke(System.Windows.Threading.DispatcherPriority.Input, new Action(() =>
+                    _ = Dispatcher.BeginInvoke(System.Windows.Threading.DispatcherPriority.Input, new Action(() =>
                     {
                         if (SearchResultsListBox.SelectedItem != null && SearchResultsListBox.SelectedIndex >= 0)
                         {
@@ -2105,7 +2105,7 @@ namespace MetroHub.Presentation.Controls
                     menu.IsOpen = false;
                     e.Handled = true;
 
-                    Dispatcher.BeginInvoke(System.Windows.Threading.DispatcherPriority.Input, new Action(() =>
+                    _ = Dispatcher.BeginInvoke(System.Windows.Threading.DispatcherPriority.Input, new Action(() =>
                     {
                         if (SearchResultsListBox.SelectedItem != null && SearchResultsListBox.SelectedIndex >= 0)
                         {

@@ -18,7 +18,7 @@ namespace MetroHub.Core.Audio;
 public sealed class AudioService : IDisposable
 {
     private static AudioService? _instance;
-    private static readonly object _instanceLock = new();
+    private static readonly Lock _instanceLock = new();
 
     public static AudioService Instance
     {
@@ -83,7 +83,7 @@ public sealed class AudioService : IDisposable
         }
     }
 
-    private readonly object _deviceLock = new();
+    private readonly Lock _deviceLock = new();
 
     private void BindToDefaultDevice()
     {

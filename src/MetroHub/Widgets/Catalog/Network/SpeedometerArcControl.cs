@@ -98,7 +98,7 @@ public sealed class SpeedometerArcControl : FrameworkElement
         {
             if (recipient is SpeedometerArcControl arc)
             {
-                arc.Dispatcher.InvokeAsync(() =>
+                _ = arc.Dispatcher.InvokeAsync(() =>
                 {
                     arc._isHubVisible = msg.IsVisible;
                     if (!msg.IsVisible)
@@ -395,9 +395,9 @@ public sealed class SpeedometerArcControl : FrameworkElement
         }
     }
 
-    protected override void OnRender(DrawingContext dc)
+    protected override void OnRender(DrawingContext drawingContext)
     {
-        base.OnRender(dc);
+        base.OnRender(drawingContext);
 
         double w = ActualWidth;
         double h = ActualHeight;
@@ -419,7 +419,7 @@ public sealed class SpeedometerArcControl : FrameworkElement
         var trackGeom = CreateArcGeometry(cx, cy, radius, startAngleDeg, totalSweepDeg);
         if (trackGeom != null)
         {
-            dc.DrawGeometry(null, TrackPen, trackGeom);
+            drawingContext.DrawGeometry(null, TrackPen, trackGeom);
         }
 
         // 2. Draw active progress arc (thick sweep with ambient glow, no needle or glowing thumb)
@@ -431,10 +431,10 @@ public sealed class SpeedometerArcControl : FrameworkElement
             if (activeGeom != null)
             {
                 // Ambient glow behind active arc (cached & frozen)
-                dc.DrawGeometry(null, _cachedGlowPen, activeGeom);
+                drawingContext.DrawGeometry(null, _cachedGlowPen, activeGeom);
 
                 // Sharp active line (cached & frozen)
-                dc.DrawGeometry(null, _cachedActivePen, activeGeom);
+                drawingContext.DrawGeometry(null, _cachedActivePen, activeGeom);
             }
         }
 
@@ -458,7 +458,7 @@ public sealed class SpeedometerArcControl : FrameworkElement
             // Radial tick mark pointing inward
             var p1 = new Point(cx + tickStartRadius * cos, cy + tickStartRadius * sin);
             var p2 = new Point(cx + tickEndRadius * cos, cy + tickEndRadius * sin);
-            dc.DrawLine(isPassed ? ActiveTickPen : InactiveTickPen, p1, p2);
+            drawingContext.DrawLine(isPassed ? ActiveTickPen : InactiveTickPen, p1, p2);
 
             // Uniform radial spacing for text labels:
             // Calculate label center so the outer boundary of the text sits exactly 'labelGap' (5.5px)
@@ -469,7 +469,7 @@ public sealed class SpeedometerArcControl : FrameworkElement
 
             double tx = cx + textCenterRadius * cos - ft.Width / 2.0;
             double ty = cy + textCenterRadius * sin - ft.Height / 2.0;
-            dc.DrawText(ft, new Point(tx, ty));
+            drawingContext.DrawText(ft, new Point(tx, ty));
         }
     }
 

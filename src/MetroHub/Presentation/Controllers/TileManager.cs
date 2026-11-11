@@ -126,9 +126,9 @@ public sealed class TileManager
         var targetTiles = snapshotModel.Tiles;
         var targetGroups = snapshotModel.Groups;
 
-        var targetDict = targetTiles.ToDictionary(t => t.Id);
+        var targetDict = targetTiles.ToDictionary(t => t.Id, StringComparer.Ordinal);
         var currentTiles = _tilesProvider().ToList();
-        var currentDict = currentTiles.ToDictionary(t => t.Id);
+        var currentDict = currentTiles.ToDictionary(t => t.Id, StringComparer.Ordinal);
 
         var toRemove = currentTiles.Where(t => !targetDict.ContainsKey(t.Id)).ToList();
         foreach (var t in toRemove)
@@ -143,9 +143,9 @@ public sealed class TileManager
             _tilesProvider().Add(t);
         }
 
-        var targetGroupDict = targetGroups.ToDictionary(g => g.Id);
+        var targetGroupDict = targetGroups.ToDictionary(g => g.Id, StringComparer.Ordinal);
         var currentGroups = _groupsProvider().ToList();
-        var currentGroupDict = currentGroups.ToDictionary(g => g.Id);
+        var currentGroupDict = currentGroups.ToDictionary(g => g.Id, StringComparer.Ordinal);
 
         bool shouldRestoreGroups = targetGroups.Count > 0 || !targetTiles.Any(t => !string.IsNullOrEmpty(t.Group));
         if (shouldRestoreGroups)
@@ -270,7 +270,7 @@ public sealed class TileManager
             if (container != null)
             {
                 Panel.SetZIndex(container, 50);
-                _dispatcher.InvokeAsync(async () =>
+                _ = _dispatcher.InvokeAsync(async () =>
                 {
                     await Task.Delay(260);
                     Panel.SetZIndex(container, 0);

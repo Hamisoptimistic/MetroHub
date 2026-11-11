@@ -45,7 +45,7 @@ public sealed class PowerAwakeService : IDisposable
     private const int SC_MONITORPOWER = 0xF170;
     private const int MONITOR_OFF = 2;
 
-    private readonly object _stateLock = new();
+    private readonly Lock _stateLock = new();
     private readonly HashSet<object> _registeredClients = new();
     private readonly AutoResetEvent _signal = new(false);
     private readonly Thread _workerThread;

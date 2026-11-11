@@ -38,6 +38,7 @@ dotnet_diagnostic.MA0006.severity = suggestion
 dotnet_diagnostic.MA0002.severity = warning
 dotnet_diagnostic.MA0023.severity = warning
 dotnet_diagnostic.CA1822.severity = warning
+dotnet_code_quality.CA1822.api_surface = private, internal
 dotnet_diagnostic.MA0015.severity = warning
 dotnet_diagnostic.MA0021.severity = warning
 dotnet_diagnostic.MA0099.severity = warning

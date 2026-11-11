@@ -241,7 +241,7 @@ public sealed record SearchSnapshot(
         Array.Empty<SearchGroup>(),
         true,
         0,
-        new Dictionary<string, SourceState>());
+        new Dictionary<string, SourceState>(StringComparer.Ordinal));
 }
 
 /// <summary>

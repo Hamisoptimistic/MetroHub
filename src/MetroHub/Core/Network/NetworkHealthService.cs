@@ -26,7 +26,7 @@ public sealed class NetworkHealthService
     private DateTime _lastSuccessfulTrafficTime = DateTime.UtcNow;
     private DateTime _lastProbeTime = DateTime.MinValue;
     private bool _lastProbeResult = true;
-    private readonly object _probeLock = new();
+    private readonly Lock _probeLock = new();
 
     /// <summary>
     /// Modular, zero-overhead reachability check usable across Ethernet, Wi-Fi, and any adapter.

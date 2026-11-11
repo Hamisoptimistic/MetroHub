@@ -9,6 +9,7 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using MetroHub.Core.Audio;
 using MetroHub.Core.Models;
+using MetroHub.Core.Services;
 using MetroHub.Widgets.Serialization;
 
 namespace MetroHub.Widgets.Catalog.AudioControls;
@@ -156,7 +157,7 @@ public sealed partial class AudioControlsWidgetViewModel : WidgetViewModelBase
         ActiveDeviceName = device.Name;
         ActiveDeviceIcon = device.IconGlyph;
 
-        Task.Run(() =>
+        _ = Task.Run(() =>
         {
             try
             {
@@ -164,7 +165,7 @@ public sealed partial class AudioControlsWidgetViewModel : WidgetViewModelBase
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"[AudioControlsWidget] SetDefaultPlaybackDevice failed: {ex.Message}");
+                Safe.Log("AudioControlsWidget.SetDefaultPlaybackDevice", ex);
             }
         });
     }
@@ -238,7 +239,7 @@ public sealed partial class AudioControlsWidgetViewModel : WidgetViewModelBase
     {
         if (!_isHubVisible) return;
 
-        Application.Current?.Dispatcher.InvokeAsync(() =>
+        _ = Application.Current?.Dispatcher.InvokeAsync(() =>
         {
             _isUpdatingMasterInternally = true;
             try
@@ -256,13 +257,13 @@ public sealed partial class AudioControlsWidgetViewModel : WidgetViewModelBase
     private void OnAudioServiceDefaultDeviceChanged()
     {
         if (!_isHubVisible) return;
-        Application.Current?.Dispatcher.InvokeAsync(RefreshAll);
+        _ = Application.Current?.Dispatcher.InvokeAsync(RefreshAll);
     }
 
     private void OnAudioServiceDeviceListChanged()
     {
         if (!_isHubVisible) return;
-        Application.Current?.Dispatcher.InvokeAsync(RefreshDevices);
+        _ = Application.Current?.Dispatcher.InvokeAsync(RefreshDevices);
     }
 
     public override void Pause()

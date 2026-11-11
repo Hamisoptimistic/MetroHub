@@ -196,7 +196,7 @@ public sealed partial class NotepadWidgetViewModel : WidgetViewModelBase
         }
     }
 
-    private readonly Dictionary<string, string> _originalTexts = new();
+    private readonly Dictionary<string, string> _originalTexts = new(StringComparer.Ordinal);
 
     [RelayCommand]
     public void BeginEditTodo(NotepadTodoItem? item)

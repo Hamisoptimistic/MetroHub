@@ -115,7 +115,7 @@ public static class SmoothPhysicsScrollBehavior
         }
         else
         {
-            parent.Dispatcher.BeginInvoke(System.Windows.Threading.DispatcherPriority.Loaded, () =>
+            _ = parent.Dispatcher.BeginInvoke(System.Windows.Threading.DispatcherPriority.Loaded, () =>
             {
                 var deferredSv = AutoHideScrollBehavior.FindChild<ScrollViewer>(parent);
                 if (deferredSv != null)
@@ -184,7 +184,7 @@ public static class SmoothPhysicsScrollBehavior
     {
         DependencyObject? current = source;
 
-        while (current != null && current != parent)
+        while (current != null && !ReferenceEquals(current, parent))
         {
             // 1. ScrollViewer (Radio, Network, and standard lists)
             if (current is ScrollViewer nestedSv && nestedSv.Visibility == Visibility.Visible)

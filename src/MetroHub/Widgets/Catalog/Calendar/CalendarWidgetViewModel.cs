@@ -146,7 +146,7 @@ public sealed partial class CalendarWidgetViewModel : WidgetViewModelBase, IWidg
     private void OnDateRollover()
     {
         _lastCheckedDate = DateTime.Today;
-        Application.Current?.Dispatcher.InvokeAsync(() =>
+        _ = Application.Current?.Dispatcher.InvokeAsync(() =>
         {
             RefreshTodayCard();
 

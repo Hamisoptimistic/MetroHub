@@ -231,7 +231,7 @@ public sealed partial class RoverWidgetViewModel : WidgetViewModelBase, IWidgetA
     {
         if (playbackInfo == null) return;
         bool isPlaying = playbackInfo.PlaybackStatus == GlobalSystemMediaTransportControlsSessionPlaybackStatus.Playing;
-        App.Current?.Dispatcher?.InvokeAsync(() =>
+        _ = App.Current?.Dispatcher?.InvokeAsync(() =>
         {
             if (isPlaying)
             {
@@ -277,7 +277,7 @@ public sealed partial class RoverWidgetViewModel : WidgetViewModelBase, IWidgetA
                 }
             }
 
-            App.Current?.Dispatcher?.InvokeAsync(() => SetMediaPlaying(anyPlaying));
+            _ = App.Current?.Dispatcher?.InvokeAsync(() => SetMediaPlaying(anyPlaying));
         }
         catch (Exception ex)
         {

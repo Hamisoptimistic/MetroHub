@@ -21,7 +21,7 @@ public static class WallpaperEffectRenderer
 {
     private const int MaxProxyDimension = 2048;
     private const int MaxCacheFiles = 16;
-    private static readonly object CacheLock = new();
+    private static readonly Lock CacheLock = new();
 
     /// <summary>
     /// Checks if the effect name is one of the supported CPU pixel treatments.

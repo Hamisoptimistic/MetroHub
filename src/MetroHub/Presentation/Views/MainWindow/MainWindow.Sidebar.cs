@@ -73,7 +73,7 @@ public sealed partial class MainWindow
         {
             if (prop is nameof(AppSettings.SidebarPinned) or nameof(AppSettings.SidebarAutoHide))
             {
-                Dispatcher.InvokeAsync(() =>
+                _ = Dispatcher.InvokeAsync(() =>
                 {
                     if (Settings.SidebarPinned)
                     {
@@ -431,6 +431,7 @@ public sealed partial class MainWindow
             string.Equals(SidebarPinningService.NormalizeTarget(tile.TargetPath), norm, StringComparison.OrdinalIgnoreCase));
     }
 
+    [System.Diagnostics.CodeAnalysis.SuppressMessage("Performance", "CA1822:Mark members as static", Justification = "WPF XAML event handler requires an instance method for BAML delegate binding.")]
     private void OnDrawerAppLaunchRequested(object? sender, CatalogItemModel item)
     {
         try

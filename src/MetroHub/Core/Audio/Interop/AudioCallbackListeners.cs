@@ -1,5 +1,6 @@
 using System;
 using System.Runtime.InteropServices;
+using MetroHub.Core.Services;
 
 namespace MetroHub.Core.Audio.Interop;
 
@@ -10,19 +11,19 @@ internal sealed class EndpointNotificationCallback : IMMNotificationClient
 
     public int OnDeviceStateChanged(string pwstrDeviceId, DeviceState dwNewState)
     {
-        Task.Run(() => DeviceListChanged?.Invoke());
+        _ = Task.Run(() => Safe.Try(() => DeviceListChanged?.Invoke(), "EndpointNotificationCallback.DeviceListChanged"));
         return 0;
     }
 
     public int OnDeviceAdded(string pwstrDeviceId)
     {
-        Task.Run(() => DeviceListChanged?.Invoke());
+        _ = Task.Run(() => Safe.Try(() => DeviceListChanged?.Invoke(), "EndpointNotificationCallback.DeviceListChanged"));
         return 0;
     }
 
     public int OnDeviceRemoved(string pwstrDeviceId)
     {
-        Task.Run(() => DeviceListChanged?.Invoke());
+        _ = Task.Run(() => Safe.Try(() => DeviceListChanged?.Invoke(), "EndpointNotificationCallback.DeviceListChanged"));
         return 0;
     }
 
@@ -30,7 +31,7 @@ internal sealed class EndpointNotificationCallback : IMMNotificationClient
     {
         if (flow == EDataFlow.eRender && (role == ERole.eMultimedia || role == ERole.eConsole))
         {
-            Task.Run(() => DefaultDeviceChanged?.Invoke());
+            _ = Task.Run(() => Safe.Try(() => DefaultDeviceChanged?.Invoke(), "EndpointNotificationCallback.DefaultDeviceChanged"));
         }
         return 0;
     }

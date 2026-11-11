@@ -246,7 +246,7 @@ public sealed partial class PomodoroWidgetViewModel : WidgetViewModelBase, IWidg
         var settings = WidgetSerializer.Deserialize<PomodoroWidgetSettings>(Model.SettingsJson);
         if (settings?.LastActiveDate != null)
         {
-            if (DateTime.TryParse(settings.LastActiveDate, out var lastDate))
+            if (DateTime.TryParse(settings.LastActiveDate, CultureInfo.InvariantCulture, out var lastDate))
             {
                 var days = (DateTime.UtcNow.Date - lastDate.Date).Days;
                 if (days == 1)

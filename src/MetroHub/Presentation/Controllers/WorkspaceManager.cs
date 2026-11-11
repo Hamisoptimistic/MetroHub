@@ -27,7 +27,7 @@ public sealed class WorkspaceManager : INotifyPropertyChanged
     private const int MaxWorkspacesLimit = 10;
     private WorkspaceModel? _activeWorkspace;
     private bool _isInitialized;
-    private readonly object _flushGate = new();
+    private readonly Lock _flushGate = new();
     private Task? _backgroundFlushTask;
     private long _manifestSaveSeq;
 

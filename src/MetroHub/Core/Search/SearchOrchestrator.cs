@@ -84,7 +84,7 @@ public sealed class SearchOrchestrator : IDisposable
     private readonly List<ISearchSource> _tier1Sources = new();
     private readonly List<ISearchSource> _tier2Sources = new();
     private readonly QueryRouter _router;
-    private readonly object _sessionLock = new();
+    private readonly Lock _sessionLock = new();
     private readonly int _debounceMs;
 
     private Timer? _debounceTimer;
@@ -308,7 +308,7 @@ public sealed class SearchOrchestrator : IDisposable
                     Groups: t1Groups,
                     IsFinal: false,
                     ElapsedMs: sw.ElapsedMilliseconds,
-                    SourceStates: new Dictionary<string, SourceState>(sourceStates));
+                    SourceStates: new Dictionary<string, SourceState>(sourceStates, StringComparer.Ordinal));
 
                 PublishIfCurrent(intermediateSnapshot, sessionId, ct);
             }
@@ -372,9 +372,10 @@ public sealed class SearchOrchestrator : IDisposable
             PublishIfCurrent(finalSnapshot, sessionId, ct);
         }
         catch (OperationCanceledException) { }
-        catch (Exception)
+        catch (Exception ex)
         {
             // Fail fast, publish empty degraded snapshot
+            System.Diagnostics.Trace.WriteLine($"[SearchOrchestrator] RunQueryPipelineAsync error: {ex.Message}");
         }
     }
 

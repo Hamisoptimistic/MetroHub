@@ -24,9 +24,9 @@ public sealed class MonitorBrightnessService : IDisposable
 
     // Rate-limiting: 140ms throttle interval per monitor to protect slow I2C serial bus while ensuring smooth live scrubbing
     private const int ThrottleIntervalMs = 140;
-    private readonly ConcurrentDictionary<string, byte> _pendingBrightness = new();
-    private readonly ConcurrentDictionary<string, long> _lastWriteTicks = new();
-    private readonly ConcurrentDictionary<string, CancellationTokenSource> _trailingTokens = new();
+    private readonly ConcurrentDictionary<string, byte> _pendingBrightness = new(StringComparer.Ordinal);
+    private readonly ConcurrentDictionary<string, long> _lastWriteTicks = new(StringComparer.Ordinal);
+    private readonly ConcurrentDictionary<string, CancellationTokenSource> _trailingTokens = new(StringComparer.Ordinal);
     private readonly SemaphoreSlim _hardwareLock = new(1, 1);
     private bool _isDisposed;
 

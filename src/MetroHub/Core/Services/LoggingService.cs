@@ -14,7 +14,7 @@ namespace MetroHub.Core.Services;
 public static class LoggingService
 {
     private static bool _initialized;
-    private static readonly object _initLock = new();
+    private static readonly Lock _initLock = new();
 
     /// <summary>
     /// Initializes Serilog globally once per application lifetime.

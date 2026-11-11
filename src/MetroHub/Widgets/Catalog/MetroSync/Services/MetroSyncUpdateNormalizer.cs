@@ -40,11 +40,10 @@ public sealed class MetroSyncUpdateNormalizer : IUpdateNormalizer
         }
     }
 
-    public MetroSyncMessageItem? NormalizeOutbound(JsonElement messageOrResult, DateTimeOffset sentAt)
+    public MetroSyncMessageItem? NormalizeOutbound(JsonElement message, DateTimeOffset sentAt)
     {
         try
         {
-            var message = messageOrResult;
             if (message.ValueKind == JsonValueKind.Object &&
                 message.TryGetProperty("result", out var res) &&
                 res.ValueKind == JsonValueKind.Object)

@@ -104,7 +104,7 @@ public sealed class NightLightService : IDisposable
 
     #endregion
 
-    private readonly object _stateLock = new();
+    private readonly Lock _stateLock = new();
     private readonly HashSet<object> _registeredClients = new();
     private readonly RAMP _defaultRamp;
 
@@ -229,7 +229,7 @@ public sealed class NightLightService : IDisposable
 
     #region Hardware Gamma Ramp Application
 
-    private RAMP CaptureCurrentRamp()
+    private static RAMP CaptureCurrentRamp()
     {
         IntPtr hdc = GetDC(IntPtr.Zero);
         try
@@ -257,7 +257,7 @@ public sealed class NightLightService : IDisposable
         return RAMP.CreateLinear();
     }
 
-    private bool VerifyHardwareSupport()
+    private static bool VerifyHardwareSupport()
     {
         IntPtr hdc = GetDC(IntPtr.Zero);
         try
@@ -284,7 +284,7 @@ public sealed class NightLightService : IDisposable
         _throttleCts = new CancellationTokenSource();
         var token = _throttleCts.Token;
 
-        Task.Run(async () =>
+        _ = Task.Run(async () =>
         {
             try
             {
@@ -384,7 +384,7 @@ public sealed class NightLightService : IDisposable
             catch (OperationCanceledException) { }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"[NightLightService] Apply error: {ex.Message}");
+                MetroHub.Core.Services.Safe.Log("NightLightService.ApplyHardwareRampThrottled", ex);
             }
         });
     }

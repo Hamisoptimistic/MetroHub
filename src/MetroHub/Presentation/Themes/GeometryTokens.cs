@@ -11,7 +11,7 @@ namespace MetroHub.Presentation.Themes;
 public static class GeometryTokens
 {
     private static bool _initialized;
-    private static readonly object _lock = new();
+    private static readonly Lock _lock = new();
 
     public static CornerRadius TileCornerRadius { get; private set; } = new(2);
     public static CornerRadius ControlCornerRadius { get; private set; } = new(2);
@@ -38,7 +38,7 @@ public static class GeometryTokens
                     var app = Application.Current;
                     if (app != null && app.Dispatcher != null && !app.Dispatcher.CheckAccess())
                     {
-                        app.Dispatcher.InvokeAsync(() => ApplyCornerRadius(SettingsService.Instance.Current.TileCornerRadius));
+                        _ = app.Dispatcher.InvokeAsync(() => ApplyCornerRadius(SettingsService.Instance.Current.TileCornerRadius));
                     }
                     else
                     {

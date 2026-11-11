@@ -45,7 +45,7 @@ public readonly record struct RouteResult(
 public sealed class QueryRouter
 {
     private SearchSettings _settings;
-    private readonly object _lock = new();
+    private readonly Lock _lock = new();
 
     public QueryRouter(SearchSettings? settings = null)
     {

@@ -15,7 +15,7 @@ public sealed class EthernetProvider
     public static EthernetProvider Instance => _instance.Value;
 
     private readonly Dictionary<string, DateTime> _fallbackConnectTimes = new(StringComparer.OrdinalIgnoreCase);
-    private readonly object _cacheLock = new();
+    private readonly Lock _cacheLock = new();
     private EthernetInfo? _cachedActiveInfo;
     private DateTime _lastCacheTimeUtc = DateTime.MinValue;
     private static readonly TimeSpan CacheTtl = TimeSpan.FromSeconds(30);

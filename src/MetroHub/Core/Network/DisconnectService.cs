@@ -42,7 +42,7 @@ public sealed partial class DisconnectService
 
     private static Dictionary<string, WindowsInterfaceStatus> _cachedStatuses = new(StringComparer.OrdinalIgnoreCase);
     private static DateTime _lastCacheTime = DateTime.MinValue;
-    private static readonly object _cacheLock = new();
+    private static readonly Lock _cacheLock = new();
 
     public static Dictionary<string, WindowsInterfaceStatus> GetCachedInterfaceStatuses(TimeSpan? maxAge = null)
     {

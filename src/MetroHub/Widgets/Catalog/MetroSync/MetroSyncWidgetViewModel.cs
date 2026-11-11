@@ -35,7 +35,7 @@ public sealed partial class MetroSyncWidgetViewModel : WidgetViewModelBase, IWid
     public const int InitialHistoryCount = 50;
     public const int MaxTextLength = MetroSyncOutboundService.MaxTextLength;
 
-    [GeneratedRegex(@"/bot([0-9]+:[A-Za-z0-9_-]+)", RegexOptions.IgnoreCase)]
+    [GeneratedRegex(@"/bot[0-9]+:[A-Za-z0-9_-]+", RegexOptions.IgnoreCase)]
     private static partial Regex BotUrlTokenRegex();
 
     private readonly MetroSyncSecurity _security;
@@ -1398,7 +1398,7 @@ public sealed partial class MetroSyncWidgetViewModel : WidgetViewModelBase, IWid
 
     public string RedactBotToken(string text) => RedactBotToken(text, _credentials?.BotToken);
 
-    private void RunOnUIThread(Action action)
+    private static void RunOnUIThread(Action action)
     {
         var app = Application.Current;
         var dispatcher = app?.Dispatcher;
@@ -1419,7 +1419,7 @@ public sealed partial class MetroSyncWidgetViewModel : WidgetViewModelBase, IWid
         }
     }
 
-    private async Task RunOnUIThreadAsync(Action action)
+    private static async Task RunOnUIThreadAsync(Action action)
     {
         var app = Application.Current;
         var dispatcher = app?.Dispatcher;

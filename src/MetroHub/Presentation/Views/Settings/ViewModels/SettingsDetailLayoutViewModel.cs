@@ -21,7 +21,7 @@ public sealed partial class SettingsDetailLayoutViewModel : ObservableObject
 
     public ObservableCollection<SettingsCategoryItem> Categories { get; }
 
-    private readonly System.Collections.Generic.Dictionary<string, object> _pageCache = new();
+    private readonly System.Collections.Generic.Dictionary<string, object> _pageCache = new(StringComparer.Ordinal);
 
     public SettingsDetailLayoutViewModel(
         SettingsShellViewModel shell,

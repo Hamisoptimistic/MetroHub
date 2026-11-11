@@ -402,10 +402,11 @@ public sealed class MetroSyncPairingService
                         {
                             return PairingResult.CancelledResult();
                         }
-                        catch (Exception)
+                        catch (Exception ex)
                         {
                             // Best-effort confirmation: if Telegram fails to acknowledge outbound confirmation,
                             // do not abort or crash an already verified handshake.
+                            System.Diagnostics.Trace.WriteLine($"[MetroSyncPairingService] Confirmation message error: {ex.Message}");
                         }
 
                         // Store verified credentials in MetroSyncSecurity vault (credentials.dat)

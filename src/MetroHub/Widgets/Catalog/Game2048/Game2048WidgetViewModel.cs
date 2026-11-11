@@ -112,10 +112,10 @@ public sealed partial class Game2048WidgetViewModel : WidgetViewModelBase, IWidg
         CanUndo = _engine.CanUndo;
     }
 
-    protected override void LoadSettings(string? json)
+    protected override void LoadSettings(string? settingsJson)
     {
         if (_engine == null) return; // Might be invoked by base ctor before field initializer
-        var settings = WidgetSerializer.Deserialize<Game2048WidgetSettings>(json);
+        var settings = WidgetSerializer.Deserialize<Game2048WidgetSettings>(settingsJson);
         if (settings != null)
         {
             _engine.LoadState(settings.SavedGrid, settings.CurrentScore, settings.HighScore);

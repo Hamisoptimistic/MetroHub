@@ -793,7 +793,7 @@ internal sealed class TrackedStreamUploadContent : HttpContent
 /// </summary>
 internal sealed class LatencyTracker
 {
-    private readonly object _lock = new();
+    private readonly Lock _lock = new();
     private readonly List<double> _allProbes = new(256);
     private readonly List<double> _jitterDeltas = new(256);
     private double? _lastProbe;

@@ -59,7 +59,7 @@ public sealed class LayoutHistoryService
             // Auto-discover groups from tiles if groups was omitted
             groupList = tileList
                 .Where(t => !string.IsNullOrEmpty(t.Group))
-                .GroupBy(t => t.Group!)
+                .GroupBy(t => t.Group!, StringComparer.Ordinal)
                 .Select(g => new TileGroupModel
                 {
                     Id = g.Key,

@@ -318,7 +318,7 @@ public sealed class ClipboardSource : ISearchSource, IDisposable
     public static ClipboardSource? Instance { get; private set; }
 
     private readonly QueryRouter _router;
-    private readonly object _lock = new();
+    private readonly Lock _lock = new();
     private readonly List<ClipboardItem> _history = new(50);
     private uint _lastSequenceNumber;
     private IntPtr _hwnd = IntPtr.Zero;
@@ -464,7 +464,7 @@ public sealed class ClipboardSource : ISearchSource, IDisposable
             string subtitle = $"{item.Text.Length} chars • {FormatTimeAgo(item.Timestamp)}";
 
             candidates.Add(new Candidate(
-                Id: $"clipboard:{item.Timestamp.ToUnixTimeMilliseconds()}:{item.Text.GetHashCode()}",
+                Id: $"clipboard:{item.Timestamp.ToUnixTimeMilliseconds()}:{StringComparer.Ordinal.GetHashCode(item.Text)}",
                 DisplayName: preview,
                 FullPathOrKey: subtitle,
                 Category: SearchCategory.Actions,

@@ -57,9 +57,9 @@ public sealed class CalendarMonthBackplate : FrameworkElement
         SnapsToDevicePixels = true;
     }
 
-    protected override void OnRender(DrawingContext dc)
+    protected override void OnRender(DrawingContext drawingContext)
     {
-        base.OnRender(dc);
+        base.OnRender(drawingContext);
 
         if (FillBrush == null || DaysInMonth <= 0 || ActualWidth <= 0 || ActualHeight <= 0)
         {
@@ -126,6 +126,6 @@ public sealed class CalendarMonthBackplate : FrameworkElement
         }
 
         geometry.Freeze();
-        dc.DrawGeometry(FillBrush, null, geometry);
+        drawingContext.DrawGeometry(FillBrush, null, geometry);
     }
 }

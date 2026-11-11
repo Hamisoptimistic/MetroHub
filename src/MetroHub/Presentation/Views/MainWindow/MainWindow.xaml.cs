@@ -94,7 +94,7 @@ public sealed partial class MainWindow : BorderlessFluentWindow, INotifyProperty
                     if (current <= 0) break;
                 } while (System.Threading.Interlocked.CompareExchange(ref _dialogOpenCount, current - 1, current) != current);
             }
-            Dispatcher.InvokeAsync(UpdateDialogScrim);
+            _ = Dispatcher.InvokeAsync(UpdateDialogScrim);
         }
     }
 
@@ -146,7 +146,7 @@ public sealed partial class MainWindow : BorderlessFluentWindow, INotifyProperty
         if (win == null) return ActionDisposable.Empty;
 
         Interlocked.Increment(ref _dialogScopeDepth);
-        win.Dispatcher.InvokeAsync(win.UpdateDialogScrim);
+        _ = win.Dispatcher.InvokeAsync(win.UpdateDialogScrim);
 
         return new ActionDisposable(() =>
         {
@@ -155,8 +155,8 @@ public sealed partial class MainWindow : BorderlessFluentWindow, INotifyProperty
             {
                 Interlocked.Exchange(ref _dialogScopeDepth, 0);
                 win._lastShownTime = DateTime.UtcNow;
-                win.Dispatcher.InvokeAsync(win.UpdateDialogScrim);
-                win.Dispatcher.InvokeAsync(() =>
+                _ = win.Dispatcher.InvokeAsync(win.UpdateDialogScrim);
+                _ = win.Dispatcher.InvokeAsync(() =>
                 {
                     try
                     {
@@ -206,7 +206,7 @@ public sealed partial class MainWindow : BorderlessFluentWindow, INotifyProperty
         }
         else
         {
-            win.Dispatcher.InvokeAsync(action);
+            _ = win.Dispatcher.InvokeAsync(action);
         }
     }
 
@@ -328,7 +328,7 @@ public sealed partial class MainWindow : BorderlessFluentWindow, INotifyProperty
             this,
             (r, msg) =>
             {
-                r.Dispatcher.InvokeAsync(() =>
+                _ = r.Dispatcher.InvokeAsync(() =>
                 {
                     if (!r.IsVisible)
                     {
@@ -518,7 +518,7 @@ public sealed partial class MainWindow : BorderlessFluentWindow, INotifyProperty
         }
         else
         {
-            Dispatcher.InvokeAsync(() =>
+            _ = Dispatcher.InvokeAsync(() =>
             {
                 if (Topmost != topmost) Topmost = topmost;
             });
@@ -574,7 +574,7 @@ public sealed partial class MainWindow : BorderlessFluentWindow, INotifyProperty
 
         if (AllAppsDrawer == null || !AllAppsDrawer.IsOpen)
         {
-            Dispatcher.InvokeAsync(() =>
+            _ = Dispatcher.InvokeAsync(() =>
             {
                 if (AllAppsDrawer == null || !AllAppsDrawer.IsOpen)
                 {
@@ -694,7 +694,7 @@ public sealed partial class MainWindow : BorderlessFluentWindow, INotifyProperty
 
         if (activeWs.ScrollOffset > 0 && ContentScrollViewer != null)
         {
-            Dispatcher.BeginInvoke(DispatcherPriority.Loaded, () =>
+            _ = Dispatcher.BeginInvoke(DispatcherPriority.Loaded, () =>
             {
                 if (ContentScrollViewer != null)
                 {
@@ -776,7 +776,7 @@ public sealed partial class MainWindow : BorderlessFluentWindow, INotifyProperty
                 return;
             }
 
-            Dispatcher.InvokeAsync(() =>
+            _ = Dispatcher.InvokeAsync(() =>
             {
                 if (IsVisible && !_isDismissing)
                 {
@@ -946,7 +946,7 @@ public sealed partial class MainWindow : BorderlessFluentWindow, INotifyProperty
         if (RootGrid != null) RootGrid.IsHitTestVisible = true;
 
         // Log diagnostic snapshot at idle priority after window is hidden (without forced GC or WorkingSet flush)
-        Dispatcher.InvokeAsync(() =>
+        _ = Dispatcher.InvokeAsync(() =>
         {
             var currentMB = GC.GetTotalMemory(false) / (1024.0 * 1024.0);
             MetroHub.Core.Services.HiddenDiagnosticsLogger.LogMemorySnapshot("HUB HIDE", currentMB);
@@ -979,7 +979,7 @@ public sealed partial class MainWindow : BorderlessFluentWindow, INotifyProperty
         }
         else if (msg == WM_DISPLAYCHANGE)
         {
-            Dispatcher.InvokeAsync(async () =>
+            _ = Dispatcher.InvokeAsync(async () =>
             {
                 try
                 {
@@ -1017,7 +1017,7 @@ public sealed partial class MainWindow : BorderlessFluentWindow, INotifyProperty
                 SnapToWorkArea(force: true);
             }
             IconExtractorService.InvalidateAssociationCache();
-            Dispatcher.InvokeAsync(async () =>
+            _ = Dispatcher.InvokeAsync(async () =>
             {
                 try
                 {
@@ -1145,7 +1145,7 @@ public sealed partial class MainWindow : BorderlessFluentWindow, INotifyProperty
         {
             try
             {
-                Dispatcher.BeginInvoke(new Action(() =>
+                _ = Dispatcher.BeginInvoke(new Action(() =>
                 {
                     if (!IsVisible)
                     {
@@ -1250,7 +1250,7 @@ public sealed partial class MainWindow : BorderlessFluentWindow, INotifyProperty
 
         // Stagger widget wake-up and background service resumption so window restore and initial scroll do not compete with 14 widgets resuming simultaneously
         int showToken = ++_showSequence;
-        Dispatcher.InvokeAsync(async () =>
+        _ = Dispatcher.InvokeAsync(async () =>
         {
             await Task.Delay(120).ConfigureAwait(false);
             await Dispatcher.InvokeAsync(() =>
@@ -1458,7 +1458,7 @@ public sealed partial class MainWindow : BorderlessFluentWindow, INotifyProperty
         }
 
         // Don't trigger if modifier keys (Ctrl, Alt, Win) are held down
-        if ((Keyboard.Modifiers & (ModifierKeys.Control | ModifierKeys.Alt | ModifierKeys.Windows)) != 0)
+        if ((Keyboard.Modifiers & (ModifierKeys.Control | ModifierKeys.Alt | ModifierKeys.Windows)) != ModifierKeys.None)
         {
             return;
         }

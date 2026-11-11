@@ -135,7 +135,7 @@ public sealed class IconPathToBitmapConverter : IValueConverter
         {
             decodeWidth = intParam;
         }
-        else if (parameter is string strParam && int.TryParse(strParam, out int parsed) && parsed > 0)
+        else if (parameter is string strParam && int.TryParse(strParam, CultureInfo.InvariantCulture, out int parsed) && parsed > 0)
         {
             decodeWidth = parsed;
         }

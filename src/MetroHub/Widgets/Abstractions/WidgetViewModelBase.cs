@@ -118,11 +118,6 @@ public abstract partial class WidgetViewModelBase : ObservableRecipient, IWidget
         Dispose();
     }
 
-    ~WidgetViewModelBase()
-    {
-        Dispose(disposing: false);
-    }
-
     public void Dispose()
     {
         Dispose(disposing: true);

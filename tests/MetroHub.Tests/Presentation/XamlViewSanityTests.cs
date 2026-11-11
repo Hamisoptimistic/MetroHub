@@ -61,6 +61,21 @@ public class XamlViewSanityTests
         });
     }
 
+    [Fact]
+    public void Verify_MainWindow_OnDrawerAppLaunchRequested_Delegate()
+    {
+        var method = typeof(MainWindow).GetMethod("OnDrawerAppLaunchRequested", 
+            System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static | System.Reflection.BindingFlags.Instance);
+        Assert.NotNull(method);
+        // WPF XAML event binding test:
+        // Must bind cleanly to EventHandler<CatalogItemModel> on MainWindow instance without ArgumentException
+        var del = System.Delegate.CreateDelegate(
+            typeof(EventHandler<MetroHub.Core.Models.CatalogItemModel>), 
+            System.Runtime.CompilerServices.RuntimeHelpers.GetUninitializedObject(typeof(MainWindow)), 
+            method);
+        Assert.NotNull(del);
+    }
+
     [Theory]
     [InlineData(typeof(SidebarRailControl))]
     [InlineData(typeof(AllAppsDrawerControl))]

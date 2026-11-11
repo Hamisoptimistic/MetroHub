@@ -50,7 +50,7 @@ public sealed partial class SidebarRailControl : UserControl, ISidebarShortcutSt
         MetroHub.Presentation.Controllers.WorkspaceManager.Instance.WorkspaceChanged += OnWorkspaceChanged;
         InstalledAppsService.AppsCatalogChanged += freshApps =>
         {
-            Dispatcher.InvokeAsync(() =>
+            _ = Dispatcher.InvokeAsync(() =>
             {
                 _cachedShortcutApps = freshApps?.OrderBy(i => i.Name, StringComparer.OrdinalIgnoreCase).ToList();
             });
@@ -63,7 +63,7 @@ public sealed partial class SidebarRailControl : UserControl, ISidebarShortcutSt
                         nameof(AppSettings.SidebarPinned) or
                         nameof(AppSettings.SidebarAutoHide))
             {
-                Dispatcher.InvokeAsync(ApplyButtonSettings);
+                _ = Dispatcher.InvokeAsync(ApplyButtonSettings);
             }
         };
     }
@@ -220,7 +220,7 @@ public sealed partial class SidebarRailControl : UserControl, ISidebarShortcutSt
 
     private void ScrollToActiveWorkspace()
     {
-        Dispatcher.BeginInvoke(System.Windows.Threading.DispatcherPriority.Loaded, () =>
+        _ = Dispatcher.BeginInvoke(System.Windows.Threading.DispatcherPriority.Loaded, () =>
         {
             var activeWs = MetroHub.Presentation.Controllers.WorkspaceManager.Instance.ActiveWorkspace;
             if (activeWs == null) return;
@@ -319,7 +319,7 @@ public sealed partial class SidebarRailControl : UserControl, ISidebarShortcutSt
         }
     }
 
-    private void LaunchShortcut(SidebarShortcutItem item, bool runAsAdmin = false)
+    private static void LaunchShortcut(SidebarShortcutItem item, bool runAsAdmin = false)
     {
         try
         {
@@ -375,7 +375,7 @@ public sealed partial class SidebarRailControl : UserControl, ISidebarShortcutSt
         }
     }
 
-    private void LaunchShortcutInNewWindow(SidebarShortcutItem item)
+    private static void LaunchShortcutInNewWindow(SidebarShortcutItem item)
     {
         try
         {

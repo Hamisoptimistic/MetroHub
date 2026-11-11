@@ -107,7 +107,7 @@ public sealed partial class App : Application
             if (ShouldHandleDispatcherException())
             {
                 args.Handled = true;
-                _mainWindow?.Dispatcher.InvokeAsync(() =>
+                _ = _mainWindow?.Dispatcher.InvokeAsync(() =>
                 {
                     try
                     {
@@ -142,7 +142,7 @@ public sealed partial class App : Application
                 {
                     if (!timedOut)
                     {
-                        Dispatcher.InvokeAsync(() =>
+                        _ = Dispatcher.InvokeAsync(() =>
                         {
                             _mainWindow?.ShowScreen();
                         });

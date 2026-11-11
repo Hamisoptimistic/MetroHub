@@ -240,7 +240,7 @@ public sealed partial class MediaWidgetViewModel : WidgetViewModelBase, IWidgetC
     [ObservableProperty]
     private bool _canSkipPrevious = true;
 
-    private readonly object _stateLock = new();
+    private readonly Lock _stateLock = new();
     private string _currentTrackId = string.Empty;
 
     /// <summary>
@@ -1143,7 +1143,7 @@ public sealed partial class MediaWidgetViewModel : WidgetViewModelBase, IWidgetC
         NotifySettingsChanged();
     }
 
-    private void RunOnUi(Action action)
+    private static void RunOnUi(Action action)
     {
         var app = Application.Current;
         if (app == null) return;
@@ -1153,7 +1153,7 @@ public sealed partial class MediaWidgetViewModel : WidgetViewModelBase, IWidgetC
         }
         else if (!app.Dispatcher.HasShutdownStarted)
         {
-            app.Dispatcher.InvokeAsync(action);
+            _ = app.Dispatcher.InvokeAsync(action);
         }
     }
 

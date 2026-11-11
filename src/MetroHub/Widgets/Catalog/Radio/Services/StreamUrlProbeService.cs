@@ -1,6 +1,7 @@
 using System;
 using System.Buffers;
 using System.Diagnostics;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Net.Http;
@@ -46,22 +47,22 @@ public sealed partial class StreamUrlProbeService : IDisposable
     [GeneratedRegex(@"^Title1=", RegexOptions.IgnoreCase)]
     private static partial Regex PlsTitleEntryRegex();
 
-    [GeneratedRegex(@"<ref\s+[^>]*href=[""']([^""']+)[""']", RegexOptions.IgnoreCase)]
+    [GeneratedRegex(@"<ref\s+[^>]*href=[""'](?<href>[^""']+)[""']", RegexOptions.IgnoreCase)]
     private static partial Regex AsxRefHrefRegex();
 
-    [GeneratedRegex(@"<title>([^<]+)</title>", RegexOptions.IgnoreCase)]
+    [GeneratedRegex(@"<title>(?<title>[^<]+)</title>", RegexOptions.IgnoreCase)]
     private static partial Regex XmlTitleRegex();
 
-    [GeneratedRegex(@"<location>([^<]+)</location>", RegexOptions.IgnoreCase)]
+    [GeneratedRegex(@"<location>(?<location>[^<]+)</location>", RegexOptions.IgnoreCase)]
     private static partial Regex XspfLocationRegex();
 
-    [GeneratedRegex(@"BANDWIDTH=(\d+)", RegexOptions.IgnoreCase)]
+    [GeneratedRegex(@"BANDWIDTH=(?<bandwidth>\d+)", RegexOptions.IgnoreCase)]
     private static partial Regex HlsBandwidthRegex();
 
     [GeneratedRegex(@"[_-]")]
     private static partial Regex SeparatorNormalizeRegex();
 
-    [GeneratedRegex(@"\d+k(bps)?|\d+mp3", RegexOptions.IgnoreCase)]
+    [GeneratedRegex(@"\d+k(?:bps)?|\d+mp3", RegexOptions.IgnoreCase)]
     private static partial Regex BitrateSuffixStripRegex();
 
     private readonly HttpClient _httpClient;
@@ -197,7 +198,7 @@ public sealed partial class StreamUrlProbeService : IDisposable
                 string? icyGenre = GetHeader(response, "icy-genre");
 
                 int bitrate = 128;
-                if (!string.IsNullOrWhiteSpace(icyBr) && int.TryParse(icyBr, out int parsedBr) && parsedBr > 0)
+                if (!string.IsNullOrWhiteSpace(icyBr) && int.TryParse(icyBr, CultureInfo.InvariantCulture, out int parsedBr) && parsedBr > 0)
                 {
                     bitrate = parsedBr;
                 }
@@ -221,7 +222,7 @@ public sealed partial class StreamUrlProbeService : IDisposable
                                 {
                                     string scName = GetHeader(scRes, "icy-name") ?? InferStationNameFromUri(uri);
                                     string? scBr = GetHeader(scRes, "icy-br");
-                                    int scBitrate = (int.TryParse(scBr, out int b) && b > 0) ? b : bitrate;
+                                    int scBitrate = (int.TryParse(scBr, CultureInfo.InvariantCulture, out int b) && b > 0) ? b : bitrate;
                                     return new StreamProbeResult(
                                         IsValid: true,
                                         ResolvedStreamUrl: shoutcastUri.ToString(),
@@ -422,7 +423,7 @@ public sealed partial class StreamUrlProbeService : IDisposable
                 PlaylistTrackCount: hrefMatches.Count);
         }
 
-        string firstHref = hrefMatches[0].Groups[1].Value.Trim();
+        string firstHref = hrefMatches[0].Groups["href"].Value.Trim();
         if (!Uri.TryCreate(origin, firstHref, out var resolvedUri))
         {
             return new StreamProbeResult(false, null, null, null, "The .asx playlist stream entry is an invalid URL.");
@@ -432,7 +433,7 @@ public sealed partial class StreamUrlProbeService : IDisposable
         var titleMatch = XmlTitleRegex().Match(content);
         if (titleMatch.Success)
         {
-            title = titleMatch.Groups[1].Value.Trim();
+            title = titleMatch.Groups["title"].Value.Trim();
         }
 
         return new StreamProbeResult(
@@ -461,7 +462,7 @@ public sealed partial class StreamUrlProbeService : IDisposable
                 PlaylistTrackCount: locMatches.Count);
         }
 
-        string firstLoc = locMatches[0].Groups[1].Value.Trim();
+        string firstLoc = locMatches[0].Groups["location"].Value.Trim();
         if (!Uri.TryCreate(origin, firstLoc, out var resolvedUri))
         {
             return new StreamProbeResult(false, null, null, null, "The .xspf playlist stream entry is an invalid URL.");
@@ -471,7 +472,7 @@ public sealed partial class StreamUrlProbeService : IDisposable
         var titleMatch = XmlTitleRegex().Match(content);
         if (titleMatch.Success)
         {
-            title = titleMatch.Groups[1].Value.Trim();
+            title = titleMatch.Groups["title"].Value.Trim();
         }
 
         return new StreamProbeResult(
@@ -510,7 +511,7 @@ public sealed partial class StreamUrlProbeService : IDisposable
             if (streamInfLine != null)
             {
                 var match = HlsBandwidthRegex().Match(streamInfLine);
-                if (match.Success && int.TryParse(match.Groups[1].Value, out int bps) && bps > 0)
+                if (match.Success && int.TryParse(match.Groups["bandwidth"].Value, CultureInfo.InvariantCulture, out int bps) && bps > 0)
                 {
                     bitrate = Math.Max(32, bps / 1000);
                 }

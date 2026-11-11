@@ -21,7 +21,7 @@ public sealed class MetroSyncSecurity
 {
     private readonly string _credentialsPath;
     private readonly string _directoryPath;
-    private readonly object _lock = new();
+    private readonly Lock _lock = new();
 
     public static MetroSyncSecurity Default { get; } = new();
 

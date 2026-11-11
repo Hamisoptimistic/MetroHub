@@ -15,7 +15,7 @@ public static class HiddenDiagnosticsLogger
 {
     private static readonly ILogger Logger = Serilog.Log.ForContext("Source", "Diagnostics");
     private static string _logFilePath = AppPaths.HiddenDiagnosticsLogPath;
-    private static readonly object _lock = new();
+    private static readonly Lock _lock = new();
 
     public static bool IsEnabled { get; set; } = true;
 

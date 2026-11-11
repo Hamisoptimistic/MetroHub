@@ -12,7 +12,7 @@ namespace MetroHub.Widgets.Catalog.Weather;
 public static class WeatherIcons
 {
     private static readonly Dictionary<string, BitmapImage> Cache = new(StringComparer.Ordinal);
-    private static readonly object SyncLock = new();
+    private static readonly Lock SyncLock = new();
 
     public static BitmapImage Get(string? iconName)
     {

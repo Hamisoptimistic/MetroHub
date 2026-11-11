@@ -42,7 +42,7 @@ public sealed class AudioSpectrumProcessor
     private const float BandLowHz = 35f;
     private const float BandHighHz = 16000f;
 
-    private readonly object _gate = new();
+    private readonly Lock _gate = new();
     private readonly float[] _fftBuffer = new float[FftBinCount];
     private readonly int[] _bandStart = new int[BandCount];
     private readonly int[] _bandEnd = new int[BandCount];

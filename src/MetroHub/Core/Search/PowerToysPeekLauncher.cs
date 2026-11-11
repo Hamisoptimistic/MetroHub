@@ -15,7 +15,7 @@ namespace MetroHub.Core.Search;
 /// </summary>
 public static class PowerToysPeekLauncher
 {
-    private static readonly object _lock = new();
+    private static readonly Lock _lock = new();
     private static string? _cachedExePath;
     private static DateTime _lastFailedCheck = DateTime.MinValue;
     private static readonly TimeSpan RetryInterval = TimeSpan.FromMinutes(1);

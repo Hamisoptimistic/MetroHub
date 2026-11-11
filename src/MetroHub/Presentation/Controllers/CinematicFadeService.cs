@@ -58,7 +58,7 @@ public sealed class CinematicFadeService
     private const int WS_EX_NOACTIVATE = 0x08000000;
 
     private Window? _activeOverlay;
-    private readonly object _gate = new();
+    private readonly Lock _gate = new();
     private bool _isFading;
 
     /// <summary>
@@ -112,9 +112,9 @@ public sealed class CinematicFadeService
 
                     // Safety Net 1: Watchdog timer (closes overlay if action or shutdown halts)
                     var watchdogCts = new CancellationTokenSource();
-                    _ = Task.Delay(3500, watchdogCts.Token).ContinueWith(_ =>
+                    _ = Task.Delay(3500, watchdogCts.Token).ContinueWith(t =>
                     {
-                        Application.Current?.Dispatcher.InvokeAsync(() =>
+                        _ = Application.Current?.Dispatcher.InvokeAsync(() =>
                         {
                             DismissOverlay(overlay);
                         });
@@ -126,7 +126,7 @@ public sealed class CinematicFadeService
                     {
                         if (e.Reason == SessionSwitchReason.SessionLock)
                         {
-                            Application.Current?.Dispatcher.InvokeAsync(() =>
+                            _ = Application.Current?.Dispatcher.InvokeAsync(() =>
                             {
                                 DismissOverlay(overlay);
                             });
@@ -138,7 +138,7 @@ public sealed class CinematicFadeService
                     PowerModeChangedEventHandler? powerHandler = null;
                     powerHandler = (s, e) =>
                     {
-                        Application.Current?.Dispatcher.InvokeAsync(() =>
+                        _ = Application.Current?.Dispatcher.InvokeAsync(() =>
                         {
                             DismissOverlay(overlay);
                         });

@@ -71,7 +71,7 @@ public sealed partial class RadioStationDialog : MetroDialog
 
     private void OnCatalogChanged(object? sender, EventArgs e)
     {
-        Dispatcher.InvokeAsync(() =>
+        _ = Dispatcher.InvokeAsync(() =>
         {
             string currentSelectedId = GetSelectedCategoryId();
             LoadCategories();
@@ -239,7 +239,7 @@ public sealed partial class RadioStationDialog : MetroDialog
         RadioSearchPlaceholderText.Visibility = Visibility.Collapsed;
         RadioSearchSpinner.Visibility = Visibility.Visible;
 
-        Task.Run(async () =>
+        _ = Task.Run(async () =>
         {
             try
             {
@@ -293,6 +293,7 @@ public sealed partial class RadioStationDialog : MetroDialog
             catch (OperationCanceledException) { }
             catch (Exception ex)
             {
+                Safe.Log("RadioStationDialog.SearchStations", ex);
                 if (!token.IsCancellationRequested)
                 {
                     await Dispatcher.InvokeAsync(() =>
@@ -371,7 +372,7 @@ public sealed partial class RadioStationDialog : MetroDialog
         RadioProbeStatusText.Text = "Validating stream...";
         RadioProbeStatusText.Foreground = ProbeStatusActiveBrush;
 
-        Task.Run(async () =>
+        _ = Task.Run(async () =>
         {
             try
             {
@@ -432,6 +433,7 @@ public sealed partial class RadioStationDialog : MetroDialog
             catch (OperationCanceledException) { }
             catch (Exception ex)
             {
+                Safe.Log("RadioStationDialog.ProbeUrl", ex);
                 if (!token.IsCancellationRequested)
                 {
                     await Dispatcher.InvokeAsync(() =>

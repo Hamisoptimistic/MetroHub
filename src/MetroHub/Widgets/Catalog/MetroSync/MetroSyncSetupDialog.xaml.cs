@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
+using System.Globalization;
 using System.IO;
 using System.Net.Http;
 using System.Threading;
@@ -496,7 +497,7 @@ public sealed partial class MetroSyncSetupDialog : MetroDialog
         }
 
         var rawId = ManualUserIdInput.Text?.Trim();
-        if (!long.TryParse(rawId, out var userId) || userId <= 0)
+        if (!long.TryParse(rawId, CultureInfo.InvariantCulture, out var userId) || userId <= 0)
         {
             ShowError("User ID not valid.");
             return;

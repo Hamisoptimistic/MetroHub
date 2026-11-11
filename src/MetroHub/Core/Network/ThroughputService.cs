@@ -14,7 +14,7 @@ public sealed class ThroughputService : IDisposable
     private static readonly Lazy<ThroughputService> _instance = new(() => new ThroughputService());
     public static ThroughputService Instance => _instance.Value;
 
-    private readonly object _lock = new();
+    private readonly Lock _lock = new();
     private Timer? _throughputTimer;
     private Timer? _latencyTimer;
     private CancellationTokenSource? _latencyCts;
@@ -267,27 +267,34 @@ public sealed class ThroughputService : IDisposable
         catch { }
     }
 
-    private async void OnLatencyTick(object? state)
+    private void OnLatencyTick(object? state)
     {
-        CancellationToken token;
-        lock (_lock)
-        {
-            if (_isPaused || !_isRunning)
-            {
-                if (MetroHub.Core.Services.HubState.IsHidden)
-                {
-                    MetroHub.Core.Services.HiddenDiagnosticsLogger.LogHiddenEvent("ThroughputService", "OnLatencyTick", "Skipped tick (properly paused)");
-                }
-                return;
-            }
-            _latencyCts?.Dispose();
-            _latencyCts = new CancellationTokenSource();
-            token = _latencyCts.Token;
-        }
+        _ = MeasureLatencyTickAsync();
+    }
 
+    private async Task MeasureLatencyTickAsync()
+    {
         try
         {
-            var latency = await MeasureLatencyAsync(token);
+            CancellationToken token;
+            lock (_lock)
+            {
+                if (_isPaused || !_isRunning)
+                {
+                    if (MetroHub.Core.Services.HubState.IsHidden)
+                    {
+                        MetroHub.Core.Services.HiddenDiagnosticsLogger.LogHiddenEvent("ThroughputService", "OnLatencyTick", "Skipped tick (properly paused)");
+                    }
+                    return;
+                }
+
+                _latencyCts?.Cancel();
+                _latencyCts?.Dispose();
+                _latencyCts = new CancellationTokenSource();
+                token = _latencyCts.Token;
+            }
+
+            var latency = await MeasureLatencyAsync(token).ConfigureAwait(false);
             if (token.IsCancellationRequested || _isPaused) return;
 
             lock (_lock)

@@ -399,9 +399,7 @@ public static class CanvasPasteService
             }
         }
 
-        string normalized = hasHttp
-            ? trimmed
-            : (hasWww ? "https://" + trimmed : "https://" + trimmed);
+        string normalized = hasHttp ? trimmed : "https://" + trimmed;
 
         if (Uri.TryCreate(normalized, UriKind.Absolute, out Uri? uri))
         {

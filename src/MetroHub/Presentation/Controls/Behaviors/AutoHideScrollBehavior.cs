@@ -88,7 +88,7 @@ public static class AutoHideScrollBehavior
         }
         else
         {
-            parent.Dispatcher.BeginInvoke(DispatcherPriority.Loaded, () =>
+            _ = parent.Dispatcher.BeginInvoke(DispatcherPriority.Loaded, () =>
             {
                 var deferredSv = FindChild<ScrollViewer>(parent);
                 if (deferredSv != null)

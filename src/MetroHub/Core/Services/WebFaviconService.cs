@@ -3,6 +3,7 @@ using System.Collections.Concurrent;
 using System.Collections.Frozen;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Globalization;
 using System.IO;
 using System.Text.RegularExpressions;
 using System.Threading;
@@ -130,22 +131,22 @@ public static partial class WebFaviconService
         { "docs.google.com/forms", "docs.google.com_forms" }
     }.ToFrozenDictionary(StringComparer.OrdinalIgnoreCase);
 
-    [GeneratedRegex(@"<meta[^>]+(?:property|name)\s*=\s*[""'](?:og:site_name)[""'][^>]+content\s*=\s*[""']([^""']+)[""']|<meta[^>]+content\s*=\s*[""']([^""']+)[""'][^>]+(?:property|name)\s*=\s*[""'](?:og:site_name)[""']", RegexOptions.IgnoreCase)]
+    [GeneratedRegex(@"<meta[^>]+(?:property|name)\s*=\s*[""'](?:og:site_name)[""'][^>]+content\s*=\s*[""'](?<siteName>[^""']+)[""']|<meta[^>]+content\s*=\s*[""'](?<siteName>[^""']+)[""'][^>]+(?:property|name)\s*=\s*[""'](?:og:site_name)[""']", RegexOptions.IgnoreCase)]
     private static partial Regex OgSiteNameRegex();
 
-    [GeneratedRegex(@"<title[^>]*>(.*?)</title>", RegexOptions.IgnoreCase | RegexOptions.Singleline)]
+    [GeneratedRegex(@"<title[^>]*>(?<title>.*?)</title>", RegexOptions.IgnoreCase | RegexOptions.Singleline)]
     private static partial Regex TitleRegex();
 
     [GeneratedRegex(@"<link\b[^>]*>", RegexOptions.IgnoreCase)]
     private static partial Regex LinkTagRegex();
 
-    [GeneratedRegex(@"\brel\s*=\s*[""']?([^""'>\s]+(?:\s+[^""'>\s]+)*)[""']?", RegexOptions.IgnoreCase)]
+    [GeneratedRegex(@"\brel\s*=\s*[""']?(?<rel>[^""'>\s]+(?:\s+[^""'>\s]+)*)[""']?", RegexOptions.IgnoreCase)]
     private static partial Regex RelAttrRegex();
 
-    [GeneratedRegex(@"\bhref\s*=\s*[""']?([^""'>\s]+)[""']?", RegexOptions.IgnoreCase)]
+    [GeneratedRegex(@"\bhref\s*=\s*[""']?(?<href>[^""'>\s]+)[""']?", RegexOptions.IgnoreCase)]
     private static partial Regex HrefAttrRegex();
 
-    [GeneratedRegex(@"\bsizes\s*=\s*[""']?(\d+)x(\d+)?[""']?", RegexOptions.IgnoreCase)]
+    [GeneratedRegex(@"\bsizes\s*=\s*[""']?(?<width>\d+)x(?:\d+)?[""']?", RegexOptions.IgnoreCase)]
     private static partial Regex SizesAttrRegex();
 
     [GeneratedRegex(@"\s+")]
@@ -444,10 +445,7 @@ public static partial class WebFaviconService
         var ogMatch = OgSiteNameRegex().Match(htmlHead);
         if (ogMatch.Success)
         {
-            siteName = !string.IsNullOrWhiteSpace(ogMatch.Groups[1].Value)
-                ? ogMatch.Groups[1].Value.Trim()
-                : ogMatch.Groups[2].Value.Trim();
-            siteName = System.Net.WebUtility.HtmlDecode(siteName);
+            siteName = System.Net.WebUtility.HtmlDecode(ogMatch.Groups["siteName"].Value.Trim());
         }
 
         // 2. Extract <title>
@@ -455,7 +453,7 @@ public static partial class WebFaviconService
         var titleMatch = TitleRegex().Match(htmlHead);
         if (titleMatch.Success)
         {
-            title = System.Net.WebUtility.HtmlDecode(titleMatch.Groups[1].Value.Trim());
+            title = System.Net.WebUtility.HtmlDecode(titleMatch.Groups["title"].Value.Trim());
             title = MultipleWhitespaceRegex().Replace(title, " ");
         }
 
@@ -473,8 +471,8 @@ public static partial class WebFaviconService
 
             if (!relMatch.Success || !hrefMatch.Success) continue;
 
-            string rel = relMatch.Groups[1].Value.Trim();
-            string rawHref = hrefMatch.Groups[1].Value.Trim();
+            string rel = relMatch.Groups["rel"].Value.Trim();
+            string rawHref = hrefMatch.Groups["href"].Value.Trim();
 
             if (string.IsNullOrWhiteSpace(rawHref)) continue;
 
@@ -518,7 +516,7 @@ public static partial class WebFaviconService
 
             // Check sizes="WxH"
             var sizeMatch = SizesAttrRegex().Match(tag);
-            if (sizeMatch.Success && int.TryParse(sizeMatch.Groups[1].Value, out int dim))
+            if (sizeMatch.Success && int.TryParse(sizeMatch.Groups["width"].Value, CultureInfo.InvariantCulture, out int dim))
             {
                 score += dim;
             }

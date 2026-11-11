@@ -47,9 +47,10 @@ public static class Program
                     }
                 }
             }
-            catch (Exception)
+            catch (Exception ex)
             {
                 // Silently ignore wake signal failures
+                System.Diagnostics.Trace.WriteLine($"[Program] Failed to signal wake event: {ex.Message}");
             }
 
             // Immediately dismiss Windows Explorer's IDC_APPSTARTING wait cursor
@@ -86,9 +87,10 @@ public static class Program
             {
                 mutex.ReleaseMutex();
             }
-            catch (Exception)
+            catch (Exception ex)
             {
                 // Mutex may not be owned or already released
+                System.Diagnostics.Trace.WriteLine($"[Program] Mutex release warning: {ex.Message}");
             }
             finally
             {

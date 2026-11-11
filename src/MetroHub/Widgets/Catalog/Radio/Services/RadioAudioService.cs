@@ -19,7 +19,7 @@ public sealed class RadioAudioService : IRadioAudioService
     private static readonly Lazy<RadioAudioService> _lazyInstance = new(() => new RadioAudioService());
     public static RadioAudioService Instance => _lazyInstance.Value;
 
-    private readonly object _gate = new();
+    private readonly Lock _gate = new();
     private readonly AudioSpectrumProcessor _spectrumProcessor = new();
     private int _currentStream;
     private long _switchVersion;

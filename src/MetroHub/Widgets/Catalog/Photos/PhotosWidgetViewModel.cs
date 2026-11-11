@@ -109,7 +109,7 @@ public sealed partial class PhotosWidgetViewModel : WidgetViewModelBase, IWidget
         _slideshowTimer = new System.Threading.Timer(_ =>
         {
             if (!_isHubVisible || _isHovered || PhotoCount <= 1 || _isTransitioning) return;
-            Application.Current?.Dispatcher.InvokeAsync(async () =>
+            _ = Application.Current?.Dispatcher.InvokeAsync(async () =>
             {
                 if (!_isHubVisible || _isHovered || PhotoCount <= 1 || _isTransitioning) return;
                 await TransitionToNextPhotoAsync(forward: true);

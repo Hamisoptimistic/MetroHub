@@ -110,7 +110,7 @@ public sealed class CanvasGroupManager
         var tiles = _tilesProvider();
         var grouped = tiles
             .Where(t => !string.IsNullOrWhiteSpace(t.SectionHeader) || !string.IsNullOrWhiteSpace(t.Group))
-            .GroupBy(t => !string.IsNullOrWhiteSpace(t.Group) ? t.Group : t.SectionHeader!)
+            .GroupBy(t => !string.IsNullOrWhiteSpace(t.Group) ? t.Group : t.SectionHeader!, StringComparer.Ordinal)
             .ToList();
 
         foreach (var grp in grouped)

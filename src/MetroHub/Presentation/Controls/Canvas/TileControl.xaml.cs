@@ -75,18 +75,19 @@ public sealed partial class TileControl : UserControl, IShaderInputBlocker
         if (IsShaderActive == active) return;
         IsShaderActive = active;
 
-        var app = Application.Current;
-        if (app != null && app.Dispatcher != null && !app.Dispatcher.CheckAccess())
-        {
-            app.Dispatcher.InvokeAsync(() => SetShaderActive(active));
-            return;
-        }
-
         for (int i = s_activeTiles.Count - 1; i >= 0; i--)
         {
             if (i < s_activeTiles.Count)
             {
-                s_activeTiles[i].ApplyShaderCacheMode(active);
+                var tile = s_activeTiles[i];
+                if (tile.Dispatcher.CheckAccess())
+                {
+                    tile.ApplyShaderCacheMode(active);
+                }
+                else
+                {
+                    _ = tile.Dispatcher.InvokeAsync(() => tile.ApplyShaderCacheMode(active));
+                }
             }
         }
     }
@@ -408,7 +409,7 @@ public sealed partial class TileControl : UserControl, IShaderInputBlocker
 
     private static DateTime _lastControlLaunchTime = DateTime.MinValue;
     private static string? _lastControlLaunchPath;
-    private static readonly object _controlLaunchLock = new();
+    private static readonly Lock _controlLaunchLock = new();
 
     public static bool IsNoteTile(TileModel? tile) => tile?.IsNote ?? false;
 
@@ -537,7 +538,7 @@ public sealed partial class TileControl : UserControl, IShaderInputBlocker
                     _ = Task.Run(() =>
                     {
                         var hex = ColorExtractorService.ExtractAccentColor(iconPath);
-                        App.Current?.Dispatcher?.InvokeAsync(() =>
+                        _ = App.Current?.Dispatcher?.InvokeAsync(() =>
                         {
                             if (DataContext == tile)
                             {

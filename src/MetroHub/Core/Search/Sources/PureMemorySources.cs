@@ -659,7 +659,7 @@ public sealed class CalculatorSource : ISearchSource
         int toIdx = input.IndexOf(" to ", StringComparison.OrdinalIgnoreCase);
         int inIdx = input.IndexOf(" in ", StringComparison.OrdinalIgnoreCase);
         int sepIdx = toIdx >= 0 ? toIdx : inIdx;
-        int sepLen = toIdx >= 0 ? 4 : 4;
+        const int sepLen = 4;
 
         if (sepIdx <= 0) return false;
 
@@ -1972,7 +1972,6 @@ public sealed class DevUtilitySource : ISearchSource
 
             if (onlyMd5) payload = raw[4..].Trim();
             else if (onlySha256) payload = raw[7..].Trim();
-            else if (onlySha1) payload = raw[5..].Trim();
             else payload = raw[5..].Trim();
 
             if (!string.IsNullOrEmpty(payload))

@@ -666,7 +666,7 @@ public sealed partial class NotepadWidgetView : UserControl
     {
         if (sender is TextBox textBox && textBox.IsVisible)
         {
-            Dispatcher.BeginInvoke(DispatcherPriority.Input, () =>
+            _ = Dispatcher.BeginInvoke(DispatcherPriority.Input, () =>
             {
                 textBox.Focus();
                 textBox.SelectAll();

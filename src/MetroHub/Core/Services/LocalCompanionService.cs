@@ -325,7 +325,7 @@ public sealed class LocalCompanionService : IDisposable, IAsyncDisposable
     private int _activePort;
     private CancellationTokenSource? _cts;
     private Task? _listenTask;
-    private readonly object _lock = new();
+    private readonly Lock _lock = new();
 
     public bool IsRunning => _listener?.IsListening == true;
     public int ActivePort => _activePort;

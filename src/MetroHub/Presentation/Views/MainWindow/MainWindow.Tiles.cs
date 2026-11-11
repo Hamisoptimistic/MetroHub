@@ -526,7 +526,7 @@ public sealed partial class MainWindow
 
     private void StartBackgroundMaintenance()
     {
-        Task.Run(async () =>
+        _ = Task.Run(async () =>
         {
             try
             {
@@ -588,7 +588,7 @@ public sealed partial class MainWindow
 
     private void OnAppsCatalogChanged(List<CatalogItemModel> freshApps)
     {
-        Dispatcher.InvokeAsync(() =>
+        _ = Dispatcher.InvokeAsync(() =>
         {
             if (_isAppsLoaded && AppsMenuItem != null)
             {
@@ -610,7 +610,7 @@ public sealed partial class MainWindow
 
         _lastAppsRefreshTime = DateTime.UtcNow;
 
-        Task.Run(async () =>
+        _ = Task.Run(async () =>
         {
             try
             {
@@ -635,7 +635,7 @@ public sealed partial class MainWindow
             }
             catch (Exception ex)
             {
-                Debug.WriteLine($"[AppsCatalog] Background refresh error: {ex.Message}");
+                MetroHub.Core.Services.Safe.Log("MainWindow.Tiles.TriggerBackgroundAppsCatalogRefresh", ex);
             }
         });
     }

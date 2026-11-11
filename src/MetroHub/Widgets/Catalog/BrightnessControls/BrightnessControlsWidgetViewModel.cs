@@ -489,7 +489,7 @@ public sealed partial class BrightnessControlsWidgetViewModel : WidgetViewModelB
                 }
                 _pinnedCursorMonitorId = null;
 
-                Application.Current?.Dispatcher.InvokeAsync(() =>
+                _ = Application.Current?.Dispatcher.InvokeAsync(() =>
                 {
                     ProcessCursorMonitorChange(cursorMonitorId);
                 });
@@ -505,7 +505,7 @@ public sealed partial class BrightnessControlsWidgetViewModel : WidgetViewModelB
     {
         if (!_isHubVisible) return;
 
-        Application.Current?.Dispatcher.InvokeAsync(() =>
+        _ = Application.Current?.Dispatcher.InvokeAsync(() =>
         {
             UpdateMonitorsCollection(updatedMonitors);
         });

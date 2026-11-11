@@ -33,7 +33,7 @@ public sealed class RadioCatalogService
 
     private static readonly Encoding Utf8NoBom = new UTF8Encoding(encoderShouldEmitUTF8Identifier: false);
 
-    private readonly object _gate = new();
+    private readonly Lock _gate = new();
     private readonly string _catalogFilePath;
     private readonly string _catalogBakPath;
     private RadioCatalog? _cachedCatalog;

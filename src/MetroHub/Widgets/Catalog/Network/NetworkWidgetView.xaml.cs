@@ -81,7 +81,7 @@ public sealed partial class NetworkWidgetView : UserControl
     {
         if (e.NewValue is true && sender is FrameworkElement drawer)
         {
-            Dispatcher.InvokeAsync(() =>
+            _ = Dispatcher.InvokeAsync(() =>
             {
                 EnsureItemFitsInView(drawer);
 
@@ -104,7 +104,7 @@ public sealed partial class NetworkWidgetView : UserControl
         EnsureItemFitsInView(drawer);
     }
 
-    private void EnsureItemFitsInView(FrameworkElement drawer)
+    private static void EnsureItemFitsInView(FrameworkElement drawer)
     {
         try
         {

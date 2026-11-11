@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Media;
@@ -273,7 +274,7 @@ public sealed partial class CaffeineSleepWidgetViewModel : WidgetViewModelBase
         {
             minutes = m;
         }
-        else if (minutesParameter is string s && int.TryParse(s, out int parsed))
+        else if (minutesParameter is string s && int.TryParse(s, CultureInfo.InvariantCulture, out int parsed))
         {
             minutes = parsed;
         }
@@ -316,7 +317,7 @@ public sealed partial class CaffeineSleepWidgetViewModel : WidgetViewModelBase
 
     private void OnPowerServiceStateChanged(object? sender, EventArgs e)
     {
-        Application.Current?.Dispatcher.InvokeAsync(() =>
+        _ = Application.Current?.Dispatcher.InvokeAsync(() =>
         {
             OnPropertyChanged(nameof(CurrentMode));
             OnPropertyChanged(nameof(ModeTitle));
@@ -344,7 +345,7 @@ public sealed partial class CaffeineSleepWidgetViewModel : WidgetViewModelBase
 
     private void OnNightLightServiceStateChanged(object? sender, EventArgs e)
     {
-        Application.Current?.Dispatcher.InvokeAsync(() =>
+        _ = Application.Current?.Dispatcher.InvokeAsync(() =>
         {
             OnPropertyChanged(nameof(IsNightLightEnabled));
             OnPropertyChanged(nameof(IsWarmSunAnimating));

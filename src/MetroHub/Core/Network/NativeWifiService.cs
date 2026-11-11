@@ -22,7 +22,7 @@ public sealed class NativeWifiService : IDisposable
     private bool _hasWifiAdapter;
     private string _wifiStatusMessage = "Initializing Wi-Fi...";
 
-    private readonly object _lock = new();
+    private readonly Lock _lock = new();
     private DateTime _lastEnumTime = DateTime.MinValue;
     private static readonly TimeSpan EnumThrottle = TimeSpan.FromMilliseconds(500);
 

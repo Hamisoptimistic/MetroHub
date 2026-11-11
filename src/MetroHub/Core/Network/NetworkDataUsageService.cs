@@ -72,7 +72,7 @@ public sealed class NetworkDataUsageService
     private static readonly Lazy<NetworkDataUsageService> _instance = new(() => new NetworkDataUsageService());
     public static NetworkDataUsageService Instance => _instance.Value;
 
-    private readonly Dictionary<string, (DateTime CachedAt, DataUsageResult Result)> _cache = new();
+    private readonly Dictionary<string, (DateTime CachedAt, DataUsageResult Result)> _cache = new(StringComparer.Ordinal);
     private static readonly TimeSpan CacheExpiry = TimeSpan.FromMinutes(1);
 
     public async Task<DataUsageResult> QueryUsageAsync(NetworkKind kind, DataUsageTimeframe timeframe)

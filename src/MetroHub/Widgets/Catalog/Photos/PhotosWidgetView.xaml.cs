@@ -31,7 +31,7 @@ public sealed partial class PhotosWidgetView : UserControl
         {
             if (recipient is PhotosWidgetView view)
             {
-                view.Dispatcher.InvokeAsync(() =>
+                _ = view.Dispatcher.InvokeAsync(() =>
                 {
                     if (msg.IsVisible)
                     {

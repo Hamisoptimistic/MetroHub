@@ -195,7 +195,7 @@ public sealed partial class WebLinkDialog : MetroDialog
             WebLinkTitleInput.Text = inferred;
         }
 
-        Task.Run(async () =>
+        _ = Task.Run(async () =>
         {
             try
             {
@@ -344,8 +344,9 @@ public sealed partial class WebLinkDialog : MetroDialog
                 });
             }
             catch (OperationCanceledException) { }
-            catch
+            catch (Exception ex)
             {
+                MetroHub.Core.Services.Safe.Log("WebLinkDialog.FaviconProbe", ex);
                 if (!token.IsCancellationRequested)
                 {
                     await Dispatcher.InvokeAsync(() =>

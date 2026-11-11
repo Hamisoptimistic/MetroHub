@@ -459,7 +459,7 @@ public sealed class DailyWallpaperService
 
     private static void PruneOldCacheFiles()
     {
-        Task.Run(() =>
+        _ = Task.Run(() =>
         {
             try
             {
@@ -476,7 +476,10 @@ public sealed class DailyWallpaperService
                     }
                 }
             }
-            catch { }
+            catch (Exception ex)
+            {
+                Safe.Log("DailyWallpaperService.PruneOldCacheFiles", ex);
+            }
         });
     }
 }

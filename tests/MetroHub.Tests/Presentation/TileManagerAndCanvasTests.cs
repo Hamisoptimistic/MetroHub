@@ -546,6 +546,7 @@ public class TileManagerAndCanvasTests
             var tileControl = new Presentation.Controls.TileControl();
             var window = new System.Windows.Window { Content = tileControl, Width = 300, Height = 300 };
             window.Show();
+            System.Windows.Threading.Dispatcher.CurrentDispatcher.Invoke(() => { }, System.Windows.Threading.DispatcherPriority.Loaded);
 
             try
             {

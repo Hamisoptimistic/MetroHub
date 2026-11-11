@@ -16,7 +16,7 @@ public static class SystemAccentColorService
 {
     private static Windows.UI.ViewManagement.UISettings? _uiSettings;
     private static bool _initialized;
-    private static readonly object _lock = new();
+    private static readonly Lock _lock = new();
 
     public static Color CurrentAccentColor { get; private set; } = Color.FromRgb(0x4C, 0xC2, 0xFF);
     public static string CurrentAccentHex { get; private set; } = "#4CC2FF";
@@ -57,7 +57,7 @@ public static class SystemAccentColorService
                 _uiSettings = new Windows.UI.ViewManagement.UISettings();
                 _uiSettings.ColorValuesChanged += (sender, args) =>
                 {
-                    Application.Current?.Dispatcher.InvokeAsync(UpdateSystemAccentColors);
+                    _ = Application.Current?.Dispatcher.InvokeAsync(UpdateSystemAccentColors);
                 };
             }
             catch (Exception ex)
@@ -69,7 +69,7 @@ public static class SystemAccentColorService
                     {
                         if (e.Category is Microsoft.Win32.UserPreferenceCategory.General or Microsoft.Win32.UserPreferenceCategory.Color)
                         {
-                            Application.Current?.Dispatcher.InvokeAsync(UpdateSystemAccentColors);
+                            _ = Application.Current?.Dispatcher.InvokeAsync(UpdateSystemAccentColors);
                         }
                     };
                 }

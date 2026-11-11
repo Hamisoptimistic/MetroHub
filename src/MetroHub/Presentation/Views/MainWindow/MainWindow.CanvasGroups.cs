@@ -180,16 +180,23 @@ public sealed partial class MainWindow
 
         _ = Task.Run(async () =>
         {
-            foreach (var tile in launchableTiles)
+            try
             {
-                ProcessLauncherService.LaunchTarget(tile.TargetPath, tile.Arguments, tile.RunAsAdmin);
-                await Task.Delay(150).ConfigureAwait(false);
+                foreach (var tile in launchableTiles)
+                {
+                    ProcessLauncherService.LaunchTarget(tile.TargetPath, tile.Arguments, tile.RunAsAdmin);
+                    await Task.Delay(150).ConfigureAwait(false);
+                }
+            }
+            catch (Exception ex)
+            {
+                MetroHub.Core.Services.Safe.Log("MainWindow.CanvasGroups.LaunchAll", ex);
             }
         });
 
         if (Settings.CloseOnLaunch)
         {
-            Dispatcher.InvokeAsync(() => HideScreen(restorePreviousFocus: false));
+            _ = Dispatcher.InvokeAsync(() => HideScreen(restorePreviousFocus: false));
         }
     }
 }

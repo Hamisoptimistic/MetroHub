@@ -17,7 +17,7 @@ namespace MetroHub.Core.Services;
 public static class InstalledAppsService
 {
     private static List<CatalogItemModel>? _cachedApps;
-    private static readonly object _lock = new();
+    private static readonly Lock _lock = new();
     private static readonly List<FileSystemWatcher> _watchers = new();
     private static Timer? _debounceTimer;
 
