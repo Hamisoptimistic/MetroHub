@@ -2,6 +2,7 @@ using System;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Threading;
+using MetroHub.Core.Services;
 
 namespace MetroHub;
 
@@ -60,13 +61,28 @@ public static class Program
             return;
         }
 
+        LoggingService.Initialize();
+
         try
         {
             RunApplication();
         }
+        catch (Exception ex)
+        {
+            try
+            {
+                Serilog.Log.Fatal(ex, "Host terminated unexpectedly during application execution");
+            }
+            catch
+            {
+                // Crash logging must never throw
+            }
+            throw;
+        }
         finally
         {
             ReleaseSingleInstanceMutex();
+            LoggingService.Shutdown();
         }
     }
 

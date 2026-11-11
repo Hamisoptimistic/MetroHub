@@ -1,6 +1,7 @@
 using System;
 using System.Globalization;
 using System.IO;
+using System.Threading;
 using Serilog;
 using Serilog.Events;
 
@@ -13,8 +14,13 @@ namespace MetroHub.Core.Services;
 /// </summary>
 public static class LoggingService
 {
-    private static bool _initialized;
+    private static volatile bool _initialized;
     private static readonly Lock _initLock = new();
+
+    /// <summary>
+    /// Gets a value indicating whether logging has been initialized.
+    /// </summary>
+    public static bool IsInitialized => _initialized;
 
     /// <summary>
     /// Initializes Serilog globally once per application lifetime.
@@ -55,11 +61,14 @@ public static class LoggingService
                         rollOnFileSizeLimit: true,
                         buffered: true,
                         outputTemplate: "{Timestamp:yyyy-MM-dd HH:mm:ss.fff} [{Level:u3}] [{SourceContext}] {Message:lj}{NewLine}{Exception}",
-                        formatProvider: CultureInfo.InvariantCulture)
-                    .WriteTo.Seq(
-                        serverUrl: "http://localhost:5341",
-                        period: TimeSpan.FromSeconds(2),
                         formatProvider: CultureInfo.InvariantCulture);
+
+#if DEBUG
+                logConfig = logConfig.WriteTo.Seq(
+                    serverUrl: "http://localhost:5341",
+                    period: TimeSpan.FromSeconds(2),
+                    formatProvider: CultureInfo.InvariantCulture);
+#endif
 
                 Log.Logger = logConfig.CreateLogger();
                 _initialized = true;
@@ -77,17 +86,27 @@ public static class LoggingService
 
     /// <summary>
     /// Flushes all pending async log batches and releases file handles before process exit.
+    /// Safe to call multiple times; subsequent calls are no-ops.
     /// </summary>
     public static void Shutdown()
     {
-        try
+        lock (_initLock)
         {
-            Log.Information("MetroHub logging shutting down. Flushing sinks.");
-            Log.CloseAndFlush();
-        }
-        catch
-        {
-            // Shutdown flush must never throw
+            if (!_initialized) return;
+
+            try
+            {
+                Log.Information("MetroHub logging shutting down. Flushing sinks.");
+                Log.CloseAndFlush();
+            }
+            catch
+            {
+                // Shutdown flush must never throw
+            }
+            finally
+            {
+                _initialized = false;
+            }
         }
     }
 }

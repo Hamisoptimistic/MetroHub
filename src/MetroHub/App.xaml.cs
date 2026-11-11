@@ -23,7 +23,7 @@ public sealed partial class App : Application
     private static int _unhandledExceptionCount;
     private static DateTime _lastUnhandledExceptionTime = DateTime.MinValue;
 
-    private static void LogCrash(string source, object? exception)
+    private static void LogCrash(string source, object? exception, bool isTerminating = false)
     {
         try
         {
@@ -53,6 +53,11 @@ public sealed partial class App : Application
             if (exception is Exception exObj)
             {
                 Safe.Log(source, exObj);
+            }
+
+            if (isTerminating)
+            {
+                LoggingService.Shutdown();
             }
         }
         catch
@@ -97,15 +102,14 @@ public sealed partial class App : Application
         // Global crash logging
         AppDomain.CurrentDomain.UnhandledException += (s, args) =>
         {
-            LogCrash("AppDomain.UnhandledException", args.ExceptionObject);
+            LogCrash("AppDomain.UnhandledException", args.ExceptionObject, isTerminating: args.IsTerminating);
         };
 
         DispatcherUnhandledException += (s, args) =>
         {
-            LogCrash("DispatcherUnhandledException", args.Exception);
-
             if (ShouldHandleDispatcherException())
             {
+                LogCrash("DispatcherUnhandledException", args.Exception, isTerminating: false);
                 args.Handled = true;
                 _ = _mainWindow?.Dispatcher.InvokeAsync(() =>
                 {
@@ -120,11 +124,15 @@ public sealed partial class App : Application
                     }
                 });
             }
+            else
+            {
+                LogCrash("DispatcherUnhandledException", args.Exception, isTerminating: true);
+            }
         };
 
         System.Threading.Tasks.TaskScheduler.UnobservedTaskException += (s, args) =>
         {
-            LogCrash("TaskScheduler.UnobservedTaskException", args.Exception);
+            LogCrash("TaskScheduler.UnobservedTaskException", args.Exception, isTerminating: false);
             args.SetObserved();
         };
 
@@ -180,7 +188,10 @@ public sealed partial class App : Application
         {
             string crashLog = MetroHub.Core.Services.AppPaths.CrashLogPath;
             MetroHub.Core.Services.AppPaths.EnsureDirectory(crashLog);
-            File.WriteAllText(crashLog, ex.ToString());
+            string entry = $"[{System.DateTime.Now:yyyy-MM-dd HH:mm:ss.fff}] [App.OnStartup.MainWindowInit]{System.Environment.NewLine}{ex}{System.Environment.NewLine}{System.Environment.NewLine}";
+            File.AppendAllText(crashLog, entry);
+            Serilog.Log.Fatal(ex, "MetroHub failed to start during MainWindow initialization");
+            LoggingService.Shutdown();
             MessageBox.Show($"MetroHub failed to start:\n\n{ex.Message}", "MetroHub Startup Error", MessageBoxButton.OK, MessageBoxImage.Error);
             Shutdown();
             return;
