@@ -42,7 +42,7 @@ public sealed class DailyWallpaperService
         }
         catch (Exception ex)
         {
-            Debug.WriteLine($"[DailyWallpaperService] Failed to create cache directory: {ex.Message}");
+            Safe.Log(ex, "DailyWallpaperService.EnsureCacheDirectory");
         }
     }
 
@@ -59,7 +59,10 @@ public sealed class DailyWallpaperService
                 return culture.Name;
             }
         }
-        catch { }
+        catch (Exception ex)
+        {
+            Safe.Log(ex, "DailyWallpaperService.GetCurrentMarket");
+        }
         return "en-US";
     }
 
@@ -76,7 +79,10 @@ public sealed class DailyWallpaperService
                 return region.TwoLetterISORegionName.ToLowerInvariant();
             }
         }
-        catch { }
+        catch (Exception ex)
+        {
+            Safe.Log(ex, "DailyWallpaperService.GetCurrentCountryCode");
+        }
         return "us";
     }
 
@@ -116,7 +122,7 @@ public sealed class DailyWallpaperService
             }
             catch (Exception ex)
             {
-                Debug.WriteLine($"[DailyWallpaperService] Bing metadata request failed: {ex.Message}");
+                Safe.Log(ex, "DailyWallpaperService.GetBingWallpaperAsync.Metadata");
             }
 
             // 3. Download high-resolution image
@@ -207,7 +213,7 @@ public sealed class DailyWallpaperService
             }
             catch (Exception ex)
             {
-                Debug.WriteLine($"[DailyWallpaperService] Peapix metadata request failed: {ex.Message}");
+                Safe.Log(ex, "DailyWallpaperService.GetSpotlightWallpaperAsync.Metadata");
             }
 
             // 3. Download high-resolution master image
@@ -266,8 +272,9 @@ public sealed class DailyWallpaperService
             var decoder = BitmapDecoder.Create(ms, BitmapCreateOptions.None, BitmapCacheOption.None);
             return decoder != null;
         }
-        catch
+        catch (Exception ex)
         {
+            Safe.Ignore(ex, "DailyWallpaperService.IsWebpSupportedProbe");
             return false;
         }
     });
@@ -357,9 +364,10 @@ public sealed class DailyWallpaperService
                 var frame = BitmapFrame.Create(fs, BitmapCreateOptions.DelayCreation, BitmapCacheOption.None);
                 originalWidth = frame.PixelWidth;
             }
-            catch
+            catch (Exception ex)
             {
                 // If header probing fails, fall back to standard decode
+                Safe.Ignore(ex, "DailyWallpaperService.LoadOptimizedWallpaperImage.HeaderProbe");
             }
 
             var bmp = new BitmapImage();
@@ -379,30 +387,35 @@ public sealed class DailyWallpaperService
             bmp.Freeze(); // Immutable, thread-safe Freezable per Rule 3
             return bmp;
         }
-        catch (NotSupportedException)
+        catch (NotSupportedException ex)
         {
+            Safe.Log(ex, "DailyWallpaperService.LoadOptimizedWallpaperImage.NotSupported");
             error = path.EndsWith(".webp", StringComparison.OrdinalIgnoreCase)
                 ? "WebP isn't supported on this Windows install. Convert to PNG or JPG."
                 : "That image format isn't supported on this Windows install.";
             return null;
         }
-        catch (FileFormatException)
+        catch (FileFormatException ex)
         {
+            Safe.Log(ex, "DailyWallpaperService.LoadOptimizedWallpaperImage.FileFormat");
             error = "That file appears to be corrupt.";
             return null;
         }
-        catch (OutOfMemoryException)
+        catch (OutOfMemoryException ex)
         {
+            Safe.Log(ex, "DailyWallpaperService.LoadOptimizedWallpaperImage.OutOfMemory");
             error = "That image is too large to use as a wallpaper.";
             return null;
         }
-        catch (IOException)
+        catch (IOException ex)
         {
+            Safe.Log(ex, "DailyWallpaperService.LoadOptimizedWallpaperImage.IO");
             error = "Can't read that file. Is it open in another app?";
             return null;
         }
         catch (Exception ex)
         {
+            Safe.Log(ex, "DailyWallpaperService.LoadOptimizedWallpaperImage");
             error = $"Couldn't load that image: {ex.Message}";
             return null;
         }
@@ -451,15 +464,16 @@ public sealed class DailyWallpaperService
 
             return file?.FullName;
         }
-        catch
+        catch (Exception ex)
         {
+            Safe.Log(ex, "DailyWallpaperService.GetNewestCachedWallpaper");
             return null;
         }
     }
 
     private static void PruneOldCacheFiles()
     {
-        _ = Task.Run(() =>
+        Task.Run(() =>
         {
             try
             {
@@ -472,14 +486,14 @@ public sealed class DailyWallpaperService
                 {
                     if (file.LastWriteTimeUtc < cutoff)
                     {
-                        try { file.Delete(); } catch { }
+                        try { file.Delete(); } catch (Exception ex) { Safe.Ignore(ex, "DailyWallpaperService.PruneOldCacheFiles.Delete"); }
                     }
                 }
             }
             catch (Exception ex)
             {
-                Safe.Log("DailyWallpaperService.PruneOldCacheFiles", ex);
+                Safe.Log(ex, "DailyWallpaperService.PruneOldCacheFiles");
             }
-        });
+        }).FireAndForget("DailyWallpaperService.PruneOldCacheFiles");
     }
 }

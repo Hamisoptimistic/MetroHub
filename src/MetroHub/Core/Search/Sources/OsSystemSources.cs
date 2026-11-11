@@ -93,7 +93,10 @@ public static class RunningSnapshot
                 using var proc = Process.GetProcessById((int)pid);
                 procName = proc.ProcessName;
             }
-            catch { }
+            catch (Exception ex)
+            {
+                Safe.Ignore(ex, "WindowSnapshotEntry.GetProcessName");
+            }
 
             list.Add(new WindowSnapshotEntry(hwnd, title, procName, pid));
             return true;
@@ -128,8 +131,9 @@ public static class RunningSnapshot
             {
                 list.Add(new ProcessSnapshotEntry(p.Id, p.ProcessName, p.StartTime));
             }
-            catch
+            catch (Exception ex)
             {
+                Safe.Ignore(ex, "ProcessSnapshotEntry.StartTime");
                 list.Add(new ProcessSnapshotEntry(p.Id, p.ProcessName, DateTime.MinValue));
             }
             finally
@@ -244,8 +248,9 @@ public sealed class TerminalSource : ISearchSource
             string wtPath = Path.Combine(localAppData, @"Microsoft\WindowsApps\wt.exe");
             return File.Exists(wtPath);
         }
-        catch
+        catch (Exception ex)
         {
+            Safe.Ignore(ex, "TerminalSource.IsWindowsTerminalAvailable");
             return false;
         }
     }
@@ -524,7 +529,10 @@ public sealed class ProcessKillerSource : ISearchSource
                         return false;
                     }
                 }
-                catch { }
+                catch (Exception ex)
+                {
+                    Safe.Ignore(ex, "ProcessKiller.StartTimeCheck");
+                }
             }
 
             if (Denylist.Contains(proc.ProcessName)) return false;

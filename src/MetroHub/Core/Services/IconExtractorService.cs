@@ -137,7 +137,10 @@ public static class IconExtractorService
                 return shinfo.iIcon;
             }
         }
-        catch { }
+        catch (Exception ex)
+        {
+            Safe.Ignore(ex, "IconExtractorService.GetFileVersion");
+        }
         return 0;
     }
 
@@ -264,7 +267,10 @@ public static class IconExtractorService
                 }
             }
         }
-        catch { }
+        catch (Exception ex)
+        {
+            Safe.Ignore(ex, "IconExtractorService.ResolveAppIdIconPath.Manifest");
+        }
 
         try
         {
@@ -276,7 +282,10 @@ public static class IconExtractorService
                 return progId.Trim().ToLowerInvariant();
             }
         }
-        catch { }
+        catch (Exception ex)
+        {
+            Safe.Ignore(ex, "IconExtractorService.ResolveAppIdIconPath.Registry");
+        }
 
         return string.Empty;
     }
@@ -353,8 +362,9 @@ public static class IconExtractorService
                     {
                         return ExtractPerFileIcon(path);
                     }
-                    catch
+                    catch (Exception ex)
                     {
+                        Safe.Ignore(ex, "IconExtractorService.ExtractAndCacheIconAsync.Inner");
                         return null;
                     }
                     finally
@@ -378,7 +388,7 @@ public static class IconExtractorService
                     }
                     catch (Exception ex)
                     {
-                        Safe.Log("IconExtractorService.ContinueWith", ex);
+                        Safe.Ignore(ex, "IconExtractorService.ContinueWith");
                     }
                     finally
                     {
@@ -428,7 +438,10 @@ public static class IconExtractorService
                 }
             }
         }
-        catch { }
+        catch (Exception ex)
+        {
+            Safe.Ignore(ex, "IconExtractorService.ExtractShellIconByAttribute");
+        }
         return null;
     }
 
@@ -455,8 +468,9 @@ public static class IconExtractorService
             return ExtractViaLegacyShell(fullPath)
                 ?? (hasDifferentTarget ? ExtractViaLegacyShell(target) : null);
         }
-        catch
+        catch (Exception ex)
         {
+            Safe.Ignore(ex, "IconExtractorService.ExtractPerFileIcon");
             return null;
         }
     }
@@ -628,8 +642,9 @@ public static class IconExtractorService
             cropped.Freeze();
             return cropped;
         }
-        catch
+        catch (Exception ex)
         {
+            Safe.Ignore(ex, "IconExtractorService.CropTransparentMargins");
             return source;
         }
     }
@@ -645,7 +660,7 @@ public static class IconExtractorService
             else
             {
                 // Background sweep: Purge orphaned legacy v1-v4 cache files from earlier versions
-                _ = Task.Run(() =>
+                Task.Run(() =>
                 {
                     try
                     {
@@ -654,22 +669,25 @@ public static class IconExtractorService
                         {
                             if (!f.Name.StartsWith("v5_", StringComparison.OrdinalIgnoreCase))
                             {
-                                try { f.Delete(); } catch { }
+                                try { f.Delete(); } catch (Exception ex) { Safe.Ignore(ex, "IconExtractorService.CacheSweep.DeleteV1V4"); }
                             }
                         }
                         foreach (var f in dir.GetFiles("*.tmp"))
                         {
-                            try { f.Delete(); } catch { }
+                            try { f.Delete(); } catch (Exception ex) { Safe.Ignore(ex, "IconExtractorService.CacheSweep.DeleteTmp"); }
                         }
                     }
                     catch (Exception ex)
                     {
-                        Safe.Log("IconExtractorService.CacheSweep", ex);
+                        Safe.Ignore(ex, "IconExtractorService.CacheSweep");
                     }
-                });
+                }).FireAndForget("IconExtractorService.CacheSweep");
             }
         }
-        catch { }
+        catch (Exception ex)
+        {
+            Safe.Ignore(ex, "IconExtractorService.cctor");
+        }
     }
 
     /// <summary>
@@ -717,7 +735,7 @@ public static class IconExtractorService
             // Canonicalize keyPath so relative, differently cased, or slash-varying paths resolve to the exact same hash
             if (!keyPath.StartsWith("shell:", StringComparison.OrdinalIgnoreCase) && (File.Exists(keyPath) || Directory.Exists(keyPath)))
             {
-                try { keyPath = Path.GetFullPath(keyPath); } catch { }
+                try { keyPath = Path.GetFullPath(keyPath); } catch (Exception ex) { Safe.Ignore(ex, "IconExtractorService.ExtractAndCacheIcon.GetFullPath"); }
             }
             keyPath = keyPath.Trim().ToLowerInvariant();
 
@@ -750,7 +768,10 @@ public static class IconExtractorService
                         return cachedFilePath;
                     }
                 }
-                catch { }
+                catch (Exception ex)
+                {
+                    Safe.Ignore(ex, "IconExtractorService.ExtractAndCacheIcon.FileInfo");
+                }
             }
 
             // Extract best quality icon via multi-tier strategy
@@ -777,7 +798,7 @@ public static class IconExtractorService
                 {
                     if (File.Exists(tempFile))
                     {
-                        try { File.Delete(tempFile); } catch { }
+                        try { File.Delete(tempFile); } catch (Exception ex) { Safe.Ignore(ex, "IconExtractorService.ExtractAndCacheIcon.DeleteTemp"); }
                     }
                 }
 
@@ -787,7 +808,10 @@ public static class IconExtractorService
                 return cachedFilePath;
             }
         }
-        catch { }
+        catch (Exception ex)
+        {
+            Safe.Ignore(ex, "IconExtractorService.ExtractAndCacheIcon");
+        }
 
         return null;
     }
@@ -871,8 +895,9 @@ public static class IconExtractorService
             int hr = SHCreateItemFromParsingName(path, IntPtr.Zero, ref guid, out var factory);
             return hr == 0 && factory != null;
         }
-        catch
+        catch (Exception ex)
         {
+            Safe.Ignore(ex, "IconExtractorService.ShellItemExists");
             return false;
         }
     }
@@ -901,7 +926,10 @@ public static class IconExtractorService
                 }
             }
         }
-        catch { }
+        catch (Exception ex)
+        {
+            Safe.Ignore(ex, "IconExtractorService.ExtractViaPrivateExtractIcons");
+        }
         return null;
     }
 
@@ -938,7 +966,10 @@ public static class IconExtractorService
                 }
             }
         }
-        catch { }
+        catch (Exception ex)
+        {
+            Safe.Ignore(ex, "IconExtractorService.ExtractViaShellItemImageFactory");
+        }
         finally
         {
             if (factory != null)
@@ -972,7 +1003,10 @@ public static class IconExtractorService
                 }
             }
         }
-        catch { }
+        catch (Exception ex)
+        {
+            Safe.Ignore(ex, "IconExtractorService.ExtractViaLegacyShell");
+        }
         return null;
     }
 
@@ -1035,7 +1069,10 @@ public static class IconExtractorService
                 }
             }
         }
-        catch { }
+        catch (Exception ex)
+        {
+            Safe.Ignore(ex, "IconExtractorService.ResolveShortcutTarget");
+        }
 
         return shortcutPath;
     }
@@ -1077,7 +1114,10 @@ public static class IconExtractorService
                     }
                 }
             }
-            catch { }
+            catch (Exception ex)
+            {
+                Safe.Ignore(ex, "IconExtractorService.ResolveExecutableTarget");
+            }
         }
 
         return path;

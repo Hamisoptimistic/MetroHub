@@ -25,20 +25,27 @@ public static class AppUninstallService
                 }
             }
         }
-        catch { }
+        catch (Exception ex)
+        {
+            Safe.Log(ex, "AppUninstallService.LaunchUninstallString");
+        }
 
         // 2. Fallback to Windows 11 Installed Apps Settings
         try
         {
             Process.Start(new ProcessStartInfo("ms-settings:appsfeatures") { UseShellExecute = true });
         }
-        catch
+        catch (Exception ex)
         {
+            Safe.Log(ex, "AppUninstallService.LaunchSettingsAppsFeatures");
             try
             {
                 Process.Start(new ProcessStartInfo("appwiz.cpl") { UseShellExecute = true });
             }
-            catch { }
+            catch (Exception innerEx)
+            {
+                Safe.Log(innerEx, "AppUninstallService.LaunchAppwizCpl");
+            }
         }
     }
 
@@ -86,10 +93,16 @@ public static class AppUninstallService
                                 return uninstallString;
                             }
                         }
-                        catch { }
+                        catch (Exception ex)
+                        {
+                            Safe.Ignore(ex, "AppUninstallService.OpenSubKey");
+                        }
                     }
                 }
-                catch { }
+                catch (Exception ex)
+                {
+                    Safe.Ignore(ex, "AppUninstallService.RegistryRoot");
+                }
             }
         }
 

@@ -224,15 +224,22 @@ public static class SidebarPinningService
         // If WebUrl with missing custom icon, trigger asynchronous background favicon fetch
         if (shortcutItem.TargetType == SidebarShortcutType.WebUrl && string.IsNullOrWhiteSpace(shortcutItem.CustomIconPath))
         {
-            _ = Task.Run(async () =>
+            Task.Run(async () =>
             {
-                string? fetched = await WebFaviconService.GetFaviconPathAsync(shortcutItem.Target);
-                if (!string.IsNullOrWhiteSpace(fetched))
+                try
                 {
-                    shortcutItem.CustomIconPath = fetched;
-                    store.SaveShortcutsState();
+                    string? fetched = await WebFaviconService.GetFaviconPathAsync(shortcutItem.Target);
+                    if (!string.IsNullOrWhiteSpace(fetched))
+                    {
+                        shortcutItem.CustomIconPath = fetched;
+                        store.SaveShortcutsState();
+                    }
                 }
-            });
+                catch (Exception ex)
+                {
+                    Safe.Ignore(ex, "SidebarPinningService.FaviconFetch");
+                }
+            }).FireAndForget("SidebarPinningService.FaviconFetch");
         }
 
         return true;

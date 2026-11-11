@@ -1,6 +1,8 @@
+using System;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using System.Text.Json.Serialization;
+using MetroHub.Core.Services;
 
 namespace MetroHub.Core.Models;
 
@@ -153,8 +155,9 @@ public sealed class TileGroupModel : INotifyPropertyChanged
                 brush.Freeze();
                 return brush;
             }
-            catch
+            catch (Exception ex)
             {
+                Safe.Log(ex, "TileGroupModel.TintBrush");
                 return System.Windows.Media.Brushes.Transparent;
             }
         }
@@ -174,8 +177,9 @@ public sealed class TileGroupModel : INotifyPropertyChanged
                 brush.Freeze();
                 return brush;
             }
-            catch
+            catch (Exception ex)
             {
+                Safe.Log(ex, "TileGroupModel.TintBorderBrush");
                 return System.Windows.Media.Brushes.Transparent;
             }
         }

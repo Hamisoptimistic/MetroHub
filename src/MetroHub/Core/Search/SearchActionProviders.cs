@@ -205,7 +205,7 @@ public static class FileActionProvider
                         string? iconPath = null;
                         if (!isFolder)
                         {
-                            try { iconPath = IconExtractorService.ExtractAndCacheIcon(path); } catch { }
+                            try { iconPath = IconExtractorService.ExtractAndCacheIcon(path); } catch (Exception ex) { Safe.Ignore(ex, "SearchActionProviders.ExtractAndCacheIcon"); }
                         }
 
                         var shortcut = new SidebarShortcutItem

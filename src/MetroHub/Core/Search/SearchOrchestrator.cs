@@ -199,7 +199,7 @@ public sealed class SearchOrchestrator : IDisposable
             ct = _activeCts.Token;
         }
 
-        _ = Task.Run(() => ExecutePipelineAsync(text, sessionId, ct), ct);
+        Task.Run(() => ExecutePipelineAsync(text, sessionId, ct), ct).FireAndForget("SearchOrchestrator.ExecutePipelineAsync");
     }
 
     private async Task ExecutePipelineAsync(string rawText, long sessionId, CancellationToken ct)
@@ -371,11 +371,13 @@ public sealed class SearchOrchestrator : IDisposable
 
             PublishIfCurrent(finalSnapshot, sessionId, ct);
         }
-        catch (OperationCanceledException) { }
+        catch (OperationCanceledException ex)
+        {
+            Safe.Ignore(ex, "SearchOrchestrator.ExecutePipelineAsync.Canceled");
+        }
         catch (Exception ex)
         {
-            // Fail fast, publish empty degraded snapshot
-            System.Diagnostics.Trace.WriteLine($"[SearchOrchestrator] RunQueryPipelineAsync error: {ex.Message}");
+            Safe.Log(ex, "SearchOrchestrator.ExecutePipelineAsync");
         }
     }
 
@@ -389,12 +391,14 @@ public sealed class SearchOrchestrator : IDisposable
             var batch = await source.SearchAsync(query, ct).ConfigureAwait(false);
             return (source, batch, null);
         }
-        catch (OperationCanceledException)
+        catch (OperationCanceledException ex)
         {
+            Safe.Ignore(ex, "SearchOrchestrator.QuerySourceSafelyAsync.Canceled");
             return (source, null, null);
         }
         catch (Exception ex)
         {
+            Safe.Log(ex, "SearchOrchestrator.QuerySourceSafelyAsync");
             return (source, null, ex);
         }
     }
@@ -585,7 +589,7 @@ public sealed class SearchOrchestrator : IDisposable
                 {
                     // Secondary check: compare filename without extension if key is a file path
                     string? keyName = null;
-                    try { keyName = Path.GetFileNameWithoutExtension(key); } catch { }
+                    try { keyName = Path.GetFileNameWithoutExtension(key); } catch (Exception ex) { Safe.Ignore(ex, "SearchOrchestrator.GetFileNameWithoutExtension.Key"); }
                     if (!string.IsNullOrEmpty(keyName))
                     {
                         for (int i = 0; i < appList.Count; i++)
@@ -605,7 +609,10 @@ public sealed class SearchOrchestrator : IDisposable
                                     break;
                                 }
                             }
-                            catch { }
+                            catch (Exception ex)
+                            {
+                                Safe.Ignore(ex, "SearchOrchestrator.GetFileNameWithoutExtension.TargetPath");
+                            }
                         }
                     }
                 }
@@ -673,9 +680,10 @@ public sealed class SearchOrchestrator : IDisposable
                         });
                     }
                 }
-                catch
+                catch (Exception ex)
                 {
                     // Silently skip invalid paths
+                    Safe.Ignore(ex, "SearchOrchestrator.BuildFallbackCandidates");
                 }
             }
         }
@@ -719,7 +727,10 @@ public sealed class SearchOrchestrator : IDisposable
             _activeCts?.Dispose();
             _activeCts = null;
         }
-        catch { }
+        catch (Exception ex)
+        {
+            Safe.Ignore(ex, "SearchOrchestrator.CancelActiveSession");
+        }
     }
 
     public void Dispose()
@@ -738,7 +749,7 @@ public sealed class SearchOrchestrator : IDisposable
         {
             if (src is IDisposable disposable)
             {
-                try { disposable.Dispose(); } catch { }
+                try { disposable.Dispose(); } catch (Exception ex) { Safe.Ignore(ex, "SearchOrchestrator.DisposeSource"); }
             }
         }
     }

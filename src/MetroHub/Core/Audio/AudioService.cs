@@ -12,6 +12,7 @@ using System.Windows.Interop;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using MetroHub.Core.Audio.Interop;
+using MetroHub.Core.Services;
 
 namespace MetroHub.Core.Audio;
 
@@ -79,7 +80,7 @@ public sealed class AudioService : IDisposable
         }
         catch (Exception ex)
         {
-            Debug.WriteLine($"[AudioService] Initialization failed: {ex.Message}");
+            Safe.LogThrottled(ex, "AudioService.InitializeCoreAudio");
         }
     }
 
@@ -94,13 +95,13 @@ public sealed class AudioService : IDisposable
             // Clean up previous endpoint-specific objects
             if (_endpointVolume != null)
             {
-                try { _endpointVolume.UnregisterControlChangeNotify(_volumeListener); } catch { }
+                try { _endpointVolume.UnregisterControlChangeNotify(_volumeListener); } catch (Exception ex) { Safe.Ignore(ex, "AudioService.UnregisterControlChangeNotify"); }
                 SafeRelease(ref _endpointVolume);
             }
 
             if (_sessionManager != null)
             {
-                try { _sessionManager.UnregisterSessionNotification(_sessionListener); } catch { }
+                try { _sessionManager.UnregisterSessionNotification(_sessionListener); } catch (Exception ex) { Safe.Ignore(ex, "AudioService.UnregisterSessionNotification"); }
                 SafeRelease(ref _sessionManager);
             }
 
@@ -153,8 +154,9 @@ public sealed class AudioService : IDisposable
             int hr = _endpointVolume.GetMasterVolumeLevelScalar(out float level);
             return hr == 0 ? level : 0f;
         }
-        catch
+        catch (Exception ex)
         {
+            Safe.LogThrottled(ex, "AudioService.GetMasterVolume");
             return 0f;
         }
     }
@@ -169,7 +171,7 @@ public sealed class AudioService : IDisposable
         }
         catch (Exception ex)
         {
-            Debug.WriteLine($"[AudioService] SetMasterVolume failed: {ex.Message}");
+            Safe.LogThrottled(ex, "AudioService.SetMasterVolume");
         }
     }
 
@@ -181,8 +183,9 @@ public sealed class AudioService : IDisposable
             int hr = _endpointVolume.GetMute(out bool isMuted);
             return hr == 0 && isMuted;
         }
-        catch
+        catch (Exception ex)
         {
+            Safe.LogThrottled(ex, "AudioService.GetMasterMute");
             return false;
         }
     }
@@ -196,7 +199,7 @@ public sealed class AudioService : IDisposable
         }
         catch (Exception ex)
         {
-            Debug.WriteLine($"[AudioService] SetMasterMute failed: {ex.Message}");
+            Safe.LogThrottled(ex, "AudioService.SetMasterMute");
         }
     }
 
@@ -218,7 +221,10 @@ public sealed class AudioService : IDisposable
                 defaultDev.GetId(out currentDefaultId);
             }
         }
-        catch { }
+        catch (Exception ex)
+        {
+            Safe.LogThrottled(ex, "AudioService.GetDefaultAudioEndpoint");
+        }
         finally
         {
             SafeRelease(ref defaultDev);
@@ -289,7 +295,7 @@ public sealed class AudioService : IDisposable
         }
         catch (Exception ex)
         {
-            Debug.WriteLine($"[AudioService] GetPlaybackDevices failed: {ex.Message}");
+            Safe.LogThrottled(ex, "AudioService.GetPlaybackDevices");
         }
         finally
         {
@@ -399,7 +405,7 @@ public sealed class AudioService : IDisposable
         }
         catch (Exception ex)
         {
-            Debug.WriteLine($"[AudioService] SetDefaultPlaybackDevice failed: {ex.Message}");
+            Safe.LogThrottled(ex, "AudioService.SetDefaultPlaybackDevice");
         }
 
         return false;
@@ -459,8 +465,9 @@ public sealed class AudioService : IDisposable
                                 iconSource = GetOrLoadProcessIcon(exePath);
                             }
                         }
-                        catch
+                        catch (Exception ex)
                         {
+                            Safe.LogThrottled(ex, "AudioService.GetAppProcessInfo");
                             // Process might have terminated or access denied
                             if (string.IsNullOrEmpty(processName) || processName == "System Sounds")
                             {
@@ -498,7 +505,7 @@ public sealed class AudioService : IDisposable
         }
         catch (Exception ex)
         {
-            Debug.WriteLine($"[AudioService] GetAppSessions failed: {ex.Message}");
+            Safe.LogThrottled(ex, "AudioService.GetAppSessions");
         }
         finally
         {
@@ -551,7 +558,7 @@ public sealed class AudioService : IDisposable
         }
         catch (Exception ex)
         {
-            Debug.WriteLine($"[AudioService] SetAppVolume failed: {ex.Message}");
+            Safe.LogThrottled(ex, "AudioService.SetAppVolume");
         }
         finally
         {
@@ -601,7 +608,7 @@ public sealed class AudioService : IDisposable
         }
         catch (Exception ex)
         {
-            Debug.WriteLine($"[AudioService] SetAppMute failed: {ex.Message}");
+            Safe.LogThrottled(ex, "AudioService.SetAppMute");
         }
         finally
         {
@@ -648,7 +655,10 @@ public sealed class AudioService : IDisposable
                 return bitmapSource;
             }
         }
-        catch { }
+        catch (Exception ex)
+        {
+            Safe.LogThrottled(ex, "AudioService.GetOrLoadProcessIcon");
+        }
 
         return null;
     }
@@ -663,7 +673,10 @@ public sealed class AudioService : IDisposable
             {
                 Marshal.ReleaseComObject(comObject);
             }
-            catch { }
+            catch (Exception ex)
+            {
+                Safe.Ignore(ex, "AudioService.SafeRelease");
+            }
             comObject = null;
         }
     }
@@ -672,17 +685,17 @@ public sealed class AudioService : IDisposable
     {
         if (_enumerator != null)
         {
-            try { _enumerator.UnregisterEndpointNotificationCallback(_endpointListener); } catch { }
+            try { _enumerator.UnregisterEndpointNotificationCallback(_endpointListener); } catch (Exception ex) { Safe.Ignore(ex, "AudioService.DisposeUnregisterEndpoint"); }
         }
 
         if (_endpointVolume != null)
         {
-            try { _endpointVolume.UnregisterControlChangeNotify(_volumeListener); } catch { }
+            try { _endpointVolume.UnregisterControlChangeNotify(_volumeListener); } catch (Exception ex) { Safe.Ignore(ex, "AudioService.DisposeUnregisterVolume"); }
         }
 
         if (_sessionManager != null)
         {
-            try { _sessionManager.UnregisterSessionNotification(_sessionListener); } catch { }
+            try { _sessionManager.UnregisterSessionNotification(_sessionListener); } catch (Exception ex) { Safe.Ignore(ex, "AudioService.DisposeUnregisterSession"); }
         }
 
         SafeRelease(ref _endpointVolume);

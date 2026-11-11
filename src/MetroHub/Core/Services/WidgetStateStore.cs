@@ -111,7 +111,6 @@ public sealed class WidgetStateStore : IWidgetStateStore
             catch (Exception ex)
             {
                 Safe.Logger(ex, $"WidgetStateStore.Write({path})");
-                System.Diagnostics.Debug.WriteLine($"[WidgetStateStore] Write failed for {path}: {ex.Message}");
             }
             finally
             {

@@ -70,10 +70,11 @@ public static class WallpaperEffectRenderer
                     return cached;
                 }
             }
-            catch
+            catch (Exception ex)
             {
                 // If corrupt, fall through to regenerate
-                try { File.Delete(cacheFilePath); } catch { }
+                Safe.Ignore(ex, "WallpaperEffectRenderer.LoadCachedBitmap.Corrupt");
+                try { File.Delete(cacheFilePath); } catch (Exception delEx) { Safe.Ignore(delEx, "WallpaperEffectRenderer.DeleteCorruptCache"); }
             }
         }
 
@@ -134,7 +135,10 @@ public static class WallpaperEffectRenderer
             length = fi.Length;
             ticks = fi.LastWriteTimeUtc.Ticks;
         }
-        catch { }
+        catch (Exception ex)
+        {
+            Safe.Ignore(ex, "WallpaperEffectRenderer.BuildCacheKey.FileInfo");
+        }
 
         string themeTag = string.Equals(effect, "Blur", StringComparison.OrdinalIgnoreCase)
             ? "shared"
@@ -201,8 +205,9 @@ public static class WallpaperEffectRenderer
             converted.Freeze();
             return converted;
         }
-        catch
+        catch (Exception ex)
         {
+            Safe.Log(ex, "WallpaperEffectRenderer.LoadProxyBitmap");
             return null;
         }
     }
@@ -233,7 +238,7 @@ public static class WallpaperEffectRenderer
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"[WallpaperEffectRenderer] Cache save failed: {ex.Message}");
+                Safe.Log(ex, "WallpaperEffectRenderer.SaveToDiskCacheSafe");
             }
         }
     }
@@ -251,11 +256,14 @@ public static class WallpaperEffectRenderer
             {
                 foreach (var oldFile in files.Skip(MaxCacheFiles))
                 {
-                    try { oldFile.Delete(); } catch { }
+                    try { oldFile.Delete(); } catch (Exception ex) { Safe.Ignore(ex, "WallpaperEffectRenderer.PruneCache.DeleteOld"); }
                 }
             }
         }
-        catch { }
+        catch (Exception ex)
+        {
+            Safe.Log(ex, "WallpaperEffectRenderer.PruneCache");
+        }
     }
 
     /// <summary>

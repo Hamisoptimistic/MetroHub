@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
+using MetroHub.Core.Services;
 
 namespace MetroHub.Core.Display;
 
@@ -165,7 +166,10 @@ public sealed class NightLightService : IDisposable
             AppDomain.CurrentDomain.ProcessExit += OnProcessExit;
             AppDomain.CurrentDomain.UnhandledException += OnUnhandledException;
         }
-        catch { }
+        catch (Exception ex)
+        {
+            Safe.LogThrottled(ex, "NightLightService.AppDomainHooks");
+        }
     }
 
     #region Client Registration / Ref-Counting
@@ -248,7 +252,10 @@ public sealed class NightLightService : IDisposable
                 }
             }
         }
-        catch { }
+        catch (Exception ex)
+        {
+            Safe.LogThrottled(ex, "NightLightService.CaptureCurrentRamp");
+        }
         finally
         {
             if (hdc != IntPtr.Zero) _ = ReleaseDC(IntPtr.Zero, hdc);
@@ -267,8 +274,9 @@ public sealed class NightLightService : IDisposable
             // Test if GetDeviceGammaRamp succeeds
             return GetDeviceGammaRamp(hdc, ref ramp);
         }
-        catch
+        catch (Exception ex)
         {
+            Safe.LogThrottled(ex, "NightLightService.VerifyHardwareSupport");
             return false;
         }
         finally
@@ -284,7 +292,7 @@ public sealed class NightLightService : IDisposable
         _throttleCts = new CancellationTokenSource();
         var token = _throttleCts.Token;
 
-        _ = Task.Run(async () =>
+        Task.Run(async () =>
         {
             try
             {
@@ -384,9 +392,9 @@ public sealed class NightLightService : IDisposable
             catch (OperationCanceledException) { }
             catch (Exception ex)
             {
-                MetroHub.Core.Services.Safe.Log("NightLightService.ApplyHardwareRampThrottled", ex);
+                Safe.Ignore(ex, "NightLightService.ApplyHardwareRampThrottled");
             }
-        });
+        }).FireAndForget("NightLightService.ApplyHardwareRampThrottled");
     }
 
     /// <summary>
@@ -512,7 +520,10 @@ public sealed class NightLightService : IDisposable
         {
             StateChanged?.Invoke(this, EventArgs.Empty);
         }
-        catch { }
+        catch (Exception ex)
+        {
+            Safe.LogThrottled(ex, "NightLightService.NotifyStateChanged");
+        }
     }
 
     private void OnProcessExit(object? sender, EventArgs e)
@@ -535,7 +546,10 @@ public sealed class NightLightService : IDisposable
             var defaultRamp = _defaultRamp;
             ApplyRampToAllMonitors(ref defaultRamp);
         }
-        catch { }
+        catch (Exception ex)
+        {
+            Safe.Ignore(ex, "NightLightService.RestoreDefaultSynchronous");
+        }
     }
 
     public void Dispose()

@@ -99,7 +99,7 @@ public static class WindowsShareService
         {
             if (_dtm != null)
             {
-                try { _dtm.DataRequested -= OnDataRequested; } catch { }
+                try { _dtm.DataRequested -= OnDataRequested; } catch (Exception ex) { Safe.Ignore(ex, "WindowsShareService.EnsureDataTransferManager.Detach"); }
                 _dtm = null;
             }
 
@@ -178,7 +178,7 @@ public static class WindowsShareService
             {
                 deferralTaken = true;
                 var deferral = request.GetDeferral();
-                _ = System.Threading.Tasks.Task.Run(async () =>
+                System.Threading.Tasks.Task.Run(async () =>
                 {
                     try
                     {
@@ -199,7 +199,7 @@ public static class WindowsShareService
                         _activeTile = null;
                         deferral.Complete();
                     }
-                });
+                }).FireAndForget("WindowsShareService.AsyncShareDeferral");
                 return;
             }
 

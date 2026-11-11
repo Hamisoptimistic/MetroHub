@@ -11,19 +11,19 @@ internal sealed class EndpointNotificationCallback : IMMNotificationClient
 
     public int OnDeviceStateChanged(string pwstrDeviceId, DeviceState dwNewState)
     {
-        _ = Task.Run(() => Safe.Try(() => DeviceListChanged?.Invoke(), "EndpointNotificationCallback.DeviceListChanged"));
+        Task.Run(() => Safe.Try(() => DeviceListChanged?.Invoke(), "EndpointNotificationCallback.DeviceListChanged")).FireAndForget("EndpointNotificationCallback.DeviceListChanged");
         return 0;
     }
 
     public int OnDeviceAdded(string pwstrDeviceId)
     {
-        _ = Task.Run(() => Safe.Try(() => DeviceListChanged?.Invoke(), "EndpointNotificationCallback.DeviceListChanged"));
+        Task.Run(() => Safe.Try(() => DeviceListChanged?.Invoke(), "EndpointNotificationCallback.DeviceListChanged")).FireAndForget("EndpointNotificationCallback.DeviceListChanged");
         return 0;
     }
 
     public int OnDeviceRemoved(string pwstrDeviceId)
     {
-        _ = Task.Run(() => Safe.Try(() => DeviceListChanged?.Invoke(), "EndpointNotificationCallback.DeviceListChanged"));
+        Task.Run(() => Safe.Try(() => DeviceListChanged?.Invoke(), "EndpointNotificationCallback.DeviceListChanged")).FireAndForget("EndpointNotificationCallback.DeviceListChanged");
         return 0;
     }
 
@@ -31,7 +31,7 @@ internal sealed class EndpointNotificationCallback : IMMNotificationClient
     {
         if (flow == EDataFlow.eRender && (role == ERole.eMultimedia || role == ERole.eConsole))
         {
-            _ = Task.Run(() => Safe.Try(() => DefaultDeviceChanged?.Invoke(), "EndpointNotificationCallback.DefaultDeviceChanged"));
+            Task.Run(() => Safe.Try(() => DefaultDeviceChanged?.Invoke(), "EndpointNotificationCallback.DefaultDeviceChanged")).FireAndForget("EndpointNotificationCallback.DefaultDeviceChanged");
         }
         return 0;
     }
@@ -55,7 +55,10 @@ internal sealed class EndpointVolumeCallback : IAudioEndpointVolumeCallback
             var data = Marshal.PtrToStructure<AUDIO_VOLUME_NOTIFICATION_DATA>(pNotifyData);
             VolumeChanged?.Invoke(data.fMasterVolume, data.bMuted);
         }
-        catch { }
+        catch (Exception ex)
+        {
+            Safe.LogThrottled(ex, "EndpointVolumeCallback.OnNotify");
+        }
 
         return 0;
     }

@@ -814,8 +814,9 @@ internal static class MathPrattParser
             bool success = parser.TryParse(out result, out hasTrig, out radResult);
             return success && !double.IsNaN(result) && !double.IsInfinity(result);
         }
-        catch
+        catch (Exception ex)
         {
+            Safe.Ignore(ex, "CalculatorSource.EvaluateExpression");
             return false;
         }
     }
@@ -1017,7 +1018,11 @@ internal static class MathPrattParser
                         result = binVal;
                         return true;
                     }
-                    catch { return false; }
+                    catch (Exception ex)
+                    {
+                        Safe.Ignore(ex, "ParserState.ParseNumber.Binary");
+                        return false;
+                    }
                 }
             }
 
@@ -1909,7 +1914,10 @@ public sealed class DevUtilitySource : ISearchSource
                         string decoded = Encoding.UTF8.GetString(bytes);
                         results.Add(CreateCopyCandidate("b64:dec", decoded, $"Decoded from Base64: {text}", decoded));
                     }
-                    catch { }
+                    catch (Exception ex)
+                    {
+                        Safe.Ignore(ex, "Base64Source.Decode");
+                    }
                 }
                 else
                 {
@@ -1928,7 +1936,10 @@ public sealed class DevUtilitySource : ISearchSource
                                 results.Add(CreateCopyCandidate("b64:dec_opt", decoded, $"Base64 decoded: {text}", decoded));
                             }
                         }
-                        catch { }
+                        catch (Exception ex)
+                        {
+                            Safe.Ignore(ex, "Base64Source.DecodeOptional");
+                        }
                     }
                 }
 

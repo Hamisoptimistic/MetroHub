@@ -222,7 +222,7 @@ public static class HttpHelper
         {
             if (tempFile != null && File.Exists(tempFile))
             {
-                try { File.Delete(tempFile); } catch { }
+                try { File.Delete(tempFile); } catch (Exception ex) { Safe.Ignore(ex, "HttpHelper.DeleteTempFile"); }
             }
         }
     }

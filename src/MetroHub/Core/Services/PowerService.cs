@@ -64,6 +64,7 @@ public static class PowerService
         }
         catch (Exception ex)
         {
+            Safe.Log(ex, "PowerService.IsHibernateSupported");
             Log.Debug(ex, "Failed to query Win32 IsPwrHibernateAllowed");
             return false;
         }
@@ -170,11 +171,13 @@ public static class PowerService
         catch (Win32Exception ex)
         {
             // Win32Exception with NativeErrorCode 1223 = ERROR_CANCELLED (User dismissed UAC prompt)
+            Safe.Ignore(ex, "PowerService.RequestEnableHibernateAsync.UacCancelled");
             Log.Information("User dismissed UAC prompt for hibernation activation ({NativeErrorCode})", ex.NativeErrorCode);
             return false;
         }
         catch (Exception ex)
         {
+            Safe.Log(ex, "PowerService.RequestEnableHibernateAsync");
             Log.Error(ex, "Failed to execute elevated powercfg /hibernate on");
             return false;
         }
@@ -212,11 +215,13 @@ public static class PowerService
         }
         catch (Win32Exception ex)
         {
+            Safe.Ignore(ex, "PowerService.RequestDisableHibernateAsync.UacCancelled");
             Log.Information("User dismissed UAC prompt for hibernation deactivation ({NativeErrorCode})", ex.NativeErrorCode);
             return false;
         }
         catch (Exception ex)
         {
+            Safe.Log(ex, "PowerService.RequestDisableHibernateAsync");
             Log.Error(ex, "Failed to execute elevated powercfg /hibernate off");
             return false;
         }

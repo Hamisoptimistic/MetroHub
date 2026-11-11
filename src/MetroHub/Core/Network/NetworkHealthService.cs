@@ -109,7 +109,10 @@ public sealed class NetworkHealthService
         {
             Windows.Networking.Connectivity.NetworkInformation.NetworkStatusChanged += OnNetworkStatusChanged;
         }
-        catch { }
+        catch (Exception ex)
+        {
+            Safe.Log(ex, "NetworkHealthService.ctor");
+        }
     }
 
     public static ConnectivityLevel QueryFastConnectivity()
@@ -132,8 +135,9 @@ public sealed class NetworkHealthService
                 ? ConnectivityLevel.LocalAccess
                 : ConnectivityLevel.None;
         }
-        catch
+        catch (Exception ex)
         {
+            Safe.Log(ex, "NetworkHealthService.QueryFastConnectivity");
             return NetworkInterface.GetIsNetworkAvailable()
                 ? ConnectivityLevel.LocalAccess
                 : ConnectivityLevel.None;
@@ -166,8 +170,9 @@ public sealed class NetworkHealthService
             }
             return false;
         }
-        catch
+        catch (Exception ex)
         {
+            Safe.Log(ex, "NetworkHealthService.HasActiveGateway");
             return false;
         }
     }
@@ -193,9 +198,10 @@ public sealed class NetworkHealthService
         {
             // Timed out or cancelled normally
         }
-        catch
+        catch (Exception ex)
         {
             // Socket or network error
+            Safe.LogThrottled(ex, "NetworkHealthService.CheckInternetReachabilityAsync.Cloudflare");
         }
 
         if (cancellationToken.IsCancellationRequested) return false;
@@ -218,7 +224,7 @@ public sealed class NetworkHealthService
         }
         catch (Exception ex)
         {
-            Safe.Log("NetworkHealthService.HasActiveGateway.FallbackSocket", ex);
+            Safe.LogThrottled(ex, "NetworkHealthService.CheckInternetReachabilityAsync.Google");
         }
 
         return false;
@@ -226,14 +232,14 @@ public sealed class NetworkHealthService
 
     private async void OnNetworkStatusChanged(object sender)
     {
-        if (!IsHubVisible) return;
         try
         {
+            if (!IsHubVisible) return;
             await EvaluateHealthAsync().ConfigureAwait(false);
         }
         catch (Exception ex)
         {
-            Safe.Log("NetworkHealthService.OnNetworkStatusChanged", ex);
+            Safe.Log(ex, "NetworkHealthService.OnNetworkStatusChanged");
         }
     }
 
@@ -273,8 +279,9 @@ public sealed class NetworkHealthService
                 sw.Stop();
                 return (HasDns: addresses != null && addresses.Length > 0, TimeMs: sw.Elapsed.TotalMilliseconds);
             }
-            catch
+            catch (Exception ex)
             {
+                Safe.LogThrottled(ex, "NetworkHealthService.DnsProbe");
                 sw.Stop();
                 return (HasDns: false, TimeMs: -1.0);
             }
@@ -306,8 +313,9 @@ public sealed class NetworkHealthService
                     lostPackets++;
                 }
             }
-            catch
+            catch (Exception ex)
             {
+                Safe.LogThrottled(ex, "NetworkHealthService.PingProbe");
                 lostPackets++;
             }
         }

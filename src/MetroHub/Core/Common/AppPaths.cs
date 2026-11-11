@@ -39,7 +39,10 @@ public static class AppPaths
                 return true;
             }
         }
-        catch { }
+        catch (Exception ex)
+        {
+            Safe.Ignore(ex, "AppPaths.DetectTestProcess");
+        }
 
         return false;
     }
@@ -91,8 +94,9 @@ public static class AppPaths
             return full.StartsWith(imgDir, StringComparison.OrdinalIgnoreCase) ||
                    full.StartsWith(noteDir, StringComparison.OrdinalIgnoreCase);
         }
-        catch
+        catch (Exception ex)
         {
+            Safe.Log(ex, "AppPaths.IsPastedAssetPath");
             return false;
         }
     }
@@ -247,7 +251,10 @@ public static class AppPaths
                 return legacyRootDir;
             }
         }
-        catch { }
+        catch (Exception ex)
+        {
+            Safe.Log(ex, "AppPaths.ResolveActiveDirectory");
+        }
 
         return categorizedDir;
     }
@@ -265,6 +272,9 @@ public static class AppPaths
                 Directory.CreateDirectory(dir);
             }
         }
-        catch { }
+        catch (Exception ex)
+        {
+            Safe.Log(ex, "AppPaths.EnsureDirectory");
+        }
     }
 }

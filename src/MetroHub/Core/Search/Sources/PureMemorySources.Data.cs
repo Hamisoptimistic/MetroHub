@@ -358,7 +358,7 @@ public static class PureMemoryData
                 {
                     foreach (var p in Process.GetProcessesByName("explorer"))
                     {
-                        try { p.Kill(); p.WaitForExit(1000); } catch { }
+                        try { p.Kill(); p.WaitForExit(1000); } catch (Exception ex) { Safe.Ignore(ex, "SystemCommands.KillExplorer"); }
                         finally { p.Dispose(); }
                     }
                     Process.Start(new ProcessStartInfo("explorer.exe") { UseShellExecute = true });

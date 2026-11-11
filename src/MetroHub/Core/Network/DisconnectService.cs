@@ -8,6 +8,7 @@ using System.Runtime.InteropServices;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using MetroHub.Core.Network.Interop;
+using MetroHub.Core.Services;
 
 namespace MetroHub.Core.Network;
 
@@ -133,7 +134,10 @@ public sealed partial class DisconnectService
                 }
             }
         }
-        catch { }
+        catch (Exception ex)
+        {
+            Safe.Log(ex, "DisconnectService.GetAllInterfaceStatuses");
+        }
 
         return result;
     }
@@ -342,10 +346,12 @@ public sealed partial class DisconnectService
             {
                 // User explicitly clicked "No" or "Cancel" on UAC prompt.
                 // Do NOT fall back to PowerShell to spam another prompt!
+                Safe.Ignore(ex, "DisconnectService.UacCanceled");
                 return false;
             }
-            catch (Exception)
+            catch (Exception ex)
             {
+                Safe.Log(ex, "DisconnectService.RunNetshElevatedAsync");
                 return false;
             }
         });
@@ -362,7 +368,10 @@ public sealed partial class DisconnectService
         {
             nics = NetworkInterface.GetAllNetworkInterfaces();
         }
-        catch { }
+        catch (Exception ex)
+        {
+            Safe.Log(ex, "DisconnectService.GetPhysicalAdapters.GetAllNetworkInterfaces");
+        }
 
         // 1. Update persistent hardware cache from all currently visible physical NICS
         foreach (var nic in nics)
@@ -408,7 +417,10 @@ public sealed partial class DisconnectService
                     mac = BitConverter.ToString(bytes);
                 }
             }
-            catch { }
+            catch (Exception ex)
+            {
+                Safe.Log(ex, "DisconnectService.GetPhysicalAdapters.MacAddress");
+            }
 
             _persistentHardwareCache[nic.Name] = (nic.Description, type, mac);
         }
@@ -457,7 +469,10 @@ public sealed partial class DisconnectService
                         mac = BitConverter.ToString(bytes);
                     }
                 }
-                catch { }
+                catch (Exception ex)
+                {
+                    Safe.Log(ex, "DisconnectService.GetPhysicalAdapters.MatchingNicMac");
+                }
 
                 if (EthernetProvider.IsUsbTetheringInterface(matchingNic))
                 {
@@ -569,7 +584,10 @@ public sealed partial class DisconnectService
                     if (bytes != null && bytes.Length > 0)
                         mac = BitConverter.ToString(bytes);
                 }
-                catch { }
+                catch (Exception ex)
+                {
+                    Safe.Log(ex, "DisconnectService.GetPhysicalAdapters.FallbackMac");
+                }
 
                 result.Add(new PhysicalAdapterInfo
                 {

@@ -673,7 +673,7 @@ public static partial class WebFaviconService
             }
             catch (Exception ex)
             {
-                Safe.Log(ex, $"Failed to inspect cached favicon '{cachedPath}'");
+                Safe.Ignore(ex, "WebFaviconService.InspectCachedFavicon");
             }
         }
 
@@ -713,7 +713,7 @@ public static partial class WebFaviconService
         }
         catch (Exception ex)
         {
-            Safe.Log(ex, $"[WebFaviconService] Tier 1 head scraping failed for '{queryUrl}'");
+            Safe.Ignore(ex, "WebFaviconService.Tier1HeadScraping");
         }
 
         // Tier 2: Path-Aware Google S2 Dynamic Favicon Service (128x128)
@@ -728,7 +728,7 @@ public static partial class WebFaviconService
         }
         catch (Exception ex) when (ex is not OperationCanceledException)
         {
-            Safe.Log(ex, $"[WebFaviconService] Tier 2 Google S2 path failed for '{queryUrl}'");
+            Safe.Ignore(ex, "WebFaviconService.Tier2GoogleS2Path");
         }
 
         // Tier 3: Google Base Domain Fallback (if queryUrl had a sub-path)
@@ -746,7 +746,7 @@ public static partial class WebFaviconService
             }
             catch (Exception ex) when (ex is not OperationCanceledException)
             {
-                Safe.Log(ex, $"[WebFaviconService] Tier 3 Google S2 domain failed for '{domain}'");
+                Safe.Ignore(ex, "WebFaviconService.Tier3GoogleS2Domain");
             }
         }
 
@@ -762,7 +762,7 @@ public static partial class WebFaviconService
         }
         catch (Exception ex) when (ex is not OperationCanceledException)
         {
-            Safe.Log(ex, $"[WebFaviconService] Tier 4 DuckDuckGo failed for '{domain}'");
+            Safe.Ignore(ex, "WebFaviconService.Tier4DuckDuckGo");
         }
 
         // Tier 5: Direct website root favicon
@@ -777,7 +777,7 @@ public static partial class WebFaviconService
         }
         catch (Exception ex) when (ex is not OperationCanceledException)
         {
-            Safe.Log(ex, $"[WebFaviconService] Tier 5 direct favicon failed for '{domain}'");
+            Safe.Ignore(ex, "WebFaviconService.Tier5DirectFavicon");
         }
 
         return new WebFaviconResult(null, resolvedTitle);
@@ -815,7 +815,7 @@ public static partial class WebFaviconService
         }
         catch (Exception ex)
         {
-            Safe.Log(ex, $"[WebFaviconService] Failed to download icon bytes from '{iconUrl}'");
+            Safe.Ignore(ex, "WebFaviconService.DownloadIconBytes");
             return null;
         }
     }
@@ -913,7 +913,7 @@ public static partial class WebFaviconService
         }
         catch (Exception ex)
         {
-            Safe.Log(ex, $"Failed to save favicon to cache for '{url}'");
+            Safe.Ignore(ex, "WebFaviconService.SaveIconToCache");
             return null;
         }
     }

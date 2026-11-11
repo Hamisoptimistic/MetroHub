@@ -9,6 +9,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
+using MetroHub.Core.Services;
 
 namespace MetroHub.Core.Display;
 
@@ -39,7 +40,10 @@ public sealed class MonitorBrightnessService : IDisposable
         {
             Microsoft.Win32.SystemEvents.DisplaySettingsChanged += OnDisplaySettingsChanged;
         }
-        catch { }
+        catch (Exception ex)
+        {
+            Safe.LogThrottled(ex, "MonitorBrightnessService.Ctor");
+        }
     }
 
     private void OnDisplaySettingsChanged(object? sender, EventArgs e)
@@ -51,7 +55,7 @@ public sealed class MonitorBrightnessService : IDisposable
         _displayChangeDebounceCts = new CancellationTokenSource();
         var token = _displayChangeDebounceCts.Token;
 
-        _ = Task.Run(async () =>
+        Task.Run(async () =>
         {
             try
             {
@@ -65,9 +69,9 @@ public sealed class MonitorBrightnessService : IDisposable
             catch (OperationCanceledException) { }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"[MonitorBrightnessService] Display change refresh error: {ex.Message}");
+                Safe.Ignore(ex, "MonitorBrightnessService.DisplayChangeRefresh");
             }
-        }, token);
+        }, token).FireAndForget("MonitorBrightnessService.DisplaySettingsChanged");
     }
 
     /// <summary>
@@ -279,7 +283,7 @@ public sealed class MonitorBrightnessService : IDisposable
         if (nowTicks - lastTicks >= ThrottleIntervalMs)
         {
             _lastWriteTicks[monitor.Id] = nowTicks;
-            _ = Task.Run(async () =>
+            Task.Run(async () =>
             {
                 try
                 {
@@ -288,8 +292,11 @@ public sealed class MonitorBrightnessService : IDisposable
                         await ApplyHardwareBrightnessAsync(monitor, b).ConfigureAwait(false);
                     }
                 }
-                catch { }
-            });
+                catch (Exception ex)
+                {
+                    Safe.LogThrottled(ex, "MonitorBrightnessService.ApplyHardwareBrightness");
+                }
+            }).FireAndForget("MonitorBrightnessService.SetBrightnessThrottled");
         }
 
         // 2. Always reset trailing debounce timer so the exact final resting position is applied
@@ -302,7 +309,7 @@ public sealed class MonitorBrightnessService : IDisposable
         var cts = new CancellationTokenSource();
         _trailingTokens[monitor.Id] = cts;
 
-        _ = Task.Run(async () =>
+        Task.Run(async () =>
         {
             try
             {
@@ -318,9 +325,9 @@ public sealed class MonitorBrightnessService : IDisposable
             catch (OperationCanceledException) { }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"[MonitorBrightnessService] Write error: {ex.Message}");
+                Safe.Ignore(ex, "MonitorBrightnessService.TrailingWrite");
             }
-        });
+        }).FireAndForget("MonitorBrightnessService.TrailingWrite");
     }
 
     /// <summary>
@@ -419,7 +426,10 @@ public sealed class MonitorBrightnessService : IDisposable
                 return results;
             }
         }
-        catch { }
+        catch (Exception ex)
+        {
+            Safe.LogThrottled(ex, "MonitorBrightnessService.GetSystemPowerStatus");
+        }
 
         try
         {
@@ -465,12 +475,14 @@ public sealed class MonitorBrightnessService : IDisposable
                 }
             }
         }
-        catch (ManagementException)
+        catch (ManagementException ex)
         {
+            Safe.LogThrottled(ex, "MonitorBrightnessService.EnumerateWmiBrightness");
             _isWmiBrightnessSupported = false;
         }
-        catch
+        catch (Exception ex)
         {
+            Safe.LogThrottled(ex, "MonitorBrightnessService.EnumerateWmiBrightness");
             _isWmiBrightnessSupported = false;
         }
         return results;
@@ -531,7 +543,10 @@ public sealed class MonitorBrightnessService : IDisposable
                 }
             }
         }
-        catch { }
+        catch (Exception ex)
+        {
+            Safe.LogThrottled(ex, "MonitorBrightnessService.GetCcdMonitorNames");
+        }
 
         return names;
     }
@@ -566,7 +581,10 @@ public sealed class MonitorBrightnessService : IDisposable
                 }
             }
         }
-        catch { }
+        catch (Exception ex)
+        {
+            Safe.LogThrottled(ex, "MonitorBrightnessService.GetWmiMonitorNames");
+        }
         return names;
     }
 
@@ -590,7 +608,10 @@ public sealed class MonitorBrightnessService : IDisposable
             string decoded = utf8.GetString(bytes.ToArray()).Trim();
             if (!string.IsNullOrWhiteSpace(decoded)) return decoded;
         }
-        catch { }
+        catch (Exception ex)
+        {
+            Safe.Ignore(ex, "MonitorBrightnessService.DecodeEdidStringUtf8");
+        }
 
         return Encoding.ASCII.GetString(bytes.ToArray()).Trim();
     }
@@ -625,7 +646,10 @@ public sealed class MonitorBrightnessService : IDisposable
                 }
             }
         }
-        catch { }
+        catch (Exception ex)
+        {
+            Safe.LogThrottled(ex, "MonitorBrightnessService.SetWmiBrightness");
+        }
     }
 
     #endregion
@@ -666,7 +690,10 @@ public sealed class MonitorBrightnessService : IDisposable
         {
             Microsoft.Win32.SystemEvents.DisplaySettingsChanged -= OnDisplaySettingsChanged;
         }
-        catch { }
+        catch (Exception ex)
+        {
+            Safe.Ignore(ex, "MonitorBrightnessService.DisposeDisplaySettingsChanged");
+        }
 
         _displayChangeDebounceCts?.Cancel();
         _displayChangeDebounceCts?.Dispose();

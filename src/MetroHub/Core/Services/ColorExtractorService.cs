@@ -63,8 +63,9 @@ public static class ColorExtractorService
                 ArrayPool<byte>.Shared.Return(pixels);
             }
         }
-        catch (Exception)
+        catch (Exception ex)
         {
+            Safe.Log(ex, "ColorExtractorService.ExtractDominantAccentColor");
             return GetFallbackSystemAccentHex();
         }
     }

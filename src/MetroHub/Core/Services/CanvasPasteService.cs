@@ -255,8 +255,9 @@ public static class CanvasPasteService
                     File.WriteAllBytes(tmpPath, pngBytes);
                     File.Move(tmpPath, targetPath, overwrite: false);
                 }
-                catch (IOException)
+                catch (IOException ex)
                 {
+                    Safe.Ignore(ex, "CanvasPasteService.SavePngAtomically.FileMoveRace");
                     Safe.Try(() => { if (File.Exists(tmpPath)) File.Delete(tmpPath); });
                 }
             }
@@ -442,7 +443,10 @@ public static class CanvasPasteService
                 }
             }
         }
-        catch { }
+        catch (Exception ex)
+        {
+            Safe.Log(ex, "CanvasPasteService.ExtractUrlFromInternetShortcut");
+        }
 
         return urlFilePath;
     }

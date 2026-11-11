@@ -6,6 +6,7 @@ using System.Net.NetworkInformation;
 using System.Threading.Tasks;
 using Windows.Networking.Connectivity;
 using CommunityToolkit.Mvvm.ComponentModel;
+using MetroHub.Core.Services;
 
 namespace MetroHub.Core.Network;
 
@@ -112,7 +113,10 @@ public sealed class NetworkDataUsageService
                         };
                     }
                 }
-                catch { }
+                catch (Exception ex)
+                {
+                    Safe.LogThrottled(ex, "NetworkDataUsageService.GetWifiSessionStats");
+                }
             }
             return new DataUsageResult();
         }
@@ -166,8 +170,9 @@ public sealed class NetworkDataUsageService
                         }
                         return (Rx: pRx, Tx: pTx);
                     }
-                    catch
+                    catch (Exception ex)
                     {
+                        Safe.LogThrottled(ex, "NetworkDataUsageService.GetNetworkUsageAsync");
                         return (Rx: 0UL, Tx: 0UL);
                     }
                 });
@@ -187,8 +192,9 @@ public sealed class NetworkDataUsageService
                     BytesSent = totalTx
                 };
             }
-            catch
+            catch (Exception ex)
             {
+                Safe.LogThrottled(ex, "NetworkDataUsageService.GetDataUsageAsync");
                 return new DataUsageResult();
             }
         });
@@ -234,9 +240,9 @@ public sealed class NetworkDataUsageService
                 }
             }
         }
-        catch
+        catch (Exception ex)
         {
-            // Ignore WinRT discovery errors
+            Safe.LogThrottled(ex, "NetworkDataUsageService.FindProfilesForKind");
         }
 
         return result;

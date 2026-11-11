@@ -25,8 +25,9 @@ public static class HiddenDiagnosticsLogger
         {
             AppPaths.EnsureDirectory(_logFilePath);
         }
-        catch
+        catch (Exception ex)
         {
+            Safe.Ignore(ex, "HiddenDiagnosticsLogger.cctor.AppPaths");
             try
             {
                 _logFilePath = System.IO.Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "logs", "hidden_diagnostics.log");
@@ -36,9 +37,9 @@ public static class HiddenDiagnosticsLogger
                     System.IO.Directory.CreateDirectory(targetDir);
                 }
             }
-            catch
+            catch (Exception innerEx)
             {
-                // Diagnostics must never fail
+                Safe.Ignore(innerEx, "HiddenDiagnosticsLogger.cctor.BaseDirectory");
             }
         }
     }
@@ -63,9 +64,9 @@ public static class HiddenDiagnosticsLogger
             Logger.Information("[TRANSITION] MetroHub is now {State} | WS: {WorkingSetMb:0.0} MB | Private: {PrivateBytesMb:0.0} MB | Managed: {ManagedMb:0.0} MB | GDI/USER: {GdiCount}/{UserCount} | Handles: {HandleCount}",
                 state, wsMb, privMb, heapMb, gdi, user, handles);
         }
-        catch
+        catch (Exception ex)
         {
-            // Diagnostics must never fail
+            Safe.Ignore(ex, "HiddenDiagnosticsLogger.LogTransition");
         }
     }
 
@@ -176,9 +177,9 @@ public static class HiddenDiagnosticsLogger
                 "[SNAPSHOT] {Trigger} | WS: {WorkingSetMb:0.0} MB | Priv: {PrivateBytesMb:0.0} MB | Heap: {HeapSizeMb:0.0} MB | GDI/USER: {GdiCount}/{UserCount} | Handles: {HandleCount}\n{SnapshotText}",
                 trigger, wsMb, privMb, heapSizeMb, gdiCount, userCount, handles, sb.ToString().TrimEnd());
         }
-        catch
+        catch (Exception ex)
         {
-            // Diagnostics must never fail or throw
+            Safe.Ignore(ex, "HiddenDiagnosticsLogger.CaptureSnapshot");
         }
     }
 
@@ -189,8 +190,9 @@ public static class HiddenDiagnosticsLogger
             using var proc = Process.GetCurrentProcess();
             return proc.WorkingSet64 / (1024.0 * 1024.0);
         }
-        catch
+        catch (Exception ex)
         {
+            Safe.Ignore(ex, "HiddenDiagnosticsLogger.GetWorkingSetMb");
             return -1;
         }
     }
@@ -207,9 +209,9 @@ public static class HiddenDiagnosticsLogger
                 System.IO.File.AppendAllText(_logFilePath, entry);
             }
         }
-        catch
+        catch (Exception ex)
         {
-            // Diagnostics must never throw
+            Safe.Ignore(ex, "HiddenDiagnosticsLogger.WriteEntry");
         }
     }
 }

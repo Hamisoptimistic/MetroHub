@@ -150,7 +150,6 @@ public sealed class StorageService
             catch (Exception ex)
             {
                 Safe.Logger(ex, $"StorageService.SaveAtomic({targetPath})");
-                System.Diagnostics.Debug.WriteLine($"[StorageService] SaveAtomic failed for {targetPath}: {ex.Message}");
                 // Last-resort: only write directly if the target doesn't exist yet.
                 // If the target already exists, it may be healthy — truncating it would destroy good data.
                 if (!File.Exists(targetPath))
@@ -362,7 +361,7 @@ public sealed class StorageService
                         // while the HTTP request was in-flight.
                         string targetUrl = tile.TargetPath;
                         var targetTile = tile;
-                        _ = Task.Run(async () =>
+                        Task.Run(async () =>
                         {
                             try
                             {
@@ -372,14 +371,14 @@ public sealed class StorageService
                                     Application.Current?.Dispatcher.InvokeAsync(() =>
                                     {
                                         targetTile.IconPath = fetched;
-                                    });
+                                    }).FireAndForget("StorageService.FaviconFetch.UpdateIconPath");
                                 }
                             }
                             catch (Exception ex)
                             {
-                                System.Diagnostics.Debug.WriteLine($"[StorageService] Favicon fetch failed for {targetUrl}: {ex.Message}");
+                                Safe.Ignore(ex, "StorageService.FaviconFetch");
                             }
-                        });
+                        }).FireAndForget("StorageService.FaviconFetch");
                     }
                 continue;
             }
@@ -620,7 +619,7 @@ public sealed class StorageService
         }
         catch (Exception ex)
         {
-            System.Diagnostics.Debug.WriteLine($"[StorageService] SaveLayout failed: {ex.Message}");
+            Safe.Log(ex, "StorageService.SaveLayout");
         }
     }
 
@@ -637,7 +636,7 @@ public sealed class StorageService
         }
         catch (Exception ex)
         {
-            System.Diagnostics.Debug.WriteLine($"[StorageService] SaveLayoutSync failed: {ex.Message}");
+            Safe.Log(ex, "StorageService.SaveLayoutSync");
         }
     }
 
@@ -691,7 +690,7 @@ public sealed class StorageService
         }
         catch (Exception ex)
         {
-            System.Diagnostics.Debug.WriteLine($"[StorageService] SaveGroups failed: {ex.Message}");
+            Safe.Log(ex, "StorageService.SaveGroups");
         }
     }
 
@@ -708,7 +707,7 @@ public sealed class StorageService
         }
         catch (Exception ex)
         {
-            System.Diagnostics.Debug.WriteLine($"[StorageService] SaveGroupsSync failed: {ex.Message}");
+            Safe.Log(ex, "StorageService.SaveGroupsSync");
         }
     }
 
@@ -756,7 +755,7 @@ public sealed class StorageService
         }
         catch (Exception ex)
         {
-            System.Diagnostics.Debug.WriteLine($"[StorageService] SaveSettings failed: {ex.Message}");
+            Safe.Log(ex, "StorageService.SaveSettings");
         }
     }
 
@@ -773,7 +772,7 @@ public sealed class StorageService
         }
         catch (Exception ex)
         {
-            System.Diagnostics.Debug.WriteLine($"[StorageService] SaveSettingsSync failed: {ex.Message}");
+            Safe.Log(ex, "StorageService.SaveSettingsSync");
         }
     }
 
@@ -1059,8 +1058,9 @@ public sealed class StorageService
         {
             return File.Exists(path) && new FileInfo(path).Length > 2;
         }
-        catch
+        catch (Exception ex)
         {
+            Safe.Log(ex, "StorageService.HasPersistedState");
             return false;
         }
     }
@@ -1106,7 +1106,7 @@ public sealed class StorageService
         }
         catch (Exception ex)
         {
-            System.Diagnostics.Debug.WriteLine($"[StorageService] SaveWorkspacesSync failed: {ex.Message}");
+            Safe.Log(ex, "StorageService.SaveWorkspacesSync");
         }
     }
 
@@ -1201,7 +1201,7 @@ public sealed class StorageService
         }
         catch (Exception ex)
         {
-            System.Diagnostics.Debug.WriteLine($"[StorageService] SaveWorkspaceLayoutSync failed for '{workspaceId}': {ex.Message}");
+            Safe.Log(ex, "StorageService.SaveWorkspaceLayoutSync");
         }
     }
 
@@ -1281,7 +1281,7 @@ public sealed class StorageService
         }
         catch (Exception ex)
         {
-            System.Diagnostics.Debug.WriteLine($"[StorageService] SaveWorkspaceGroupsSync failed for '{workspaceId}': {ex.Message}");
+            Safe.Log(ex, "StorageService.SaveWorkspaceGroupsSync");
         }
     }
 

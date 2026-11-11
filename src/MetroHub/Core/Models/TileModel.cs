@@ -315,8 +315,9 @@ public sealed class TileModel : INotifyPropertyChanged
                 return _targetPath.StartsWith(AppPaths.PastedNotesDir, StringComparison.OrdinalIgnoreCase) &&
                        _targetPath.EndsWith(".txt", StringComparison.OrdinalIgnoreCase);
             }
-            catch
+            catch (Exception ex)
             {
+                Safe.Log(ex, "TileModel.IsNote");
                 return false;
             }
         }
@@ -334,8 +335,9 @@ public sealed class TileModel : INotifyPropertyChanged
                 return IconExtractorService.IsImageFile(_targetPath) ||
                        (AppPaths.IsPastedAssetPath(_targetPath) && !IsNote);
             }
-            catch
+            catch (Exception ex)
             {
+                Safe.Log(ex, "TileModel.IsImage");
                 return false;
             }
         }
@@ -367,7 +369,7 @@ public sealed class TileModel : INotifyPropertyChanged
                 }
 
                 string targetUrl = _arguments;
-                _ = Task.Run(async () =>
+                Task.Run(async () =>
                 {
                     try
                     {
@@ -377,11 +379,14 @@ public sealed class TileModel : INotifyPropertyChanged
                             Application.Current?.Dispatcher.InvokeAsync(() =>
                             {
                                 WebSourceIconPath = fetched;
-                            });
+                            }).FireAndForget("TileModel.FetchFaviconAsync.UpdateProperty");
                         }
                     }
-                    catch { }
-                });
+                    catch (Exception ex)
+                    {
+                        Safe.Ignore(ex, "TileModel.FetchFaviconAsync");
+                    }
+                }).FireAndForget("TileModel.FetchFaviconAsync");
             }
             return _webSourceIconPath;
         }

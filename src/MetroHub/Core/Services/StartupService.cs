@@ -22,6 +22,7 @@ public static class StartupService
         }
         catch (Exception ex)
         {
+            Safe.Log(ex, "StartupService.IsLaunchAtStartupEnabled");
             Log.Debug(ex, "Failed to read Windows Startup Run key");
             return false;
         }
@@ -49,6 +50,7 @@ public static class StartupService
         }
         catch (Exception ex)
         {
+            Safe.Log(ex, "StartupService.SetLaunchAtStartup");
             Log.Warning(ex, "Failed to update Windows Startup Run key");
         }
     }

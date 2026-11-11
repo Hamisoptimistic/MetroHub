@@ -73,7 +73,7 @@ public static class ProcessLauncherService
             _lastLaunchTime = now;
         }
 
-        _ = Task.Run(() =>
+        Task.Run(() =>
         {
             try
             {
@@ -82,6 +82,7 @@ public static class ProcessLauncherService
             catch (System.ComponentModel.Win32Exception win32Ex) when (win32Ex.NativeErrorCode == 1223)
             {
                 // 1223 = ERROR_CANCELLED: User clicked "No" / "Cancel" on UAC prompt. Not an error.
+                Safe.Ignore(win32Ex, "ProcessLauncherService.UacCancelled");
             }
             catch (Exception ex)
             {
@@ -93,7 +94,7 @@ public static class ProcessLauncherService
                 Safe.Log(ex, $"Failed to launch target '{title}' ({path})");
                 WeakReferenceMessenger.Default.Send(new TargetLaunchFailedMessage(title, ex));
             }
-        });
+        }).FireAndForget("ProcessLauncherService.LaunchTarget");
     }
 
     /// <summary>

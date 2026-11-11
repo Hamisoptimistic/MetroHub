@@ -140,8 +140,9 @@ public static class CompanionImageDownloader
                 await socket.ConnectAsync(addresses, context.DnsEndPoint.Port, ct).ConfigureAwait(false);
                 return new NetworkStream(socket, ownsSocket: true);
             }
-            catch
+            catch (Exception ex)
             {
+                Safe.Log(ex, "LocalCompanionService.SafeHandler.Connect");
                 socket.Dispose();
                 throw;
             }
@@ -267,7 +268,7 @@ public static class CompanionImageDownloader
                 {
                     if (File.Exists(tmpFile))
                     {
-                        try { File.Delete(tmpFile); } catch { }
+                        try { File.Delete(tmpFile); } catch (Exception ex) { Safe.Ignore(ex, "LocalCompanionService.DeleteTmpFile"); }
                     }
                 }
             }
@@ -393,7 +394,7 @@ public sealed class LocalCompanionService : IDisposable, IAsyncDisposable
                 {
                     if (!success)
                     {
-                        try { listener.Close(); } catch { }
+                        try { listener.Close(); } catch (Exception ex) { Safe.Ignore(ex, "LocalCompanionService.Start.ListenerClose"); }
                     }
 
                 }
@@ -426,7 +427,7 @@ public sealed class LocalCompanionService : IDisposable, IAsyncDisposable
 
         if (cts != null)
         {
-            try { cts.Cancel(); } catch { }
+            try { cts.Cancel(); } catch (Exception ex) { Safe.Ignore(ex, "LocalCompanionService.Stop.CancelCts"); }
         }
 
         if (listener != null)
@@ -436,17 +437,20 @@ public sealed class LocalCompanionService : IDisposable, IAsyncDisposable
                 listener.Stop();
                 listener.Close();
             }
-            catch { }
+            catch (Exception ex)
+            {
+                Safe.Ignore(ex, "LocalCompanionService.Stop.ListenerClose");
+            }
         }
 
         if (listenTask != null)
         {
-            try { await listenTask.ConfigureAwait(false); } catch { }
+            try { await listenTask.ConfigureAwait(false); } catch (Exception ex) { Safe.Ignore(ex, "LocalCompanionService.Stop.ListenTask"); }
         }
 
         if (cts != null)
         {
-            try { cts.Dispose(); } catch { }
+            try { cts.Dispose(); } catch (Exception ex) { Safe.Ignore(ex, "LocalCompanionService.Stop.DisposeCts"); }
         }
 
         Serilog.Log.Information("[LocalCompanionService] Stopped.");
@@ -462,7 +466,7 @@ public sealed class LocalCompanionService : IDisposable, IAsyncDisposable
             try
             {
                 var context = await listener.GetContextAsync().ConfigureAwait(false);
-                _ = Task.Run(() => HandleRequestSafeAsync(context, ct), CancellationToken.None);
+                Task.Run(() => HandleRequestSafeAsync(context, ct), CancellationToken.None).FireAndForget("LocalCompanionService.HandleRequestSafeAsync");
             }
             catch (HttpListenerException) when (ct.IsCancellationRequested)
             {
@@ -496,11 +500,14 @@ public sealed class LocalCompanionService : IDisposable, IAsyncDisposable
                 context.Response.StatusCode = 500;
                 await SendJsonAsync(context.Response, 500, new CompanionErrorResponse($"Internal server error: {ex.Message}"), CompanionJsonContext.Default.CompanionErrorResponse, ct).ConfigureAwait(false);
             }
-            catch { }
+            catch (Exception sendEx)
+            {
+                Safe.Ignore(sendEx, "LocalCompanionService.HandleRequestSafeAsync.SendJson500");
+            }
         }
         finally
         {
-            try { context.Response.Close(); } catch { }
+            try { context.Response.Close(); } catch (Exception closeEx) { Safe.Ignore(closeEx, "LocalCompanionService.HandleRequestSafeAsync.ResponseClose"); }
         }
     }
 
@@ -644,8 +651,9 @@ public sealed class LocalCompanionService : IDisposable, IAsyncDisposable
         {
             pinRequest = JsonSerializer.Deserialize(buffer.AsSpan(0, totalBytesRead), CompanionJsonContext.Default.CompanionPinRequest);
         }
-        catch (JsonException)
+        catch (JsonException ex)
         {
+            Safe.Log(ex, "LocalCompanionService.HandlePostPinAsync.JsonException");
             await SendJsonAsync(response, 400, new CompanionErrorResponse("Invalid JSON payload."), CompanionJsonContext.Default.CompanionErrorResponse, ct).ConfigureAwait(false);
             return;
         }
@@ -774,8 +782,9 @@ public sealed class LocalCompanionService : IDisposable, IAsyncDisposable
 
             await SendJsonAsync(response, 200, pinResponse, CompanionJsonContext.Default.CompanionPinResponse, ct).ConfigureAwait(false);
         }
-        catch (OperationCanceledException) when (!ct.IsCancellationRequested)
+        catch (OperationCanceledException ex) when (!ct.IsCancellationRequested)
         {
+            Safe.Log(ex, "LocalCompanionService.HandlePostPinAsync.Timeout");
             response.Headers["Retry-After"] = "2";
             await SendJsonAsync(response, 503, new CompanionErrorResponse("Service Unavailable: Desktop UI thread busy. Please retry."), CompanionJsonContext.Default.CompanionErrorResponse, ct).ConfigureAwait(false);
         }
@@ -810,8 +819,9 @@ public sealed class LocalCompanionService : IDisposable, IAsyncDisposable
         {
             groupRequest = JsonSerializer.Deserialize(buffer.AsSpan(0, totalBytesRead), CompanionJsonContext.Default.CompanionTileGroupRequest);
         }
-        catch (JsonException)
+        catch (JsonException ex)
         {
+            Safe.Log(ex, "LocalCompanionService.HandlePostTileGroupsAsync.JsonException");
             await SendJsonAsync(response, 400, new CompanionErrorResponse("Invalid JSON payload."), CompanionJsonContext.Default.CompanionErrorResponse, ct).ConfigureAwait(false);
             return;
         }
@@ -927,8 +937,9 @@ public sealed class LocalCompanionService : IDisposable, IAsyncDisposable
 
             await SendJsonAsync(response, 200, groupResponse, CompanionJsonContext.Default.CompanionTileGroupResponse, ct).ConfigureAwait(false);
         }
-        catch (OperationCanceledException) when (!ct.IsCancellationRequested)
+        catch (OperationCanceledException ex) when (!ct.IsCancellationRequested)
         {
+            Safe.Log(ex, "LocalCompanionService.HandlePostTileGroupsAsync.Timeout");
             response.Headers["Retry-After"] = "2";
             await SendJsonAsync(response, 503, new CompanionErrorResponse("Service Unavailable: Desktop UI thread busy. Please retry."), CompanionJsonContext.Default.CompanionErrorResponse, ct).ConfigureAwait(false);
         }
@@ -1101,7 +1112,7 @@ public sealed class LocalCompanionService : IDisposable, IAsyncDisposable
 
         if (cts != null)
         {
-            try { cts.Cancel(); } catch { }
+            try { cts.Cancel(); } catch (Exception ex) { Safe.Ignore(ex, "LocalCompanionService.LongPoll.CancelCts"); }
         }
 
         if (listener != null)
@@ -1111,7 +1122,10 @@ public sealed class LocalCompanionService : IDisposable, IAsyncDisposable
                 listener.Stop();
                 listener.Close();
             }
-            catch { }
+            catch (Exception ex)
+            {
+                Safe.Ignore(ex, "LocalCompanionService.LongPoll.CloseListener");
+            }
         }
 
         // Note: Do not call cts.Dispose() here synchronously.

@@ -10,6 +10,7 @@ using Everything.Net.Enums;
 using Everything.Net.Models;
 using Everything.Net.Services;
 using Microsoft.Extensions.Options;
+using MetroHub.Core.Services;
 
 namespace MetroHub.Core.Search;
 
@@ -94,8 +95,9 @@ public sealed class EverythingSearchSource : ISearchSource, IDisposable
             });
             return new EverythingClient(options);
         }
-        catch
+        catch (Exception ex)
         {
+            Safe.Log(ex, "EverythingSearchSource.CreateClient");
             return null;
         }
     }
@@ -154,17 +156,20 @@ public sealed class EverythingSearchSource : ISearchSource, IDisposable
             // Blueprint Section 5: Hard 400ms timeout for Everything queries
             return await workItem.Task.WaitAsync(TimeSpan.FromMilliseconds(400), cancellationToken).ConfigureAwait(false);
         }
-        catch (TimeoutException)
+        catch (TimeoutException ex)
         {
+            Safe.Log(ex, "EverythingSearchSource.SearchAsync.Timeout");
             RecordFailure("Everything query timed out (400ms).");
             return Array.Empty<Candidate>();
         }
-        catch (OperationCanceledException)
+        catch (OperationCanceledException ex)
         {
+            Safe.Ignore(ex, "EverythingSearchSource.SearchAsync");
             return Array.Empty<Candidate>();
         }
         catch (Exception ex)
         {
+            Safe.Log(ex, "EverythingSearchSource.SearchAsync");
             RecordFailure(ex.Message);
             return Array.Empty<Candidate>();
         }
@@ -178,8 +183,9 @@ public sealed class EverythingSearchSource : ISearchSource, IDisposable
             {
                 _workSignal.WaitOne();
             }
-            catch (ObjectDisposedException)
+            catch (ObjectDisposedException ex)
             {
+                Safe.Ignore(ex, "EverythingSearchSource.WorkerLoop.Disposed");
                 break;
             }
 
@@ -205,12 +211,14 @@ public sealed class EverythingSearchSource : ISearchSource, IDisposable
                 var candidates = ExecuteSearchInternal(item.Query, item.CancellationToken);
                 item.TrySetResult(candidates);
             }
-            catch (OperationCanceledException)
+            catch (OperationCanceledException ex)
             {
+                Safe.Ignore(ex, "EverythingSearchSource.WorkerLoop.Canceled");
                 item.Cancel();
             }
             catch (Exception ex)
             {
+                Safe.Log(ex, "EverythingSearchSource.WorkerLoop.ExecuteSearch");
                 RecordFailure(ex.Message);
                 item.TrySetResult(Array.Empty<Candidate>());
             }
@@ -236,6 +244,7 @@ public sealed class EverythingSearchSource : ISearchSource, IDisposable
         }
         catch (Exception ex)
         {
+            Safe.Log(ex, "EverythingSearchSource.ExecuteSearchInternal.Availability");
             RecordUnavailable($"Everything availability probe failed: {ex.Message}");
             return Array.Empty<Candidate>();
         }
@@ -271,6 +280,7 @@ public sealed class EverythingSearchSource : ISearchSource, IDisposable
         }
         catch (Exception ex)
         {
+            Safe.Log(ex, "EverythingSearchSource.ExecuteSearchInternal.Search");
             RecordFailure(ex.Message);
             return Array.Empty<Candidate>();
         }
@@ -618,7 +628,10 @@ public sealed class EverythingSearchSource : ISearchSource, IDisposable
             _workerThread.Join(500);
             _workSignal.Dispose();
         }
-        catch { }
+        catch (Exception ex)
+        {
+            Safe.Ignore(ex, "EverythingSearchSource.Dispose");
+        }
     }
 
     private sealed class SearchWorkItem

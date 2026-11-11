@@ -6,6 +6,7 @@ using System.Net.NetworkInformation;
 using System.Net.Sockets;
 using System.Runtime.InteropServices;
 using MetroHub.Core.Network.Interop;
+using MetroHub.Core.Services;
 
 namespace MetroHub.Core.Network;
 
@@ -31,7 +32,10 @@ public sealed class EthernetProvider
             NetworkChange.NetworkAddressChanged += (s, e) => InvalidateCache();
             NetworkChange.NetworkAvailabilityChanged += (s, e) => InvalidateCache();
         }
-        catch { }
+        catch (Exception ex)
+        {
+            Safe.Log(ex, "EthernetProvider.ctor");
+        }
     }
 
     public void InvalidateCache()
@@ -93,8 +97,9 @@ public sealed class EthernetProvider
 
             return result;
         }
-        catch
+        catch (Exception ex)
         {
+            Safe.Log(ex, "EthernetProvider.GetActiveEthernetInfo");
             return new EthernetInfo
             {
                 Name = "Ethernet",
@@ -114,8 +119,9 @@ public sealed class EthernetProvider
                 .Select(BuildEthernetInfo)
                 .ToList();
         }
-        catch
+        catch (Exception ex)
         {
+            Safe.Log(ex, "EthernetProvider.GetAllEthernetInterfaces");
             return Array.Empty<EthernetInfo>();
         }
     }
@@ -139,12 +145,15 @@ public sealed class EthernetProvider
                 info.MacAddress = FormatMacAddress(mac);
             }
         }
-        catch { }
+        catch (Exception ex)
+        {
+            Safe.Log(ex, "EthernetProvider.BuildEthernetInfo.MacAddress");
+        }
 
         try
         {
             long speed = 0;
-            try { speed = nic.Speed; } catch { }
+            try { speed = nic.Speed; } catch (Exception ex) { Safe.Ignore(ex, "EthernetProvider.Speed"); }
             info.LinkSpeedBitsPerSecond = speed;
             info.LinkSpeedString = FormatSpeed(speed);
 
@@ -172,7 +181,10 @@ public sealed class EthernetProvider
                     }
                 }
             }
-            catch { }
+            catch (Exception ex)
+            {
+                Safe.Log(ex, "EthernetProvider.BuildEthernetInfo.IPv4Properties");
+            }
 
             var gateway = ipProps.GatewayAddresses
                 .FirstOrDefault(ga => ga.Address.AddressFamily == AddressFamily.InterNetwork);
@@ -192,11 +204,17 @@ public sealed class EthernetProvider
                 info.BytesReceived = (ulong)Math.Max(0L, stats.BytesReceived);
                 info.BytesSent = (ulong)Math.Max(0L, stats.BytesSent);
             }
-            catch { }
+            catch (Exception ex)
+            {
+                Safe.Log(ex, "EthernetProvider.BuildEthernetInfo.IPStatistics");
+            }
 
             info.LinkDuration = QueryLinkDuration(nic);
         }
-        catch { }
+        catch (Exception ex)
+        {
+            Safe.Log(ex, "EthernetProvider.BuildEthernetInfo");
+        }
 
         return info;
     }
@@ -242,7 +260,10 @@ public sealed class EthernetProvider
                 }
             }
         }
-        catch { }
+        catch (Exception ex)
+        {
+            Safe.Log(ex, "EthernetProvider.QueryLinkDuration");
+        }
 
         // Fallback: tracked in-memory session time
         if (!_fallbackConnectTimes.TryGetValue(nic.Id, out var connectTime))
@@ -310,8 +331,9 @@ public sealed class EthernetProvider
                 return false;
             }
         }
-        catch
+        catch (Exception ex)
         {
+            Safe.Log(ex, "EthernetProvider.IsCandidatePhysicalEthernet.MacAddress");
             return false;
         }
 
@@ -325,8 +347,9 @@ public sealed class EthernetProvider
             return nic.GetIPProperties().GatewayAddresses
                 .Any(g => g.Address.AddressFamily == AddressFamily.InterNetwork);
         }
-        catch
+        catch (Exception ex)
         {
+            Safe.Log(ex, "EthernetProvider.HasIpv4Gateway");
             return false;
         }
     }

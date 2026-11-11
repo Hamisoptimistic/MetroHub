@@ -6,6 +6,7 @@ using System.Net.NetworkInformation;
 using System.Net.Sockets;
 using System.Threading;
 using System.Threading.Tasks;
+using MetroHub.Core.Services;
 
 namespace MetroHub.Core.Network;
 
@@ -66,7 +67,10 @@ public sealed class ThroughputService : IDisposable
             NetworkChange.NetworkAddressChanged += OnNetworkChanged;
             NetworkChange.NetworkAvailabilityChanged += OnNetworkAvailabilityChanged;
         }
-        catch { }
+        catch (Exception ex)
+        {
+            Safe.LogThrottled(ex, "ThroughputService.NetworkChangeHooks");
+        }
     }
 
     private void OnNetworkChanged(object? sender, EventArgs e)
@@ -194,8 +198,9 @@ public sealed class ThroughputService : IDisposable
             {
                 stats = activeNic.GetIPStatistics();
             }
-            catch
+            catch (Exception ex)
             {
+                Safe.LogThrottled(ex, "ThroughputService.GetIPStatistics");
                 lock (_lock)
                 {
                     _cachedActiveNic = null;
@@ -264,12 +269,15 @@ public sealed class ThroughputService : IDisposable
                 ThroughputUpdated?.Invoke(_currentMetrics);
             }
         }
-        catch { }
+        catch (Exception ex)
+        {
+            Safe.LogThrottled(ex, "ThroughputService.OnSampleTick");
+        }
     }
 
     private void OnLatencyTick(object? state)
     {
-        _ = MeasureLatencyTickAsync();
+        MeasureLatencyTickAsync().FireAndForget("ThroughputService.MeasureLatencyTick");
     }
 
     private async Task MeasureLatencyTickAsync()
@@ -303,7 +311,10 @@ public sealed class ThroughputService : IDisposable
             }
             LatencyUpdated?.Invoke(latency);
         }
-        catch { }
+        catch (Exception ex)
+        {
+            Safe.LogThrottled(ex, "ThroughputService.MeasureLatencyTick");
+        }
     }
 
     public static async Task<LatencyMetrics> MeasureLatencyAsync(CancellationToken cancellationToken = default)
@@ -322,7 +333,7 @@ public sealed class ThroughputService : IDisposable
 
             try
             {
-                using var reg = cancellationToken.Register(() => { try { ping.SendAsyncCancel(); } catch { } });
+                using var reg = cancellationToken.Register(() => { try { ping.SendAsyncCancel(); } catch (Exception ex) { Safe.Ignore(ex, "ThroughputService.PingCancel"); } });
                 var reply = await ping.SendPingAsync(host, 1200);
                 if (cancellationToken.IsCancellationRequested) break;
                 if (reply != null && reply.Status == IPStatus.Success)
@@ -334,7 +345,10 @@ public sealed class ThroughputService : IDisposable
                     };
                 }
             }
-            catch { }
+            catch (Exception ex)
+            {
+                Safe.LogThrottled(ex, "ThroughputService.PingHost");
+            }
         }
 
         if (cancellationToken.IsCancellationRequested)
@@ -348,7 +362,7 @@ public sealed class ThroughputService : IDisposable
             var gw = GetDefaultGatewayIp();
             if (!string.IsNullOrEmpty(gw) && !cancellationToken.IsCancellationRequested)
             {
-                using var reg = cancellationToken.Register(() => { try { ping.SendAsyncCancel(); } catch { } });
+                using var reg = cancellationToken.Register(() => { try { ping.SendAsyncCancel(); } catch (Exception ex) { Safe.Ignore(ex, "ThroughputService.PingCancel"); } });
                 var reply = await ping.SendPingAsync(gw, 800);
                 if (cancellationToken.IsCancellationRequested)
                 {
@@ -364,7 +378,10 @@ public sealed class ThroughputService : IDisposable
                 }
             }
         }
-        catch { }
+        catch (Exception ex)
+        {
+            Safe.LogThrottled(ex, "ThroughputService.PingGateway");
+        }
 
         return new LatencyMetrics
         {
@@ -411,7 +428,11 @@ public sealed class ThroughputService : IDisposable
                 return nic.GetIPProperties().GatewayAddresses
                     .Any(g => g.Address.AddressFamily == AddressFamily.InterNetwork);
             }
-            catch { return false; }
+            catch (Exception ex)
+            {
+                Safe.LogThrottled(ex, "ThroughputService.GetIPProperties");
+                return false;
+            }
         });
 
         if (withGateway != null)
@@ -440,7 +461,11 @@ public sealed class ThroughputService : IDisposable
                     return nic.GetIPProperties().GatewayAddresses
                         .Any(g => g.Address.AddressFamily == AddressFamily.InterNetwork);
                 }
-                catch { return false; }
+                catch (Exception ex)
+                {
+                    Safe.LogThrottled(ex, "ThroughputService.GetIPProperties");
+                    return false;
+                }
             });
     }
 
@@ -463,8 +488,9 @@ public sealed class ThroughputService : IDisposable
                 .FirstOrDefault(g => g.Address.AddressFamily == AddressFamily.InterNetwork);
             return gw?.Address.ToString();
         }
-        catch
+        catch (Exception ex)
         {
+            Safe.LogThrottled(ex, "ThroughputService.GetDefaultGatewayIp");
             return null;
         }
     }
@@ -477,6 +503,9 @@ public sealed class ThroughputService : IDisposable
             NetworkChange.NetworkAddressChanged -= OnNetworkChanged;
             NetworkChange.NetworkAvailabilityChanged -= OnNetworkAvailabilityChanged;
         }
-        catch { }
+        catch (Exception ex)
+        {
+            Safe.Ignore(ex, "ThroughputService.Dispose");
+        }
     }
 }

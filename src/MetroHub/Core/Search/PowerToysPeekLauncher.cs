@@ -92,9 +92,9 @@ public static class PowerToysPeekLauncher
                     }
                 }
             }
-            catch
+            catch (Exception ex)
             {
-                // Ignore registry access errors
+                Safe.Log(ex, "PowerToysPeekLauncher.FindPeekExe.AppPaths");
             }
         }
 
@@ -122,9 +122,9 @@ public static class PowerToysPeekLauncher
                         }
                     }
                 }
-                catch
+                catch (Exception ex)
                 {
-                    // Ignore registry access errors
+                    Safe.Log(ex, "PowerToysPeekLauncher.FindPeekExe.UninstallKeys");
                 }
             }
         }
@@ -158,15 +158,15 @@ public static class PowerToysPeekLauncher
                             }
                         }
                     }
-                    catch
+                    catch (Exception ex)
                     {
-                        // Shield against individual process inspection errors
+                        Safe.Ignore(ex, "PowerToysPeekLauncher.FindPeekExe.Process");
                     }
                 }
             }
-            catch
+            catch (Exception ex)
             {
-                // Ignore process enumeration errors
+                Safe.Log(ex, "PowerToysPeekLauncher.FindPeekExe.GetProcessesByName");
             }
             finally
             {
@@ -205,10 +205,11 @@ public static class PowerToysPeekLauncher
                 return path;
             }
         }
-        catch
+        catch (Exception ex)
         {
             // MainModule throws Win32Exception (Access Denied) when PowerToys is running elevated.
             // Fall back to limited-query process image inspection which works across integrity levels.
+            Safe.Ignore(ex, "PowerToysPeekLauncher.TryGetProcessPath.AccessDenied");
         }
 
         return GetProcessPathViaLimitedQuery(proc.Id);
@@ -229,8 +230,9 @@ public static class PowerToysPeekLauncher
             }
             return null;
         }
-        catch
+        catch (Exception ex)
         {
+            Safe.Log(ex, "PowerToysPeekLauncher.GetProcessPathViaLimitedQuery");
             return null;
         }
         finally
@@ -324,9 +326,10 @@ public static class PowerToysPeekLauncher
                 return true;
             }
         }
-        catch
+        catch (Exception ex)
         {
             // Process may have exited or access denied
+            Safe.Ignore(ex, "PowerToysPeekLauncher.IsPowerToysProcess.ProcessName");
         }
 
         try
@@ -337,8 +340,9 @@ public static class PowerToysPeekLauncher
                 return true;
             }
         }
-        catch
+        catch (Exception ex)
         {
+            Safe.Ignore(ex, "PowerToysPeekLauncher.IsPowerToysProcess.LimitedQuery");
         }
 
         return false;
@@ -374,9 +378,10 @@ public static class PowerToysPeekLauncher
                 return true;
             }
         }
-        catch
+        catch (Exception ex)
         {
             // Access denied (elevation) or process exited - fallback to limited query
+            Safe.Ignore(ex, "PowerToysPeekLauncher.IsPeekWindow.ProcessName");
         }
 
         try
@@ -387,8 +392,9 @@ public static class PowerToysPeekLauncher
                 return true;
             }
         }
-        catch
+        catch (Exception ex)
         {
+            Safe.Ignore(ex, "PowerToysPeekLauncher.IsPeekWindow.LimitedQuery");
         }
 
         return false;

@@ -8,6 +8,7 @@ using System.Security;
 using System.Text;
 using System.Threading.Tasks;
 using MetroHub.Core.Network.Interop;
+using MetroHub.Core.Services;
 
 namespace MetroHub.Core.Network;
 
@@ -91,8 +92,9 @@ public sealed class NativeWifiService : IDisposable
 
                 return true;
             }
-            catch
+            catch (Exception ex)
             {
+                Safe.Log(ex, "NativeWifiService.IsRadioOn");
                 return false;
             }
             finally
@@ -145,7 +147,10 @@ public sealed class NativeWifiService : IDisposable
                 }
             }
         }
-        catch { }
+        catch (Exception ex)
+        {
+            Safe.Log(ex, "NativeWifiService.SetRadioState");
+        }
         finally
         {
             if (ppData != IntPtr.Zero)
@@ -278,6 +283,7 @@ public sealed class NativeWifiService : IDisposable
             }
             catch (Exception ex)
             {
+                Safe.Log(ex, "NativeWifiService.EnsureInitialized");
                 _hasWifiAdapter = false;
                 _wifiStatusMessage = $"Wi-Fi enumeration error: {ex.Message}";
                 _primaryInterfaceGuid = Guid.Empty;
@@ -288,7 +294,7 @@ public sealed class NativeWifiService : IDisposable
             {
                 if (pInterfaceList != IntPtr.Zero)
                 {
-                    try { WlanNative.WlanFreeMemory(pInterfaceList); } catch { }
+                    try { WlanNative.WlanFreeMemory(pInterfaceList); } catch (Exception ex) { Safe.Ignore(ex, "NativeWifiService.WlanFreeMemory"); }
                 }
             }
         }
@@ -343,8 +349,9 @@ public sealed class NativeWifiService : IDisposable
 
             return details;
         }
-        catch
+        catch (Exception ex)
         {
+            Safe.Log(ex, "NativeWifiService.GetCurrentConnectionDetails");
             details.IsConnected = false;
             return details;
         }
@@ -389,8 +396,9 @@ public sealed class NativeWifiService : IDisposable
 
             return null;
         }
-        catch
+        catch (Exception ex)
         {
+            Safe.Log(ex, "NativeWifiService.GetConnectedSsidFast");
             return null;
         }
         finally
@@ -418,7 +426,10 @@ public sealed class NativeWifiService : IDisposable
             {
                 _ = WlanNative.WlanScan(_clientHandle, ref _primaryInterfaceGuid, IntPtr.Zero, IntPtr.Zero, IntPtr.Zero);
             }
-            catch { }
+            catch (Exception ex)
+            {
+                Safe.Log(ex, "NativeWifiService.ScanAndGetAvailableNetworks.WlanScan");
+            }
         }
 
         IntPtr ppList = IntPtr.Zero;
@@ -494,8 +505,9 @@ public sealed class NativeWifiService : IDisposable
                 .ThenByDescending(n => n.SignalQuality)
                 .ToList();
         }
-        catch
+        catch (Exception ex)
         {
+            Safe.Log(ex, "NativeWifiService.ScanAndGetAvailableNetworks");
             return items;
         }
         finally
@@ -861,7 +873,10 @@ public sealed class NativeWifiService : IDisposable
                 }
             }
         }
-        catch { }
+        catch (Exception ex)
+        {
+            Safe.Log(ex, "NativeWifiService.EnrichWithIpProperties.LinkDuration");
+        }
     }
 
     private static string FormatSsid(WlanNative.DOT11_SSID ssid)

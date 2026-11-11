@@ -285,9 +285,10 @@ public sealed class WorldClockSource : ISearchSource
             {
                 return (match.DisplayName, TimeZoneInfo.FindSystemTimeZoneById(match.TimeZoneId));
             }
-            catch
+            catch (Exception ex)
             {
                 // Fall back to system scan below
+                Safe.Ignore(ex, "TimeZoneSource.FindSystemTimeZoneById");
             }
         }
 

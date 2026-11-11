@@ -106,7 +106,7 @@ public sealed class CatalogItemModel : INotifyPropertyChanged
     public static void PrewarmMemoryCache(IEnumerable<CatalogItemModel> items, int maxItems = 24)
     {
         if (items == null) return;
-        _ = Task.Run(() =>
+        Task.Run(() =>
         {
             var itemList = items.Where(i => !string.IsNullOrWhiteSpace(i.TargetPath)).Take(maxItems).ToList();
             if (itemList.Count == 0) return;
@@ -122,8 +122,8 @@ public sealed class CatalogItemModel : INotifyPropertyChanged
                         if (item._icon != memImg)
                         {
                             item._icon = memImg;
-                            _ = App.Current?.Dispatcher?.InvokeAsync(() => item.OnPropertyChanged(nameof(Icon)),
-                                System.Windows.Threading.DispatcherPriority.Background);
+                            App.Current?.Dispatcher?.InvokeAsync(() => item.OnPropertyChanged(nameof(Icon)),
+                                System.Windows.Threading.DispatcherPriority.Background).FireAndForget("CatalogItemModel.PrewarmMemoryCache.UpdateMemImg");
                         }
                         return;
                     }
@@ -148,17 +148,17 @@ public sealed class CatalogItemModel : INotifyPropertyChanged
                         if (img != null && item._icon != img)
                         {
                             item._icon = img;
-                            _ = App.Current?.Dispatcher?.InvokeAsync(() => item.OnPropertyChanged(nameof(Icon)),
-                                System.Windows.Threading.DispatcherPriority.Background);
+                            App.Current?.Dispatcher?.InvokeAsync(() => item.OnPropertyChanged(nameof(Icon)),
+                                System.Windows.Threading.DispatcherPriority.Background).FireAndForget("CatalogItemModel.PrewarmMemoryCache.UpdateImg");
                         }
                     }
                 }
                 catch (Exception ex)
                 {
-                    Safe.Log("CatalogItemModel.PrewarmMemoryCache", ex);
+                    Safe.Log(ex, "CatalogItemModel.PrewarmMemoryCache");
                 }
             });
-        });
+        }).FireAndForget("CatalogItemModel.PrewarmMemoryCache");
     }
 
     private static ImageSource? GetOrCreateBitmapImage(string cachedPath, string targetPath)
@@ -191,8 +191,9 @@ public sealed class CatalogItemModel : INotifyPropertyChanged
             _memoryIconCache[targetPath] = bi;
             return bi;
         }
-        catch
+        catch (Exception ex)
         {
+            Safe.Log(ex, "CatalogItemModel.GetOrCreateBitmapImage");
             return null;
         }
     }
@@ -222,7 +223,7 @@ public sealed class CatalogItemModel : INotifyPropertyChanged
 
     private void LoadIconInBackground()
     {
-        _ = Task.Run(() =>
+        Task.Run(() =>
         {
             try
             {
@@ -230,10 +231,10 @@ public sealed class CatalogItemModel : INotifyPropertyChanged
 
                 if (_memoryIconCache.TryGetValue(_targetPath, out var memImg))
                 {
-                    _ = App.Current?.Dispatcher?.InvokeAsync(() =>
+                    App.Current?.Dispatcher?.InvokeAsync(() =>
                     {
                         Icon = memImg;
-                    }, System.Windows.Threading.DispatcherPriority.Normal);
+                    }, System.Windows.Threading.DispatcherPriority.Normal).FireAndForget("CatalogItemModel.LoadIconInBackground.MemImg");
                     return;
                 }
 
@@ -256,22 +257,22 @@ public sealed class CatalogItemModel : INotifyPropertyChanged
                     var bi = GetOrCreateBitmapImage(cached, _targetPath);
                     if (bi != null)
                     {
-                        _ = App.Current?.Dispatcher?.InvokeAsync(() =>
+                        App.Current?.Dispatcher?.InvokeAsync(() =>
                         {
                             Icon = bi;
-                        }, System.Windows.Threading.DispatcherPriority.Normal);
+                        }, System.Windows.Threading.DispatcherPriority.Normal).FireAndForget("CatalogItemModel.LoadIconInBackground.Bi");
                     }
                 }
             }
             catch (Exception ex)
             {
-                Safe.Log("CatalogItemModel.LoadIconInBackground", ex);
+                Safe.Log(ex, "CatalogItemModel.LoadIconInBackground");
             }
             finally
             {
                 _isIconLoading = false;
             }
-        });
+        }).FireAndForget("CatalogItemModel.LoadIconInBackground");
     }
 
     public event PropertyChangedEventHandler? PropertyChanged;

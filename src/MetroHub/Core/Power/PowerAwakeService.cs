@@ -4,6 +4,7 @@ using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
+using MetroHub.Core.Services;
 
 namespace MetroHub.Core.Power;
 
@@ -118,7 +119,10 @@ public sealed class PowerAwakeService : IDisposable
             AppDomain.CurrentDomain.ProcessExit += OnProcessExit;
             AppDomain.CurrentDomain.UnhandledException += OnUnhandledException;
         }
-        catch { }
+        catch (Exception ex)
+        {
+            Safe.Log(ex, "PowerAwakeService.ctor.AppDomainEvents");
+        }
     }
 
     #region Client Registration / Ref-Counting
@@ -224,7 +228,10 @@ public sealed class PowerAwakeService : IDisposable
         {
             PostMessage((IntPtr)HWND_BROADCAST, WM_SYSCOMMAND, (IntPtr)SC_MONITORPOWER, (IntPtr)MONITOR_OFF);
         }
-        catch { }
+        catch (Exception ex)
+        {
+            Safe.Log(ex, "PowerAwakeService.TurnOffScreensAsync");
+        }
     }
 
     #endregion
@@ -288,7 +295,10 @@ public sealed class PowerAwakeService : IDisposable
             {
                 SetThreadExecutionState(flags);
             }
-            catch { }
+            catch (Exception ex)
+            {
+                Safe.Log(ex, "PowerAwakeService.WorkerLoop.SetThreadExecutionState");
+            }
 
             // Sleep in kernel wait with 0% CPU until signal or timer expiration
             _signal.WaitOne(waitMs);
@@ -299,7 +309,10 @@ public sealed class PowerAwakeService : IDisposable
         {
             SetThreadExecutionState(EXECUTION_STATE.ES_CONTINUOUS);
         }
-        catch { }
+        catch (Exception ex)
+        {
+            Safe.Ignore(ex, "PowerAwakeService.WorkerLoop.Cleanup");
+        }
     }
 
     #endregion
@@ -310,7 +323,10 @@ public sealed class PowerAwakeService : IDisposable
         {
             StateChanged?.Invoke(this, EventArgs.Empty);
         }
-        catch { }
+        catch (Exception ex)
+        {
+            Safe.Log(ex, "PowerAwakeService.NotifyStateChanged");
+        }
     }
 
     private void OnProcessExit(object? sender, EventArgs e)
@@ -336,7 +352,10 @@ public sealed class PowerAwakeService : IDisposable
                 _workerThread.Join(400);
             }
         }
-        catch { }
+        catch (Exception ex)
+        {
+            Safe.Ignore(ex, "PowerAwakeService.Shutdown");
+        }
     }
 
     public void Dispose()

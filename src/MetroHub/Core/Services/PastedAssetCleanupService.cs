@@ -132,7 +132,10 @@ public static class PastedAssetCleanupService
                     set.Add(fileName);
                 }
             }
-            catch { }
+            catch (Exception ex)
+            {
+                Safe.Ignore(ex, "PastedAssetCleanupService.AddPathToReferencedSet");
+            }
         }
 
         // 1. Active in-memory tiles snapshot
@@ -307,7 +310,10 @@ public static class PastedAssetCleanupService
                                 var fi = new FileInfo(file);
                                 candidateFiles.Add(new AssetFileInfo(file, fi.CreationTimeUtc, fi.LastWriteTimeUtc, fi.Length));
                             }
-                            catch { }
+                            catch (Exception ex)
+                            {
+                                Safe.Ignore(ex, "PastedAssetCleanupService.FileInfo");
+                            }
                         }
                     }
                     catch (Exception ex)
@@ -355,7 +361,10 @@ public static class PastedAssetCleanupService
                     AppPaths.EnsureDirectory(timestampPath);
                     File.WriteAllText(timestampPath, DateTime.UtcNow.ToBinary().ToString(CultureInfo.InvariantCulture));
                 }
-                catch { }
+                catch (Exception ex)
+                {
+                    Safe.Ignore(ex, "PastedAssetCleanupService.RecordTimestamp");
+                }
 
                 return new SweepResult(candidateFiles.Count, deletedCount, reclaimedBytes);
             }
@@ -388,7 +397,10 @@ public static class PastedAssetCleanupService
                 }
             }
         }
-        catch { }
+        catch (Exception ex)
+        {
+            Safe.Ignore(ex, "PastedAssetCleanupService.IsThrottled");
+        }
         return false;
     }
 }

@@ -8,6 +8,7 @@ using System.Net.Http;
 using System.Net.NetworkInformation;
 using System.Threading;
 using System.Threading.Tasks;
+using MetroHub.Core.Services;
 
 namespace MetroHub.Core.Network;
 
@@ -60,7 +61,10 @@ public sealed class SpeedTestService
                 ExtractServerLocation(response);
             }
         }
-        catch { }
+        catch (Exception ex)
+        {
+            Safe.LogThrottled(ex, "SpeedTestService.DetectLocation");
+        }
 
         return _cachedServerLocation;
     }
@@ -119,8 +123,9 @@ public sealed class SpeedTestService
                 || cost.Roaming
                 || cost.OverDataLimit;
         }
-        catch
+        catch (Exception ex)
         {
+            Safe.LogThrottled(ex, "SpeedTestService.IsCurrentConnectionMetered");
             return false;
         }
     }
@@ -157,7 +162,10 @@ public sealed class SpeedTestService
                             : Math.Max(0.5, (Stopwatch.GetTimestamp() - probeStart) * 1000.0 / Stopwatch.Frequency);
                     }
                 }
-                catch { }
+                catch (Exception ex)
+                {
+                    Safe.LogThrottled(ex, "SpeedTestService.PingProbe");
+                }
 
                 if (elapsedMs < 0)
                 {
@@ -178,7 +186,10 @@ public sealed class SpeedTestService
                     {
                         break;
                     }
-                    catch { }
+                    catch (Exception ex)
+                    {
+                        Safe.LogThrottled(ex, "SpeedTestService.HttpProbe");
+                    }
                 }
 
                 if (elapsedMs >= 0)
@@ -357,6 +368,7 @@ public sealed class SpeedTestService
                     }
                     catch (Exception ex)
                     {
+                        Safe.LogThrottled(ex, "SpeedTestService.DownloadStream");
                         lastDownloadError = ex;
                         if (Interlocked.Increment(ref consecutiveDownloadErrors) >= downloadStreams * 3)
                         {
@@ -429,7 +441,7 @@ public sealed class SpeedTestService
                 });
             }
 
-            try { await Task.WhenAll(downloadTasks).ConfigureAwait(false); } catch { }
+            try { await Task.WhenAll(downloadTasks).ConfigureAwait(false); } catch (Exception ex) { Safe.Ignore(ex, "SpeedTestService.DownloadTasksJoin"); }
 
             cancellationToken.ThrowIfCancellationRequested();
 
@@ -543,6 +555,7 @@ public sealed class SpeedTestService
                     }
                     catch (Exception ex)
                     {
+                        Safe.LogThrottled(ex, "SpeedTestService.UploadStream");
                         lastUploadError = ex;
                         if (Interlocked.Increment(ref consecutiveUploadErrors) >= uploadStreams * 3)
                         {
@@ -616,7 +629,7 @@ public sealed class SpeedTestService
                 });
             }
 
-            try { await Task.WhenAll(uploadTasks).ConfigureAwait(false); } catch { }
+            try { await Task.WhenAll(uploadTasks).ConfigureAwait(false); } catch (Exception ex) { Safe.Ignore(ex, "SpeedTestService.UploadTasksJoin"); }
 
             cancellationToken.ThrowIfCancellationRequested();
 
@@ -651,7 +664,7 @@ public sealed class SpeedTestService
 
             // Stop continuous background latency probing and await task completion
             latencyCts.Cancel();
-            try { await pingTask.ConfigureAwait(false); } catch { }
+            try { await pingTask.ConfigureAwait(false); } catch (Exception ex) { Safe.Ignore(ex, "SpeedTestService.PingTaskJoin"); }
 
             // Compute representative consolidated session metrics across all probes (median to eliminate tail spikes)
             var (finalPing, finalJitter) = latencyTracker.GetConsolidatedMetrics();
@@ -687,6 +700,7 @@ public sealed class SpeedTestService
         }
         catch (Exception ex)
         {
+            Safe.LogThrottled(ex, "SpeedTestService.RunTest");
             string friendlyMsg = GetFriendlyErrorMessage(ex);
             progress.Report(new SpeedTestProgress
             {
@@ -698,7 +712,7 @@ public sealed class SpeedTestService
         finally
         {
             latencyCts.Cancel();
-            try { await pingTask.ConfigureAwait(false); } catch { }
+            try { await pingTask.ConfigureAwait(false); } catch (Exception ex) { Safe.Ignore(ex, "SpeedTestService.PingTaskCleanup"); }
         }
     }
 
