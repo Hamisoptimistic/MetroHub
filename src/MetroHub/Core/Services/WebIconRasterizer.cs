@@ -52,11 +52,19 @@ public static class WebIconRasterizer
         if (string.IsNullOrWhiteSpace(header)) return false;
         string trimmed = header.TrimStart();
 
+        // HTML documents (e.g. <!DOCTYPE html, <html, <head) containing inline SVGs must not be treated as SVG files
+        if (trimmed.StartsWith("<!DOCTYPE html", StringComparison.OrdinalIgnoreCase) ||
+            trimmed.StartsWith("<html", StringComparison.OrdinalIgnoreCase) ||
+            trimmed.StartsWith("<head", StringComparison.OrdinalIgnoreCase))
+        {
+            return false;
+        }
+
         if (trimmed.StartsWith("<svg", StringComparison.OrdinalIgnoreCase))
             return true;
 
         if ((trimmed.StartsWith("<?xml", StringComparison.OrdinalIgnoreCase) ||
-             trimmed.StartsWith("<!DOCTYPE", StringComparison.OrdinalIgnoreCase) ||
+             trimmed.StartsWith("<!DOCTYPE svg", StringComparison.OrdinalIgnoreCase) ||
              trimmed.StartsWith("<!--", StringComparison.OrdinalIgnoreCase)) &&
             trimmed.Contains("<svg", StringComparison.OrdinalIgnoreCase))
         {
@@ -64,6 +72,19 @@ public static class WebIconRasterizer
         }
 
         return false;
+    }
+
+    private static void DeleteFileQuietly(string path)
+    {
+        try
+        {
+            if (File.Exists(path))
+            {
+                File.SetAttributes(path, FileAttributes.Normal);
+                File.Delete(path);
+            }
+        }
+        catch { }
     }
 
     /// <summary>
@@ -75,6 +96,7 @@ public static class WebIconRasterizer
         if (string.IsNullOrWhiteSpace(filePath) || !File.Exists(filePath))
             return false;
 
+        bool isSvg = false;
         try
         {
             byte[] headerBuffer = new byte[8192];
@@ -89,12 +111,24 @@ public static class WebIconRasterizer
                 return false;
             }
 
+            isSvg = true;
             string svgText = await File.ReadAllTextAsync(filePath).ConfigureAwait(false);
-            return await RasterizeSvgToPngFileAsync(svgText, filePath, targetSize).ConfigureAwait(false);
+            bool rasterized = await RasterizeSvgToPngFileAsync(svgText, filePath, targetSize).ConfigureAwait(false);
+            if (!rasterized)
+            {
+                DeleteFileQuietly(filePath);
+                return false;
+            }
+
+            return true;
         }
         catch (Exception ex)
         {
             Safe.Ignore(ex, "WebIconRasterizer.TryRasterizeFileIfSvg");
+            if (isSvg)
+            {
+                DeleteFileQuietly(filePath);
+            }
             return false;
         }
     }
@@ -334,13 +368,17 @@ public static class WebIconRasterizer
         {
             try
             {
-                T result = action();
+                T? result = action();
                 tcs.TrySetResult(result);
             }
             catch (Exception ex)
             {
                 Safe.Log(ex, "WebIconRasterizer.STAWorker");
                 tcs.TrySetResult(default);
+            }
+            finally
+            {
+                System.Windows.Threading.Dispatcher.FromThread(Thread.CurrentThread)?.InvokeShutdown();
             }
         })
         {
@@ -457,6 +495,7 @@ public static class WebIconRasterizer
 
         var rtb = new RenderTargetBitmap(targetSize, targetSize, 96, 96, PixelFormats.Pbgra32);
         rtb.Render(visual);
+        rtb.Freeze();
         return rtb;
     }
 }

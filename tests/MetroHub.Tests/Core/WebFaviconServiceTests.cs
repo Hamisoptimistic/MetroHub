@@ -486,4 +486,244 @@ public class WebFaviconServiceTests
             }
         }
     }
+
+    [Fact]
+    public async Task WebIconRasterizer_TryRasterizeFileIfSvgAsync_WithMalformedSvg_DeletesFileAndReturnsFalse()
+    {
+        string tempPath = Path.Combine(Path.GetTempPath(), $"malformed_svg_{Guid.NewGuid():N}.svg");
+        try
+        {
+            await File.WriteAllTextAsync(tempPath, "<svg xmlns='http://www.w3.org/2000/svg'><bad-unclosed-xml");
+            bool result = await WebIconRasterizer.TryRasterizeFileIfSvgAsync(tempPath, 256);
+
+            Assert.False(result);
+            Assert.False(File.Exists(tempPath), "Malformed SVG file must be deleted so unrenderable XML is not left on disk.");
+        }
+        finally
+        {
+            if (File.Exists(tempPath))
+            {
+                try { File.Delete(tempPath); } catch { }
+            }
+        }
+    }
+
+    [Theory]
+    [InlineData("<!DOCTYPE html><html><head><title>SPA 404</title></head><body>Not Found</body></html>")]
+    [InlineData("<html><head><title>SPA</title></head></html>")]
+    [InlineData("<head><meta charset='utf-8'></head>")]
+    public async Task WebFaviconService_ValidateAndNormalizeDownloadedIconAsync_WithHtmlResponses_DeletesFileAndReturnsFalse(string htmlContent)
+    {
+        string tempPath = Path.Combine(Path.GetTempPath(), $"html_response_{Guid.NewGuid():N}.ico");
+        try
+        {
+            await File.WriteAllTextAsync(tempPath, htmlContent);
+            bool result = await WebFaviconService.ValidateAndNormalizeDownloadedIconAsync(tempPath);
+
+            Assert.False(result);
+            Assert.False(File.Exists(tempPath), "HTML response disguised as icon must be deleted.");
+        }
+        finally
+        {
+            if (File.Exists(tempPath))
+            {
+                try { File.Delete(tempPath); } catch { }
+            }
+        }
+    }
+
+    [Fact]
+    public async Task WebFaviconService_ValidateAndNormalizeDownloadedIconAsync_WithValidSvg_RasterizesInPlace()
+    {
+        string tempPath = Path.Combine(Path.GetTempPath(), $"valid_svg_{Guid.NewGuid():N}.svg");
+        try
+        {
+            string validSvg = "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><circle cx='8' cy='8' r='7' fill='blue'/></svg>";
+            await File.WriteAllTextAsync(tempPath, validSvg);
+
+            bool result = await WebFaviconService.ValidateAndNormalizeDownloadedIconAsync(tempPath);
+
+            Assert.True(result);
+            Assert.True(File.Exists(tempPath));
+
+            byte[] bytes = await File.ReadAllBytesAsync(tempPath);
+            Assert.True(bytes.Length > 100);
+            for (int i = 0; i < PngSignature.Length; i++)
+            {
+                Assert.Equal(PngSignature[i], bytes[i]);
+            }
+        }
+        finally
+        {
+            if (File.Exists(tempPath))
+            {
+                try { File.Delete(tempPath); } catch { }
+            }
+        }
+    }
+
+    [Fact]
+    public void WebFaviconService_SaveIconToCache_WithMalformedSvg_ReturnsNullAndDeletesCacheFile()
+    {
+        string url = $"https://example.com/bad_{Guid.NewGuid():N}";
+        byte[] malformedSvg = Encoding.UTF8.GetBytes("<svg xmlns='http://www.w3.org/2000/svg'><unclosed");
+
+        string? result = WebFaviconService.SaveIconToCache(url, malformedSvg);
+
+        Assert.Null(result);
+        string expectedPath = WebFaviconService.GetCachedIconPath(url);
+        Assert.False(File.Exists(expectedPath), "Unrenderable SVG bytes must not be committed to disk cache.");
+    }
+
+    [Fact]
+    public void ParseHtmlHead_WithMultiSizeDimensions_SelectsMaximumWidth()
+    {
+        string html = """
+            <html>
+            <head>
+                <link rel="icon" sizes="16x16 32x32 180x180" href="/icons/app-icon.png">
+            </head>
+            </html>
+            """;
+
+        var info = WebFaviconService.ParseHtmlHead(html, new Uri("https://example.com/"));
+
+        Assert.NotNull(info);
+        Assert.Equal("https://example.com/icons/app-icon.png", info.IconUrl);
+        // maxDim is 180 >= 128, so score is 1000 + 180 = 1180 (previously only parsed first match 16x16 -> score 26)
+        Assert.Equal(1180, info.IconScore);
+    }
+
+    [Fact]
+    public void ParseHtmlHead_WithCurrentColorSvg_PrefersCrispAppleTouchIcon()
+    {
+        string html = """
+            <html>
+            <head>
+                <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath fill='currentColor' d='M0 0h16v16H0z'/%3E%3C/svg%3E">
+                <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+            </head>
+            </html>
+            """;
+
+        var info = WebFaviconService.ParseHtmlHead(html, new Uri("https://example.com/"));
+
+        Assert.NotNull(info);
+        Assert.Equal("https://example.com/apple-touch-icon.png", info.IconUrl);
+        Assert.Equal(1180, info.IconScore);
+    }
+
+    [Fact]
+    public void ParseHtmlHead_WithPrefersColorSchemeSvg_PrefersCrispAppleTouchIcon()
+    {
+        string html = """
+            <html>
+            <head>
+                <link rel="icon" type="image/svg+xml" href="/logo-dark.svg" media="(prefers-color-scheme: dark)">
+                <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+            </head>
+            </html>
+            """;
+
+        var info = WebFaviconService.ParseHtmlHead(html, new Uri("https://example.com/"));
+
+        Assert.NotNull(info);
+        Assert.Equal("https://example.com/apple-touch-icon.png", info.IconUrl);
+        Assert.Equal(1180, info.IconScore);
+    }
+
+    [Fact]
+    public void ParseHtmlHead_WithCurrentColorSvg_WhenNoAppleTouchIcon_RetainsScore900()
+    {
+        string html = """
+            <html>
+            <head>
+                <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='currentColor'%3E%3C/svg%3E">
+            </head>
+            </html>
+            """;
+
+        var info = WebFaviconService.ParseHtmlHead(html, new Uri("https://example.com/"));
+
+        Assert.NotNull(info);
+        Assert.Equal(900, info.IconScore);
+    }
+
+    [Fact]
+    public void WebFaviconService_SaveIconToCache_WithHtmlResponse_ReturnsNullAndDeletesCacheFile()
+    {
+        string url = $"https://example.com/html_{Guid.NewGuid():N}";
+        byte[] htmlBytes = Encoding.UTF8.GetBytes("<!DOCTYPE html><html><body>Error</body></html>");
+
+        string? result = WebFaviconService.SaveIconToCache(url, htmlBytes);
+
+        Assert.Null(result);
+        string expectedPath = WebFaviconService.GetCachedIconPath(url);
+        Assert.False(File.Exists(expectedPath), "HTML bytes must not be committed to disk cache.");
+    }
+
+    [Fact]
+    public void WebFaviconService_SaveIconToCache_WithNonSvgXml_ReturnsNullAndDeletesCacheFile()
+    {
+        string url = $"https://example.com/xml_{Guid.NewGuid():N}";
+        byte[] xmlBytes = Encoding.UTF8.GetBytes("<?xml version='1.0'?><Error><Code>AccessDenied</Code></Error>");
+
+        string? result = WebFaviconService.SaveIconToCache(url, xmlBytes);
+
+        Assert.Null(result);
+        string expectedPath = WebFaviconService.GetCachedIconPath(url);
+        Assert.False(File.Exists(expectedPath), "Non-SVG XML bytes must not be committed to disk cache.");
+    }
+
+    [Fact]
+    public async Task WebFaviconService_ValidateAndNormalizeDownloadedIconAsync_WithNonSvgXml_DeletesFileAndReturnsFalse()
+    {
+        string tempPath = Path.Combine(Path.GetTempPath(), $"xml_error_{Guid.NewGuid():N}.xml");
+        try
+        {
+            await File.WriteAllTextAsync(tempPath, "<?xml version='1.0'?><Error><Code>AccessDenied</Code></Error>");
+            bool result = await WebFaviconService.ValidateAndNormalizeDownloadedIconAsync(tempPath);
+
+            Assert.False(result);
+            Assert.False(File.Exists(tempPath), "Non-SVG XML response must be deleted.");
+        }
+        finally
+        {
+            if (File.Exists(tempPath))
+            {
+                try { File.Delete(tempPath); } catch { }
+            }
+        }
+    }
+
+    [Fact]
+    public void WebIconRasterizer_IsSvgBytes_WithHtmlContainingInlineSvg_ReturnsFalse()
+    {
+        byte[] htmlBytes = Encoding.UTF8.GetBytes("<!DOCTYPE html><html><body><svg viewBox='0 0 16 16'><circle cx='8' cy='8' r='7'/></svg></body></html>");
+        bool isSvg = WebIconRasterizer.IsSvgBytes(htmlBytes);
+
+        Assert.False(isSvg, "HTML document with inline SVG must not be classified as standalone SVG.");
+    }
+
+    [Fact]
+    public async Task WebFaviconService_ValidateAndNormalizeDownloadedIconAsync_WithHtmlContainingInlineSvg_DeletesFileAndReturnsFalse()
+    {
+        string tempPath = Path.Combine(Path.GetTempPath(), $"html_with_svg_{Guid.NewGuid():N}.ico");
+        try
+        {
+            string content = "<!DOCTYPE html><html><body><svg viewBox='0 0 16 16'><rect width='16' height='16'/></svg>404 Not Found</body></html>";
+            await File.WriteAllTextAsync(tempPath, content);
+            bool result = await WebFaviconService.ValidateAndNormalizeDownloadedIconAsync(tempPath);
+
+            Assert.False(result);
+            Assert.False(File.Exists(tempPath), "HTML file containing inline SVG must be deleted.");
+        }
+        finally
+        {
+            if (File.Exists(tempPath))
+            {
+                try { File.Delete(tempPath); } catch { }
+            }
+        }
+    }
 }

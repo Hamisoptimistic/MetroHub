@@ -560,7 +560,59 @@ public static partial class WebFaviconService
                 }
             }
 
-            int score = isSvg ? 2000 : (isApple ? 1000 : 10);
+            bool hasDynamicColor = false;
+            if (isSvg)
+            {
+                if (tag.Contains("currentColor", StringComparison.OrdinalIgnoreCase) ||
+                    tag.Contains("prefers-color-scheme", StringComparison.OrdinalIgnoreCase))
+                {
+                    hasDynamicColor = true;
+                }
+                else if (rawHref.StartsWith("data:", StringComparison.OrdinalIgnoreCase))
+                {
+                    if (WebIconRasterizer.TryParseDataUri(rawHref, out _, out bool isBase64, out string payload))
+                    {
+                        try
+                        {
+                            string cleanPayload = payload.Trim();
+                            string payloadText;
+                            if (isBase64)
+                            {
+                                if (cleanPayload.Contains('%'))
+                                {
+                                    try { cleanPayload = Uri.UnescapeDataString(cleanPayload); } catch { }
+                                }
+                                payloadText = Encoding.UTF8.GetString(Convert.FromBase64String(cleanPayload));
+                            }
+                            else
+                            {
+                                try { payloadText = Uri.UnescapeDataString(cleanPayload); } catch { payloadText = cleanPayload; }
+                            }
+
+                            if (payloadText.Contains("currentColor", StringComparison.OrdinalIgnoreCase) ||
+                                payloadText.Contains("prefers-color-scheme", StringComparison.OrdinalIgnoreCase))
+                            {
+                                hasDynamicColor = true;
+                            }
+                        }
+                        catch
+                        {
+                            if (rawHref.Contains("currentColor", StringComparison.OrdinalIgnoreCase) ||
+                                rawHref.Contains("prefers-color-scheme", StringComparison.OrdinalIgnoreCase))
+                            {
+                                hasDynamicColor = true;
+                            }
+                        }
+                    }
+                    else if (rawHref.Contains("currentColor", StringComparison.OrdinalIgnoreCase) ||
+                             rawHref.Contains("prefers-color-scheme", StringComparison.OrdinalIgnoreCase))
+                    {
+                        hasDynamicColor = true;
+                    }
+                }
+            }
+
+            int score = isSvg ? (hasDynamicColor ? 900 : 2000) : (isApple ? 1000 : 10);
 
             var sizesMatch = SizesAttrRegex().Match(tag);
             if (sizesMatch.Success)
@@ -568,24 +620,36 @@ public static partial class WebFaviconService
                 string sizesVal = sizesMatch.Groups["sizes"].Value.Trim();
                 if (sizesVal.Equals("any", StringComparison.OrdinalIgnoreCase))
                 {
-                    score = Math.Max(score, 2500);
+                    if (!hasDynamicColor)
+                    {
+                        score = Math.Max(score, 2500);
+                    }
                 }
                 else
                 {
-                    var dimMatch = DimensionsRegex().Match(sizesVal);
-                    if (dimMatch.Success && int.TryParse(dimMatch.Groups["width"].Value, CultureInfo.InvariantCulture, out int dim))
+                    var dimMatches = DimensionsRegex().Matches(sizesVal);
+                    int maxDim = 0;
+                    foreach (Match m in dimMatches)
+                    {
+                        if (int.TryParse(m.Groups["width"].Value, CultureInfo.InvariantCulture, out int dim) && dim > maxDim)
+                        {
+                            maxDim = dim;
+                        }
+                    }
+
+                    if (maxDim > 0)
                     {
                         if (isSvg)
                         {
                             // SVGs are resolution independent vector graphics
                         }
-                        else if (dim >= 128 && !isApple)
+                        else if (maxDim >= 128 && !isApple)
                         {
-                            score = 1000 + dim;
+                            score = 1000 + maxDim;
                         }
                         else
                         {
-                            score += dim;
+                            score += maxDim;
                         }
                     }
                     else if (isApple)
@@ -645,12 +709,12 @@ public static partial class WebFaviconService
 
         Uri baseUri = response.RequestMessage?.RequestUri ?? requestedUri;
 
-        // Stream up to 64 KB, accumulating into memory and checking for </head>
+        // Stream up to 256 KB, accumulating into memory and checking for </head>
         await using var stream = await response.Content.ReadAsStreamAsync(ct).ConfigureAwait(false);
         using var ms = new MemoryStream();
         byte[] buffer = new byte[4096];
         int totalRead = 0;
-        const int maxHeadBytes = 65536;
+        const int maxHeadBytes = 262144; // 256 KB
 
         while (totalRead < maxHeadBytes)
         {
@@ -658,12 +722,26 @@ public static partial class WebFaviconService
             int read = await stream.ReadAsync(buffer.AsMemory(0, toRead), ct).ConfigureAwait(false);
             if (read == 0) break;
 
+            int prevLength = (int)ms.Length;
+            int overlap = Math.Min(16, prevLength);
+            int checkOffset = prevLength - overlap;
+
             await ms.WriteAsync(buffer.AsMemory(0, read), ct).ConfigureAwait(false);
             totalRead += read;
 
-            // Check accumulated buffer for </head>
-            string currentText = System.Text.Encoding.UTF8.GetString(ms.GetBuffer(), 0, (int)ms.Length);
-            if (currentText.Contains("</head>", StringComparison.OrdinalIgnoreCase))
+            // Adjust checkOffset to start on a UTF-8 character boundary (avoid continuation byte 10xxxxxx)
+            byte[] msBuffer = ms.GetBuffer();
+            while (checkOffset > 0 && (msBuffer[checkOffset] & 0xC0) == 0x80)
+            {
+                checkOffset--;
+            }
+
+            int checkLength = (int)ms.Length - checkOffset;
+
+            // Check newly read slice (plus overlap) for </head> or <body
+            string chunkText = System.Text.Encoding.UTF8.GetString(msBuffer, checkOffset, checkLength);
+            if (chunkText.Contains("</head>", StringComparison.OrdinalIgnoreCase) ||
+                chunkText.Contains("<body", StringComparison.OrdinalIgnoreCase))
             {
                 break;
             }
@@ -671,6 +749,131 @@ public static partial class WebFaviconService
 
         string htmlHead = System.Text.Encoding.UTF8.GetString(ms.GetBuffer(), 0, (int)ms.Length);
         return ParseHtmlHead(htmlHead, baseUri);
+    }
+
+    private static void DeleteFileQuietly(string path)
+    {
+        try
+        {
+            if (File.Exists(path))
+            {
+                File.SetAttributes(path, FileAttributes.Normal);
+                File.Delete(path);
+            }
+        }
+        catch { }
+    }
+
+    /// <summary>
+    /// Sniffs if a byte sequence represents HTML document markup (starts with &lt;!DOCTYPE, &lt;html, or &lt;head).
+    /// </summary>
+    public static bool IsHtmlBytes(ReadOnlySpan<byte> bytes)
+    {
+        if (bytes.Length < 5) return false;
+
+        if (bytes.Length >= 3 && bytes[0] == 0xEF && bytes[1] == 0xBB && bytes[2] == 0xBF)
+        {
+            bytes = bytes[3..];
+        }
+
+        int i = 0;
+        while (i < bytes.Length && (bytes[i] == ' ' || bytes[i] == '\t' || bytes[i] == '\r' || bytes[i] == '\n'))
+        {
+            i++;
+        }
+
+        if (i >= bytes.Length) return false;
+        bytes = bytes[i..];
+
+        int inspectLen = Math.Min(bytes.Length, 512);
+        string header = Encoding.UTF8.GetString(bytes[..inspectLen]).TrimStart();
+        return header.StartsWith("<!DOCTYPE", StringComparison.OrdinalIgnoreCase) ||
+               header.StartsWith("<html", StringComparison.OrdinalIgnoreCase) ||
+               header.StartsWith("<head", StringComparison.OrdinalIgnoreCase);
+    }
+
+    /// <summary>
+    /// Sniffs if a byte sequence represents non-SVG XML (such as AWS S3 error XML or SOAP responses).
+    /// </summary>
+    public static bool IsNonSvgXmlBytes(ReadOnlySpan<byte> bytes)
+    {
+        if (bytes.Length < 5) return false;
+
+        if (bytes.Length >= 3 && bytes[0] == 0xEF && bytes[1] == 0xBB && bytes[2] == 0xBF)
+        {
+            bytes = bytes[3..];
+        }
+
+        int i = 0;
+        while (i < bytes.Length && (bytes[i] == ' ' || bytes[i] == '\t' || bytes[i] == '\r' || bytes[i] == '\n'))
+        {
+            i++;
+        }
+
+        if (i >= bytes.Length) return false;
+        bytes = bytes[i..];
+
+        int inspectLen = Math.Min(bytes.Length, 512);
+        string header = Encoding.UTF8.GetString(bytes[..inspectLen]).TrimStart();
+        return header.StartsWith("<?xml", StringComparison.OrdinalIgnoreCase) && !WebIconRasterizer.IsSvgBytes(bytes);
+    }
+
+    /// <summary>
+    /// Inspects a downloaded candidate file (checking first 512 bytes).
+    /// If SVG, rasterizes to PNG in-place (or deletes the file if rasterization fails).
+    /// Rejects HTML responses starting with &lt;!DOCTYPE, &lt;html, or &lt;head by deleting the file and returning false.
+    /// Rejects non-SVG XML documents (e.g. S3 errors) by deleting the file and returning false.
+    /// </summary>
+    public static async Task<bool> ValidateAndNormalizeDownloadedIconAsync(string filePath, int targetSize = 256)
+    {
+        if (string.IsNullOrWhiteSpace(filePath) || !File.Exists(filePath))
+            return false;
+
+        try
+        {
+            byte[] buffer = new byte[512];
+            int bytesRead;
+            await using (var fs = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.Read))
+            {
+                bytesRead = await fs.ReadAsync(buffer.AsMemory(0, buffer.Length)).ConfigureAwait(false);
+            }
+
+            if (bytesRead <= 0)
+            {
+                DeleteFileQuietly(filePath);
+                return false;
+            }
+
+            var span = buffer.AsSpan(0, bytesRead);
+
+            // 1. Reject HTML responses starting with <!DOCTYPE, <html, or <head
+            if (IsHtmlBytes(span))
+            {
+                DeleteFileQuietly(filePath);
+                return false;
+            }
+
+            // 2. If SVG, rasterize to PNG in-place (deletes file if rasterization fails)
+            if (WebIconRasterizer.IsSvgBytes(span))
+            {
+                return await WebIconRasterizer.TryRasterizeFileIfSvgAsync(filePath, targetSize).ConfigureAwait(false);
+            }
+
+            // 3. Reject non-SVG XML responses (e.g. S3 error XML)
+            if (IsNonSvgXmlBytes(span))
+            {
+                DeleteFileQuietly(filePath);
+                return false;
+            }
+
+            return true;
+        }
+        catch (Exception ex)
+        {
+            Safe.Ignore(ex, "WebFaviconService.ValidateAndNormalizeDownloadedIcon");
+            DeleteFileQuietly(filePath);
+            return false;
+        }
     }
 
     /// <summary>
@@ -693,8 +896,7 @@ public static partial class WebFaviconService
 
         if (downloaded)
         {
-            await WebIconRasterizer.TryRasterizeFileIfSvgAsync(destinationPath, 256).ConfigureAwait(false);
-            return true;
+            return await ValidateAndNormalizeDownloadedIconAsync(destinationPath).ConfigureAwait(false);
         }
 
         return false;
@@ -749,10 +951,18 @@ public static partial class WebFaviconService
                 else if (sizes.Contains("192x192", StringComparison.OrdinalIgnoreCase)) score += 192;
                 else
                 {
-                    var m = DimensionsRegex().Match(sizes);
-                    if (m.Success && int.TryParse(m.Groups["width"].Value, CultureInfo.InvariantCulture, out int w))
+                    int maxW = 0;
+                    foreach (Match m in DimensionsRegex().Matches(sizes))
                     {
-                        score += w;
+                        if (int.TryParse(m.Groups["width"].Value, CultureInfo.InvariantCulture, out int w) && w > maxW)
+                        {
+                            maxW = w;
+                        }
+                    }
+
+                    if (maxW > 0)
+                    {
+                        score += maxW;
                     }
                 }
 
@@ -922,9 +1132,11 @@ public static partial class WebFaviconService
             string googlePathUrl = $"https://www.google.com/s2/favicons?domain={Uri.EscapeDataString(queryUrl)}&sz=128";
             if (await HttpHelper.DownloadFileAsync(googlePathUrl, cachedPath, minimumBytes: 200, ct: overallCts.Token).ConfigureAwait(false))
             {
-                await WebIconRasterizer.TryRasterizeFileIfSvgAsync(cachedPath, 256).ConfigureAwait(false);
-                _memoryCache[scopeKey] = cachedPath;
-                return new WebFaviconResult(cachedPath, resolvedTitle);
+                if (await ValidateAndNormalizeDownloadedIconAsync(cachedPath).ConfigureAwait(false))
+                {
+                    _memoryCache[scopeKey] = cachedPath;
+                    return new WebFaviconResult(cachedPath, resolvedTitle);
+                }
             }
         }
         catch (Exception ex) when (ex is not OperationCanceledException)
@@ -941,9 +1153,11 @@ public static partial class WebFaviconService
                 string googleDomainUrl = $"https://www.google.com/s2/favicons?domain={Uri.EscapeDataString(domain)}&sz=128";
                 if (await HttpHelper.DownloadFileAsync(googleDomainUrl, cachedPath, minimumBytes: 200, ct: overallCts.Token).ConfigureAwait(false))
                 {
-                    await WebIconRasterizer.TryRasterizeFileIfSvgAsync(cachedPath, 256).ConfigureAwait(false);
-                    _memoryCache[scopeKey] = cachedPath;
-                    return new WebFaviconResult(cachedPath, resolvedTitle);
+                    if (await ValidateAndNormalizeDownloadedIconAsync(cachedPath).ConfigureAwait(false))
+                    {
+                        _memoryCache[scopeKey] = cachedPath;
+                        return new WebFaviconResult(cachedPath, resolvedTitle);
+                    }
                 }
             }
             catch (Exception ex) when (ex is not OperationCanceledException)
@@ -958,9 +1172,11 @@ public static partial class WebFaviconService
             string ddgUrl = $"https://icons.duckduckgo.com/ip3/{Uri.EscapeDataString(domain)}.ico";
             if (await HttpHelper.DownloadFileAsync(ddgUrl, cachedPath, minimumBytes: 200, ct: overallCts.Token).ConfigureAwait(false))
             {
-                await WebIconRasterizer.TryRasterizeFileIfSvgAsync(cachedPath, 256).ConfigureAwait(false);
-                _memoryCache[scopeKey] = cachedPath;
-                return new WebFaviconResult(cachedPath, resolvedTitle);
+                if (await ValidateAndNormalizeDownloadedIconAsync(cachedPath).ConfigureAwait(false))
+                {
+                    _memoryCache[scopeKey] = cachedPath;
+                    return new WebFaviconResult(cachedPath, resolvedTitle);
+                }
             }
         }
         catch (Exception ex) when (ex is not OperationCanceledException)
@@ -974,9 +1190,11 @@ public static partial class WebFaviconService
             string directUrl = $"https://{domain}/favicon.ico";
             if (await HttpHelper.DownloadFileAsync(directUrl, cachedPath, minimumBytes: 200, ct: overallCts.Token).ConfigureAwait(false))
             {
-                await WebIconRasterizer.TryRasterizeFileIfSvgAsync(cachedPath, 256).ConfigureAwait(false);
-                _memoryCache[scopeKey] = cachedPath;
-                return new WebFaviconResult(cachedPath, resolvedTitle);
+                if (await ValidateAndNormalizeDownloadedIconAsync(cachedPath).ConfigureAwait(false))
+                {
+                    _memoryCache[scopeKey] = cachedPath;
+                    return new WebFaviconResult(cachedPath, resolvedTitle);
+                }
             }
         }
         catch (Exception ex) when (ex is not OperationCanceledException)
@@ -1018,6 +1236,11 @@ public static partial class WebFaviconService
             byte[] bytes = await response.Content.ReadAsByteArrayAsync(ct).ConfigureAwait(false);
             if (bytes.Length == 0) return null;
 
+            if (IsHtmlBytes(bytes) || IsNonSvgXmlBytes(bytes))
+            {
+                return null;
+            }
+
             if (WebIconRasterizer.IsSvgBytes(bytes))
             {
                 string svgText = Encoding.UTF8.GetString(bytes);
@@ -1026,6 +1249,7 @@ public static partial class WebFaviconService
                 {
                     return pngBytes;
                 }
+                return null;
             }
 
             if (minimumBytes > 0 && bytes.Length < minimumBytes) return null;
@@ -1118,6 +1342,12 @@ public static partial class WebFaviconService
             string cachedPath = GetCachedIconPath(url);
             if (string.IsNullOrWhiteSpace(cachedPath)) return null;
 
+            if (IsHtmlBytes(bytes) || IsNonSvgXmlBytes(bytes))
+            {
+                DeleteFileQuietly(cachedPath);
+                return null;
+            }
+
             string? dir = Path.GetDirectoryName(cachedPath);
             if (!string.IsNullOrEmpty(dir) && !Directory.Exists(dir))
             {
@@ -1130,7 +1360,8 @@ public static partial class WebFaviconService
                 bool rasterized = WebIconRasterizer.RasterizeSvgToPngFileAsync(svgText, cachedPath, 256).GetAwaiter().GetResult();
                 if (!rasterized)
                 {
-                    File.WriteAllBytes(cachedPath, bytes);
+                    DeleteFileQuietly(cachedPath);
+                    return null;
                 }
             }
             else
