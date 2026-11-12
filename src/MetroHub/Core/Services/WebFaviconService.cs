@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Globalization;
 using System.IO;
+using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
@@ -140,14 +141,20 @@ public static partial class WebFaviconService
     [GeneratedRegex(@"<link\b[^>]*>", RegexOptions.IgnoreCase)]
     private static partial Regex LinkTagRegex();
 
-    [GeneratedRegex(@"\brel\s*=\s*[""']?(?<rel>[^""'>\s]+(?:\s+[^""'>\s]+)*)[""']?", RegexOptions.IgnoreCase)]
+    [GeneratedRegex(@"<base\b[^>]*>", RegexOptions.IgnoreCase)]
+    private static partial Regex BaseTagRegex();
+
+    [GeneratedRegex(@"\brel\s*=\s*(?:""(?<rel>[^""]*)""|'(?<rel>[^']*)'|(?<rel>[^\s>]+))", RegexOptions.IgnoreCase)]
     private static partial Regex RelAttrRegex();
 
-    [GeneratedRegex(@"\bhref\s*=\s*[""']?(?<href>[^""'>\s]+)[""']?", RegexOptions.IgnoreCase)]
+    [GeneratedRegex(@"\bhref\s*=\s*(?:""(?<href>[^""]*)""|'(?<href>[^']*)'|(?<href>[^\s>]+))", RegexOptions.IgnoreCase)]
     private static partial Regex HrefAttrRegex();
 
-    [GeneratedRegex(@"\bsizes\s*=\s*[""']?(?<width>\d+)x(?:\d+)?[""']?", RegexOptions.IgnoreCase)]
+    [GeneratedRegex(@"\bsizes\s*=\s*(?:""(?<sizes>[^""]*)""|'(?<sizes>[^']*)'|(?<sizes>[^\s>]+))", RegexOptions.IgnoreCase)]
     private static partial Regex SizesAttrRegex();
+
+    [GeneratedRegex(@"(?<width>\d+)x(?:\d+)?", RegexOptions.IgnoreCase)]
+    private static partial Regex DimensionsRegex();
 
     [GeneratedRegex(@"\s+")]
     private static partial Regex MultipleWhitespaceRegex();
@@ -431,7 +438,7 @@ public static partial class WebFaviconService
 
     /// <summary>
     /// Pure in-memory parser for HTML head markup.
-    /// Extracts site name, page title, and the highest-quality non-SVG icon URL.
+    /// Extracts site name, page title, PWA manifest link, and the highest-quality icon URL (including SVGs and data URIs).
     /// </summary>
     public static HtmlHeadInfo ParseHtmlHead(string htmlHead, Uri baseUri)
     {
@@ -440,7 +447,24 @@ public static partial class WebFaviconService
             return new HtmlHeadInfo(null, null, null);
         }
 
-        // 1. Extract og:site_name
+        // 1. Check for <base href="...">
+        foreach (Match baseTag in BaseTagRegex().Matches(htmlHead))
+        {
+            var baseHrefMatch = HrefAttrRegex().Match(baseTag.Value);
+            if (baseHrefMatch.Success)
+            {
+                string rawBase = System.Net.WebUtility.HtmlDecode(baseHrefMatch.Groups["href"].Value.Trim());
+                if (!string.IsNullOrWhiteSpace(rawBase) &&
+                    Uri.TryCreate(baseUri, rawBase, out Uri? customBase) &&
+                    (customBase.Scheme == Uri.UriSchemeHttp || customBase.Scheme == Uri.UriSchemeHttps))
+                {
+                    baseUri = customBase;
+                    break;
+                }
+            }
+        }
+
+        // 2. Extract og:site_name
         string? siteName = null;
         var ogMatch = OgSiteNameRegex().Match(htmlHead);
         if (ogMatch.Success)
@@ -448,7 +472,7 @@ public static partial class WebFaviconService
             siteName = System.Net.WebUtility.HtmlDecode(ogMatch.Groups["siteName"].Value.Trim());
         }
 
-        // 2. Extract <title>
+        // 3. Extract <title>
         string? title = null;
         var titleMatch = TitleRegex().Match(htmlHead);
         if (titleMatch.Success)
@@ -457,9 +481,10 @@ public static partial class WebFaviconService
             title = MultipleWhitespaceRegex().Replace(title, " ");
         }
 
-        // 3. Extract highest quality non-SVG icon
+        // 4. Extract highest quality icon and PWA manifest
         string? bestIconUrl = null;
         int bestScore = -1;
+        string? manifestUrl = null;
 
         var linkMatches = LinkTagRegex().Matches(htmlHead);
         foreach (Match linkTag in linkMatches)
@@ -472,14 +497,18 @@ public static partial class WebFaviconService
             if (!relMatch.Success || !hrefMatch.Success) continue;
 
             string rel = relMatch.Groups["rel"].Value.Trim();
-            string rawHref = hrefMatch.Groups["href"].Value.Trim();
+            string rawHref = System.Net.WebUtility.HtmlDecode(hrefMatch.Groups["href"].Value.Trim());
 
             if (string.IsNullOrWhiteSpace(rawHref)) continue;
 
-            // Skip SVGs
-            string hrefWithoutQuery = rawHref.Split('?')[0];
-            if (hrefWithoutQuery.EndsWith(".svg", StringComparison.OrdinalIgnoreCase))
+            // Check for PWA manifest link
+            if (rel.Equals("manifest", StringComparison.OrdinalIgnoreCase))
             {
+                if (Uri.TryCreate(baseUri, rawHref, out Uri? resolvedManifest) &&
+                    (resolvedManifest.Scheme == Uri.UriSchemeHttp || resolvedManifest.Scheme == Uri.UriSchemeHttps))
+                {
+                    manifestUrl = resolvedManifest.AbsoluteUri;
+                }
                 continue;
             }
 
@@ -504,21 +533,66 @@ public static partial class WebFaviconService
 
             if (!isApple && !isIcon) continue;
 
-            // Resolve relative URI against baseUri
-            if (!Uri.TryCreate(baseUri, rawHref, out Uri? resolvedUri) ||
-                (resolvedUri.Scheme != Uri.UriSchemeHttp && resolvedUri.Scheme != Uri.UriSchemeHttps))
+            string resolvedIconUrl;
+            bool isSvg = false;
+
+            if (rawHref.StartsWith("data:", StringComparison.OrdinalIgnoreCase))
             {
-                continue;
+                resolvedIconUrl = rawHref;
+                isSvg = rawHref.Contains("image/svg+xml", StringComparison.OrdinalIgnoreCase) ||
+                        rawHref.Contains("<svg", StringComparison.OrdinalIgnoreCase) ||
+                        rawHref.Contains("%3Csvg", StringComparison.OrdinalIgnoreCase);
+            }
+            else
+            {
+                if (!Uri.TryCreate(baseUri, rawHref, out Uri? resolvedUri) ||
+                    (resolvedUri.Scheme != Uri.UriSchemeHttp && resolvedUri.Scheme != Uri.UriSchemeHttps))
+                {
+                    continue;
+                }
+
+                resolvedIconUrl = resolvedUri.AbsoluteUri;
+                string hrefWithoutQuery = resolvedUri.AbsolutePath;
+                if (hrefWithoutQuery.EndsWith(".svg", StringComparison.OrdinalIgnoreCase) ||
+                    tag.Contains("image/svg+xml", StringComparison.OrdinalIgnoreCase))
+                {
+                    isSvg = true;
+                }
             }
 
-            // Score candidate: apple-touch-icon gets large base score
-            int score = isApple ? 1000 : 10;
+            int score = isSvg ? 2000 : (isApple ? 1000 : 10);
 
-            // Check sizes="WxH"
-            var sizeMatch = SizesAttrRegex().Match(tag);
-            if (sizeMatch.Success && int.TryParse(sizeMatch.Groups["width"].Value, CultureInfo.InvariantCulture, out int dim))
+            var sizesMatch = SizesAttrRegex().Match(tag);
+            if (sizesMatch.Success)
             {
-                score += dim;
+                string sizesVal = sizesMatch.Groups["sizes"].Value.Trim();
+                if (sizesVal.Equals("any", StringComparison.OrdinalIgnoreCase))
+                {
+                    score = Math.Max(score, 2500);
+                }
+                else
+                {
+                    var dimMatch = DimensionsRegex().Match(sizesVal);
+                    if (dimMatch.Success && int.TryParse(dimMatch.Groups["width"].Value, CultureInfo.InvariantCulture, out int dim))
+                    {
+                        if (isSvg)
+                        {
+                            // SVGs are resolution independent vector graphics
+                        }
+                        else if (dim >= 128 && !isApple)
+                        {
+                            score = 1000 + dim;
+                        }
+                        else
+                        {
+                            score += dim;
+                        }
+                    }
+                    else if (isApple)
+                    {
+                        score += 180;
+                    }
+                }
             }
             else if (isApple)
             {
@@ -528,11 +602,11 @@ public static partial class WebFaviconService
             if (score > bestScore)
             {
                 bestScore = score;
-                bestIconUrl = resolvedUri.AbsoluteUri;
+                bestIconUrl = resolvedIconUrl;
             }
         }
 
-        return new HtmlHeadInfo(siteName, title, bestIconUrl);
+        return new HtmlHeadInfo(siteName, title, bestIconUrl, manifestUrl, Math.Max(0, bestScore));
     }
 
     /// <summary>
@@ -600,8 +674,126 @@ public static partial class WebFaviconService
     }
 
     /// <summary>
+    /// Saves an icon candidate (either data: URI or remote URL) to disk, rasterizing SVGs in-place to genuine PNGs.
+    /// </summary>
+    private static async Task<bool> SaveIconCandidateAsync(string iconUrl, string destinationPath, CancellationToken ct)
+    {
+        if (string.IsNullOrWhiteSpace(iconUrl)) return false;
+
+        if (iconUrl.StartsWith("data:", StringComparison.OrdinalIgnoreCase))
+        {
+            return await WebIconRasterizer.TryProcessDataUriToFileAsync(iconUrl, destinationPath, 256).ConfigureAwait(false);
+        }
+
+        bool downloaded = await HttpHelper.DownloadFileAsync(
+            iconUrl,
+            destinationPath,
+            minimumBytes: 20,
+            ct: ct).ConfigureAwait(false);
+
+        if (downloaded)
+        {
+            await WebIconRasterizer.TryRasterizeFileIfSvgAsync(destinationPath, 256).ConfigureAwait(false);
+            return true;
+        }
+
+        return false;
+    }
+
+    /// <summary>
+    /// Fetches PWA Web App Manifest JSON and extracts the highest quality transparent icon candidate (192px/256px/512px/SVG).
+    /// </summary>
+    private static async Task<bool> TryExtractIconFromManifestAsync(
+        string manifestUrl,
+        string destinationPath,
+        CancellationToken ct)
+    {
+        if (string.IsNullOrWhiteSpace(manifestUrl)) return false;
+
+        try
+        {
+            using var request = new System.Net.Http.HttpRequestMessage(System.Net.Http.HttpMethod.Get, manifestUrl);
+            request.Headers.UserAgent.ParseAdd("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36");
+
+            using var response = await HttpHelper.Client.SendAsync(request, System.Net.Http.HttpCompletionOption.ResponseHeadersRead, ct).ConfigureAwait(false);
+            if (!response.IsSuccessStatusCode) return false;
+
+            string json = await response.Content.ReadAsStringAsync(ct).ConfigureAwait(false);
+            using var doc = System.Text.Json.JsonDocument.Parse(json);
+
+            if (!doc.RootElement.TryGetProperty("icons", out var iconsElement) ||
+                iconsElement.ValueKind != System.Text.Json.JsonValueKind.Array)
+            {
+                return false;
+            }
+
+            string? bestSrc = null;
+            int bestManifestScore = -1;
+
+            foreach (var icon in iconsElement.EnumerateArray())
+            {
+                if (!icon.TryGetProperty("src", out var srcProp)) continue;
+                string? src = srcProp.GetString();
+                if (string.IsNullOrWhiteSpace(src)) continue;
+
+                string sizes = icon.TryGetProperty("sizes", out var sProp) ? (sProp.GetString() ?? string.Empty) : string.Empty;
+                string type = icon.TryGetProperty("type", out var tProp) ? (tProp.GetString() ?? string.Empty) : string.Empty;
+                string purpose = icon.TryGetProperty("purpose", out var pProp) ? (pProp.GetString() ?? string.Empty) : string.Empty;
+
+                bool isSvg = type.Contains("svg", StringComparison.OrdinalIgnoreCase) || src.EndsWith(".svg", StringComparison.OrdinalIgnoreCase);
+                int score = isSvg ? 2000 : 100;
+
+                if (sizes.Contains("any", StringComparison.OrdinalIgnoreCase)) score += 500;
+                else if (sizes.Contains("512x512", StringComparison.OrdinalIgnoreCase)) score += 512;
+                else if (sizes.Contains("256x256", StringComparison.OrdinalIgnoreCase)) score += 256;
+                else if (sizes.Contains("192x192", StringComparison.OrdinalIgnoreCase)) score += 192;
+                else
+                {
+                    var m = DimensionsRegex().Match(sizes);
+                    if (m.Success && int.TryParse(m.Groups["width"].Value, CultureInfo.InvariantCulture, out int w))
+                    {
+                        score += w;
+                    }
+                }
+
+                if (purpose.Contains("maskable", StringComparison.OrdinalIgnoreCase) &&
+                    !purpose.Contains("any", StringComparison.OrdinalIgnoreCase))
+                {
+                    score -= 100;
+                }
+
+                if (score > bestManifestScore)
+                {
+                    bestManifestScore = score;
+                    bestSrc = src;
+                }
+            }
+
+            if (string.IsNullOrWhiteSpace(bestSrc)) return false;
+
+            if (bestSrc.StartsWith("data:", StringComparison.OrdinalIgnoreCase))
+            {
+                return await SaveIconCandidateAsync(bestSrc, destinationPath, ct).ConfigureAwait(false);
+            }
+
+            if (!Uri.TryCreate(new Uri(manifestUrl), bestSrc, out Uri? resolvedManifestIcon))
+            {
+                return false;
+            }
+
+            return await SaveIconCandidateAsync(resolvedManifestIcon.AbsoluteUri, destinationPath, ct).ConfigureAwait(false);
+        }
+        catch (Exception ex)
+        {
+            Safe.Ignore(ex, "WebFaviconService.TryExtractIconFromManifest");
+            return false;
+        }
+    }
+
+    /// <summary>
     /// Streams up to 64 KB of the page HTML head, stops at </head>, checks for host redirects,
     /// parses the highest quality icon and title, and downloads the icon if found.
+    /// Supports inline SVG data URIs, PWA manifests, and post-download disguised SVG sniffing.
     /// </summary>
     private static async Task<HtmlHeadInfo?> TryExtractFromHtmlHeadAsync(
         string url,
@@ -609,18 +801,26 @@ public static partial class WebFaviconService
         CancellationToken ct)
     {
         var headInfo = await ExtractHtmlHeadInfoAsync(url, ct).ConfigureAwait(false);
-        if (headInfo != null && !string.IsNullOrWhiteSpace(headInfo.IconUrl))
-        {
-            bool downloaded = await HttpHelper.DownloadFileAsync(
-                headInfo.IconUrl,
-                destinationPath,
-                minimumBytes: 200,
-                ct: ct).ConfigureAwait(false);
+        if (headInfo == null) return null;
 
-            if (downloaded)
-            {
-                return headInfo;
-            }
+        bool iconSaved = false;
+
+        // If head icon is high quality (score >= 800), try saving it first
+        if (!string.IsNullOrWhiteSpace(headInfo.IconUrl) && headInfo.IconScore >= 800)
+        {
+            iconSaved = await SaveIconCandidateAsync(headInfo.IconUrl, destinationPath, ct).ConfigureAwait(false);
+        }
+
+        // If no high quality icon yet, check PWA manifest
+        if (!iconSaved && !string.IsNullOrWhiteSpace(headInfo.ManifestUrl))
+        {
+            iconSaved = await TryExtractIconFromManifestAsync(headInfo.ManifestUrl, destinationPath, ct).ConfigureAwait(false);
+        }
+
+        // If still no icon and head had a low-res icon (< 800), fall back to it
+        if (!iconSaved && !string.IsNullOrWhiteSpace(headInfo.IconUrl))
+        {
+            iconSaved = await SaveIconCandidateAsync(headInfo.IconUrl, destinationPath, ct).ConfigureAwait(false);
         }
 
         return headInfo;
@@ -722,6 +922,7 @@ public static partial class WebFaviconService
             string googlePathUrl = $"https://www.google.com/s2/favicons?domain={Uri.EscapeDataString(queryUrl)}&sz=128";
             if (await HttpHelper.DownloadFileAsync(googlePathUrl, cachedPath, minimumBytes: 200, ct: overallCts.Token).ConfigureAwait(false))
             {
+                await WebIconRasterizer.TryRasterizeFileIfSvgAsync(cachedPath, 256).ConfigureAwait(false);
                 _memoryCache[scopeKey] = cachedPath;
                 return new WebFaviconResult(cachedPath, resolvedTitle);
             }
@@ -740,6 +941,7 @@ public static partial class WebFaviconService
                 string googleDomainUrl = $"https://www.google.com/s2/favicons?domain={Uri.EscapeDataString(domain)}&sz=128";
                 if (await HttpHelper.DownloadFileAsync(googleDomainUrl, cachedPath, minimumBytes: 200, ct: overallCts.Token).ConfigureAwait(false))
                 {
+                    await WebIconRasterizer.TryRasterizeFileIfSvgAsync(cachedPath, 256).ConfigureAwait(false);
                     _memoryCache[scopeKey] = cachedPath;
                     return new WebFaviconResult(cachedPath, resolvedTitle);
                 }
@@ -756,6 +958,7 @@ public static partial class WebFaviconService
             string ddgUrl = $"https://icons.duckduckgo.com/ip3/{Uri.EscapeDataString(domain)}.ico";
             if (await HttpHelper.DownloadFileAsync(ddgUrl, cachedPath, minimumBytes: 200, ct: overallCts.Token).ConfigureAwait(false))
             {
+                await WebIconRasterizer.TryRasterizeFileIfSvgAsync(cachedPath, 256).ConfigureAwait(false);
                 _memoryCache[scopeKey] = cachedPath;
                 return new WebFaviconResult(cachedPath, resolvedTitle);
             }
@@ -771,6 +974,7 @@ public static partial class WebFaviconService
             string directUrl = $"https://{domain}/favicon.ico";
             if (await HttpHelper.DownloadFileAsync(directUrl, cachedPath, minimumBytes: 200, ct: overallCts.Token).ConfigureAwait(false))
             {
+                await WebIconRasterizer.TryRasterizeFileIfSvgAsync(cachedPath, 256).ConfigureAwait(false);
                 _memoryCache[scopeKey] = cachedPath;
                 return new WebFaviconResult(cachedPath, resolvedTitle);
             }
@@ -785,16 +989,23 @@ public static partial class WebFaviconService
 
     /// <summary>
     /// Downloads remote icon bytes directly into memory without touching the local disk.
+    /// Supports inline data URIs and disguised SVGs (rasterizing to genuine PNG bytes).
     /// </summary>
     public static Task<byte[]?> DownloadIconBytesAsync(string iconUrl, CancellationToken ct = default)
         => DownloadIconBytesAsync(iconUrl, 200, ct);
 
     /// <summary>
     /// Downloads remote icon bytes directly into memory without touching the local disk.
+    /// Supports inline data URIs and disguised SVGs (rasterizing to genuine PNG bytes).
     /// </summary>
     public static async Task<byte[]?> DownloadIconBytesAsync(string iconUrl, int minimumBytes, CancellationToken ct = default)
     {
         if (string.IsNullOrWhiteSpace(iconUrl)) return null;
+
+        if (iconUrl.StartsWith("data:", StringComparison.OrdinalIgnoreCase))
+        {
+            return await WebIconRasterizer.TryProcessDataUriToBytesAsync(iconUrl, 256).ConfigureAwait(false);
+        }
 
         try
         {
@@ -805,6 +1016,18 @@ public static partial class WebFaviconService
             if (!response.IsSuccessStatusCode) return null;
 
             byte[] bytes = await response.Content.ReadAsByteArrayAsync(ct).ConfigureAwait(false);
+            if (bytes.Length == 0) return null;
+
+            if (WebIconRasterizer.IsSvgBytes(bytes))
+            {
+                string svgText = Encoding.UTF8.GetString(bytes);
+                byte[]? pngBytes = await WebIconRasterizer.RasterizeSvgToPngBytesAsync(svgText, 256).ConfigureAwait(false);
+                if (pngBytes != null && pngBytes.Length > 0)
+                {
+                    return pngBytes;
+                }
+            }
+
             if (minimumBytes > 0 && bytes.Length < minimumBytes) return null;
 
             return bytes;
@@ -884,7 +1107,7 @@ public static partial class WebFaviconService
 
     /// <summary>
     /// Saves the selected icon bytes to the single deterministic cache path on disk,
-    /// updating in-memory memoization.
+    /// updating in-memory memoization. If bytes represent SVG XML, rasterizes to PNG.
     /// </summary>
     public static string? SaveIconToCache(string url, byte[] bytes)
     {
@@ -901,7 +1124,19 @@ public static partial class WebFaviconService
                 Directory.CreateDirectory(dir);
             }
 
-            File.WriteAllBytes(cachedPath, bytes);
+            if (WebIconRasterizer.IsSvgBytes(bytes))
+            {
+                string svgText = Encoding.UTF8.GetString(bytes);
+                bool rasterized = WebIconRasterizer.RasterizeSvgToPngFileAsync(svgText, cachedPath, 256).GetAwaiter().GetResult();
+                if (!rasterized)
+                {
+                    File.WriteAllBytes(cachedPath, bytes);
+                }
+            }
+            else
+            {
+                File.WriteAllBytes(cachedPath, bytes);
+            }
 
             string scopeKey = ComputeCacheScopeKey(url);
             if (!string.IsNullOrWhiteSpace(scopeKey))
@@ -922,7 +1157,7 @@ public static partial class WebFaviconService
 /// <summary>
 /// Parsed metadata from HTML head.
 /// </summary>
-public sealed record HtmlHeadInfo(string? SiteName, string? Title, string? IconUrl);
+public sealed record HtmlHeadInfo(string? SiteName, string? Title, string? IconUrl, string? ManifestUrl = null, int IconScore = 0);
 
 /// <summary>
 /// Result of favicon resolution, implicitly convertible to string? (icon path).
