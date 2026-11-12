@@ -17,7 +17,7 @@ public static class HiddenDiagnosticsLogger
     private static string _logFilePath = AppPaths.HiddenDiagnosticsLogPath;
     private static readonly Lock _lock = new();
 
-    public static bool IsEnabled { get; set; } = true;
+    public static bool IsEnabled { get; set; }
 
     static HiddenDiagnosticsLogger()
     {

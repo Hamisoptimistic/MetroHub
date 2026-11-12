@@ -172,7 +172,7 @@ public sealed class RadioAudioService : IRadioAudioService
             LoadBassPlugin(baseDir, "bass_aac.dll");
             LoadBassPlugin(baseDir, "basshls.dll");
             LoadBassPlugin(baseDir, "bassopus.dll");
-            LoadBassPlugin(baseDir, "bass_fx.dll");
+            // Note: bass_fx.dll is an FX/DSP library loaded on demand via BassLoader P/Invoke, not an audio codec plugin.
         }
         else
         {

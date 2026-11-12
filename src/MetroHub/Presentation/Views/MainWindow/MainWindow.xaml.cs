@@ -945,13 +945,6 @@ public sealed partial class MainWindow : BorderlessFluentWindow, INotifyProperty
         Topmost = false;
 
         if (RootGrid != null) RootGrid.IsHitTestVisible = true;
-
-        // Log diagnostic snapshot at idle priority after window is hidden (without forced GC or WorkingSet flush)
-        Dispatcher.InvokeAsync(() =>
-        {
-            var currentMB = GC.GetTotalMemory(false) / (1024.0 * 1024.0);
-            MetroHub.Core.Services.HiddenDiagnosticsLogger.LogMemorySnapshot("HUB HIDE", currentMB);
-        }, DispatcherPriority.ApplicationIdle).FireAndForget("MainWindow.LogMemorySnapshot");
     }
 
     private const int WM_SETTINGCHANGE = 0x001A;
@@ -1275,7 +1268,6 @@ public sealed partial class MainWindow : BorderlessFluentWindow, INotifyProperty
         }).FireAndForget("MainWindow.StaggerWidgetWakeup");
 
         MetroHub.Core.Services.HubState.SetVisibility(true);
-        MetroHub.Core.Services.HiddenDiagnosticsLogger.LogTransition(true);
     }
 
     public void HideScreen(bool restorePreviousFocus = true)
@@ -1301,7 +1293,6 @@ public sealed partial class MainWindow : BorderlessFluentWindow, INotifyProperty
         }
 
         MetroHub.Core.Services.HubState.SetVisibility(false);
-        MetroHub.Core.Services.HiddenDiagnosticsLogger.LogTransition(false);
         Interlocked.Exchange(ref _dialogScopeDepth, 0);
         Interlocked.Exchange(ref _dialogOpenCount, 0);
         if (AmbientFocusScrim != null)
