@@ -82,8 +82,9 @@ public sealed class MetroSyncThumbnails
                 }
             }
         }
-        catch
+        catch (Exception ex)
         {
+            Safe.Ignore(ex, "MetroSyncThumbnails.DecodeFrameBounds");
             targetW = maxDimension;
         }
 
@@ -145,12 +146,13 @@ public sealed class MetroSyncThumbnails
                 {
                     if (File.Exists(tmpPath))
                     {
-                        try { File.Delete(tmpPath); } catch { }
+                        try { File.Delete(tmpPath); } catch (Exception delEx) { Safe.Ignore(delEx, "MetroSyncThumbnails.DeleteTmpThumbnail"); }
                     }
                 }
             }
-            catch
+            catch (Exception ex)
             {
+                Safe.Log(ex, "MetroSyncThumbnails.SaveThumbnailStream");
                 return null;
             }
         }, cancellationToken).ConfigureAwait(false);
@@ -206,12 +208,13 @@ public sealed class MetroSyncThumbnails
             {
                 if (File.Exists(tmpPath))
                 {
-                    try { File.Delete(tmpPath); } catch { }
+                    try { File.Delete(tmpPath); } catch (Exception delEx) { Safe.Ignore(delEx, "MetroSyncThumbnails.DeleteTmpBitmap"); }
                 }
             }
         }
-        catch
+        catch (Exception ex)
         {
+            Safe.Log(ex, "MetroSyncThumbnails.SaveThumbnailBitmap");
             return null;
         }
     }
@@ -244,8 +247,9 @@ public sealed class MetroSyncThumbnails
             using var fs = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
             return CreateFrozenThumbnail(fs, maxDimension);
         }
-        catch
+        catch (Exception ex)
         {
+            Safe.Log(ex, "MetroSyncThumbnails.LoadThumbnail");
             return null;
         }
     }

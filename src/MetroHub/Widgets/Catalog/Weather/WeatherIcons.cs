@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Windows.Media.Imaging;
+using MetroHub.Core.Services;
 
 namespace MetroHub.Widgets.Catalog.Weather;
 
@@ -42,7 +43,7 @@ public static class WeatherIcons
             }
             catch (Exception ex)
             {
-                Debug.WriteLine($"[WeatherIcons] Failed to load icon '{iconName}': {ex.Message}");
+                Safe.Log(ex, "Failed to load weather icon asset");
                 if (iconName != "not-available")
                 {
                     return Get("not-available");

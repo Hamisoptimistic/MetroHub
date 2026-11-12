@@ -7,6 +7,7 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Threading;
+using MetroHub.Core.Services;
 using MetroHub.Widgets.Catalog.MetroSync.Models;
 using MetroHub.Widgets.Catalog.MetroSync.Services;
 
@@ -80,7 +81,7 @@ public sealed partial class MetroSyncWidgetView : UserControl
             }
             else
             {
-                _ = Dispatcher.InvokeAsync(UpdateConnectionState);
+                Dispatcher.InvokeAsync(UpdateConnectionState).FireAndForget("MetroSyncWidgetView.UpdateConnectionState");
             }
         }
     }
@@ -133,10 +134,10 @@ public sealed partial class MetroSyncWidgetView : UserControl
 
             if (isNearBottom || hasOutgoing)
             {
-                _ = Dispatcher.InvokeAsync(() =>
+                Dispatcher.InvokeAsync(() =>
                 {
                     FeedScrollViewer?.ScrollToBottom();
-                }, DispatcherPriority.Loaded);
+                }, DispatcherPriority.Loaded).FireAndForget("MetroSyncWidgetView.ScrollToBottom");
             }
         }
     }

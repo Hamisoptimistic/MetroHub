@@ -64,7 +64,7 @@ public sealed class MetroSyncSecurity
             {
                 if (File.Exists(tmpPath))
                 {
-                    try { File.Delete(tmpPath); } catch { }
+                    try { File.Delete(tmpPath); } catch (Exception ex) { Safe.Ignore(ex, "MetroSyncSecurity.DeleteTmpPath"); }
                 }
             }
         }
@@ -103,20 +103,24 @@ public sealed class MetroSyncSecurity
 
                 return false;
             }
-            catch (CryptographicException)
+            catch (CryptographicException ex)
             {
+                Safe.Log(ex, "MetroSyncSecurity.DecryptCredentials");
                 return false;
             }
-            catch (JsonException)
+            catch (JsonException ex)
             {
+                Safe.Log(ex, "MetroSyncSecurity.DeserializeCredentials");
                 return false;
             }
-            catch (IOException)
+            catch (IOException ex)
             {
+                Safe.Log(ex, "MetroSyncSecurity.ReadCredentialsFile");
                 return false;
             }
-            catch (Exception)
+            catch (Exception ex)
             {
+                Safe.Log(ex, "MetroSyncSecurity.LoadCredentialsUnexpected");
                 return false;
             }
         }
@@ -136,9 +140,10 @@ public sealed class MetroSyncSecurity
                     File.Delete(_credentialsPath);
                 }
             }
-            catch
+            catch (Exception ex)
             {
                 // Best effort cleanup.
+                Safe.Ignore(ex, "MetroSyncSecurity.DeleteCredentials");
             }
 
             try
@@ -147,12 +152,13 @@ public sealed class MetroSyncSecurity
                 {
                     foreach (var file in Directory.EnumerateFiles(_directoryPath, "credentials.dat*.tmp"))
                     {
-                        try { File.Delete(file); } catch { }
+                        try { File.Delete(file); } catch (Exception ex) { Safe.Ignore(ex, "MetroSyncSecurity.DeleteTmpFile"); }
                     }
                 }
             }
-            catch
+            catch (Exception ex)
             {
+                Safe.Ignore(ex, "MetroSyncSecurity.EnumerateTmpFiles");
             }
         }
     }

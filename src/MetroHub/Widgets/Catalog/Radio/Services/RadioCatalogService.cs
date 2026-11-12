@@ -136,7 +136,7 @@ public sealed class RadioCatalogService
                 }
                 catch (Exception ex)
                 {
-                    Debug.WriteLine($"[RadioCatalogService] Failed reading {_catalogFilePath}: {ex.Message}");
+                    Safe.Log(ex, "RadioCatalogService.ReadCatalog");
                     // Attempt to restore from backup
                     if (File.Exists(_catalogBakPath))
                     {
@@ -150,7 +150,10 @@ public sealed class RadioCatalogService
                                 return _cachedCatalog;
                             }
                         }
-                        catch { }
+                        catch (Exception exBak)
+                        {
+                            Safe.Log(exBak, "RadioCatalogService.ReadBackupCatalog");
+                        }
                     }
                 }
             }
@@ -171,7 +174,7 @@ public sealed class RadioCatalogService
                 }
                 catch (Exception ex)
                 {
-                    Debug.WriteLine($"[RadioCatalogService] Failed deserializing bundled catalog: {ex.Message}");
+                    Safe.Log(ex, "RadioCatalogService.DeserializeBundledCatalog");
                 }
             }
 
@@ -332,7 +335,7 @@ public sealed class RadioCatalogService
         string? targetDir = Path.GetDirectoryName(_catalogFilePath);
         if (!string.IsNullOrWhiteSpace(targetDir) && !Directory.Exists(targetDir))
         {
-            try { Directory.CreateDirectory(targetDir); } catch { }
+            try { Directory.CreateDirectory(targetDir); } catch (Exception ex) { Safe.Log(ex, "RadioCatalogService.CreateDirectory"); }
         }
 
         string json = JsonSerializer.Serialize(catalog, JsonOptions);
@@ -358,9 +361,10 @@ public sealed class RadioCatalogService
                     File.Replace(tmpPath, _catalogFilePath, _catalogBakPath, ignoreMetadataErrors: true);
                     return;
                 }
-                catch
+                catch (Exception ex)
                 {
-                    try { File.Copy(_catalogFilePath, _catalogBakPath, overwrite: true); } catch { }
+                    Safe.Log(ex, "RadioCatalogService.ReplaceCatalog");
+                    try { File.Copy(_catalogFilePath, _catalogBakPath, overwrite: true); } catch (Exception exBak) { Safe.Log(exBak, "RadioCatalogService.CopyBackupCatalog"); }
                     File.Move(tmpPath, _catalogFilePath, overwrite: true);
                     return;
                 }
@@ -370,8 +374,8 @@ public sealed class RadioCatalogService
         }
         catch (Exception ex)
         {
-            Debug.WriteLine($"[RadioCatalogService] Atomic save failed: {ex.Message}");
-            try { if (File.Exists(tmpPath)) File.Delete(tmpPath); } catch { }
+            Safe.Log(ex, "RadioCatalogService.AtomicSave");
+            try { if (File.Exists(tmpPath)) File.Delete(tmpPath); } catch (Exception exDel) { Safe.Ignore(exDel, "RadioCatalogService.CleanupTmp"); }
         }
     }
 
@@ -393,7 +397,10 @@ public sealed class RadioCatalogService
                 return reader.ReadToEnd();
             }
         }
-        catch { }
+        catch (Exception ex)
+        {
+            Safe.Log(ex, "RadioCatalogService.LoadBundledCatalogPack");
+        }
 
         // 2. Try loading from filesystem (BaseDirectory, relative upward paths for test runners)
         try
@@ -415,7 +422,10 @@ public sealed class RadioCatalogService
                 }
             }
         }
-        catch { }
+        catch (Exception ex)
+        {
+            Safe.Log(ex, "RadioCatalogService.LoadBundledCatalogDisk");
+        }
 
         return null;
     }

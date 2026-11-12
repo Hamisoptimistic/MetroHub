@@ -3,6 +3,7 @@ using System.Diagnostics;
 using System.Windows;
 using System.Windows.Media;
 using CommunityToolkit.Mvvm.Messaging;
+using MetroHub.Core.Services;
 using MetroHub.Widgets.Messaging;
 
 namespace MetroHub.Widgets.Catalog.Network;
@@ -98,7 +99,7 @@ public sealed class SpeedometerArcControl : FrameworkElement
         {
             if (recipient is SpeedometerArcControl arc)
             {
-                _ = arc.Dispatcher.InvokeAsync(() =>
+                arc.Dispatcher.InvokeAsync(() =>
                 {
                     arc._isHubVisible = msg.IsVisible;
                     if (!msg.IsVisible)
@@ -111,7 +112,7 @@ public sealed class SpeedometerArcControl : FrameworkElement
                     {
                         arc.EnsureAnimationActive();
                     }
-                });
+                }).FireAndForget("SpeedometerArcControl.HubVisibilityChanged");
             }
         });
     }

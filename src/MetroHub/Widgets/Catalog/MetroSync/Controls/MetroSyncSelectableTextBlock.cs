@@ -7,6 +7,7 @@ using System.Windows.Controls;
 using System.Windows.Documents;
 using System.Windows.Input;
 using System.Windows.Media;
+using MetroHub.Core.Services;
 
 namespace MetroHub.Widgets.Catalog.MetroSync.Controls;
 
@@ -80,7 +81,7 @@ public sealed partial class MetroSyncSelectableTextBlock : RichTextBox
 
         var typeface = new Typeface(FontFamily, FontStyle, FontWeight, FontStretch);
         double dpi = 1.0;
-        try { dpi = VisualTreeHelper.GetDpi(this).PixelsPerDip; } catch { }
+        try { dpi = VisualTreeHelper.GetDpi(this).PixelsPerDip; } catch (Exception ex) { Safe.Ignore(ex, "MetroSyncSelectableTextBlock.GetDpi"); }
 
         var formattedText = new FormattedText(
             Text,
@@ -320,9 +321,10 @@ public sealed partial class MetroSyncSelectableTextBlock : RichTextBox
             {
                 Process.Start(new ProcessStartInfo(url) { UseShellExecute = true });
             }
-            catch
+            catch (Exception ex)
             {
                 // Ignored
+                Safe.Ignore(ex, "MetroSyncSelectableTextBlock.OpenHyperlink");
             }
         }
     }

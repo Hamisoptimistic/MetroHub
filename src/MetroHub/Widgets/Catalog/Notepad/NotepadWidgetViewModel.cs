@@ -271,7 +271,7 @@ public sealed partial class NotepadWidgetViewModel : WidgetViewModelBase
         _saveStatusCts = new CancellationTokenSource();
         var token = _saveStatusCts.Token;
 
-        _ = Task.Run(async () =>
+        Task.Run(async () =>
         {
             try
             {
@@ -287,11 +287,11 @@ public sealed partial class NotepadWidgetViewModel : WidgetViewModelBase
                     });
                 }
             }
-            catch (OperationCanceledException)
+            catch (OperationCanceledException ex)
             {
-                // Superseded by next save
+                Safe.Ignore(ex, "NotepadWidget.SaveStatusSuperseded");
             }
-        }, token);
+        }, token).FireAndForget("NotepadWidget.SaveStatus");
     }
 
     public void UpdateTextMetrics(string plainText, string? documentXaml = null)
@@ -346,9 +346,9 @@ public sealed partial class NotepadWidgetViewModel : WidgetViewModelBase
         {
             RequestDocumentSync?.Invoke();
         }
-        catch
+        catch (Exception ex)
         {
-            // Suppress document sync faults to guarantee state persistence continues
+            Safe.Log(ex, "NotepadWidget.RequestDocumentSync");
         }
 
         var settings = new NotepadWidgetSettings

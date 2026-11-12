@@ -11,6 +11,7 @@ using System.Security.Cryptography;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
+using MetroHub.Core.Services;
 
 namespace MetroHub.Widgets.Catalog.MetroSync.Services;
 
@@ -345,26 +346,31 @@ public sealed class MetroSyncPairingService
                     // Pairing mode never acknowledges updates (offset = 0)
                     updates = await transport.GetUpdatesAsync(0, _options.PollTimeoutSeconds, ct).ConfigureAwait(false);
                 }
-                catch (OperationCanceledException) when (ct.IsCancellationRequested)
+                catch (OperationCanceledException ex) when (ct.IsCancellationRequested)
                 {
+                    Safe.Ignore(ex, "MetroSyncPairingService.PairingCanceled");
                     return PairingResult.CancelledResult();
                 }
                 catch (TelegramApiException ex) when (ex.ErrorCode == 409)
                 {
+                    Safe.LogThrottled(ex, "MetroSyncPairingService.Conflict");
                     return PairingResult.FailedResult("Another app or webhook is already using this bot.");
                 }
                 catch (TelegramApiException ex) when (ex.ErrorCode == 401)
                 {
+                    Safe.Log(ex, "MetroSyncPairingService.Unauthorized");
                     return PairingResult.FailedResult("Token not valid.");
                 }
                 catch (TelegramApiException ex) when (ex.ErrorCode == 429)
                 {
+                    Safe.LogThrottled(ex, "MetroSyncPairingService.RateLimited");
                     var delaySeconds = ex.RetryAfterSeconds ?? 1;
                     await Task.Delay(TimeSpan.FromSeconds(delaySeconds), _timeProvider, ct).ConfigureAwait(false);
                     continue;
                 }
                 catch (TelegramApiException ex) when (ex.ErrorCode >= 500)
                 {
+                    Safe.LogThrottled(ex, "MetroSyncPairingService.ServerError");
                     // Transient server error (e.g. 502 Bad Gateway)
                     var delay = _options.PollDelay > TimeSpan.Zero ? _options.PollDelay : TimeSpan.FromMilliseconds(50);
                     await Task.Delay(delay, _timeProvider, ct).ConfigureAwait(false);
@@ -372,6 +378,7 @@ public sealed class MetroSyncPairingService
                 }
                 catch (Exception ex) when (IsTransient(ex))
                 {
+                    Safe.LogThrottled(ex, "MetroSyncPairingService.TransientError");
                     // Transient network / socket / I/O blip
                     var delay = _options.PollDelay > TimeSpan.Zero ? _options.PollDelay : TimeSpan.FromMilliseconds(50);
                     await Task.Delay(delay, _timeProvider, ct).ConfigureAwait(false);
@@ -398,15 +405,16 @@ public sealed class MetroSyncPairingService
                         {
                             using var doc = await transport.SendMessageAsync(step.ChatId, _options.ConfirmationMessage, ct).ConfigureAwait(false);
                         }
-                        catch (OperationCanceledException) when (ct.IsCancellationRequested)
+                        catch (OperationCanceledException ex) when (ct.IsCancellationRequested)
                         {
+                            Safe.Ignore(ex, "MetroSyncPairingService.ConfirmationCanceled");
                             return PairingResult.CancelledResult();
                         }
                         catch (Exception ex)
                         {
                             // Best-effort confirmation: if Telegram fails to acknowledge outbound confirmation,
                             // do not abort or crash an already verified handshake.
-                            System.Diagnostics.Trace.WriteLine($"[MetroSyncPairingService] Confirmation message error: {ex.Message}");
+                            Safe.Log(ex, "MetroSyncPairingService.ConfirmationMessageError");
                         }
 
                         // Store verified credentials in MetroSyncSecurity vault (credentials.dat)
@@ -427,8 +435,9 @@ public sealed class MetroSyncPairingService
                 }
             }
         }
-        catch (OperationCanceledException) when (ct.IsCancellationRequested)
+        catch (OperationCanceledException ex) when (ct.IsCancellationRequested)
         {
+            Safe.Ignore(ex, "MetroSyncPairingService.RunPairingLoopCanceled");
             return PairingResult.CancelledResult();
         }
 
@@ -455,24 +464,28 @@ public sealed class MetroSyncPairingService
                 // Pairing mode never acknowledges updates (offset = 0)
                 updates = await transport.GetUpdatesAsync(0, _options.PollTimeoutSeconds, ct).ConfigureAwait(false);
             }
-            catch (OperationCanceledException) when (ct.IsCancellationRequested)
+            catch (OperationCanceledException ex) when (ct.IsCancellationRequested)
             {
+                Safe.Ignore(ex, "MetroSyncPairingService.CandidateCanceled");
                 return null;
             }
             catch (TelegramApiException ex) when (ex.ErrorCode == 429)
             {
+                Safe.LogThrottled(ex, "MetroSyncPairingService.CandidateRateLimited");
                 var delaySeconds = ex.RetryAfterSeconds ?? 1;
                 await Task.Delay(TimeSpan.FromSeconds(delaySeconds), _timeProvider, ct).ConfigureAwait(false);
                 continue;
             }
             catch (TelegramApiException ex) when (ex.ErrorCode >= 500)
             {
+                Safe.LogThrottled(ex, "MetroSyncPairingService.CandidateServerError");
                 var delay = _options.PollDelay > TimeSpan.Zero ? _options.PollDelay : TimeSpan.FromMilliseconds(50);
                 await Task.Delay(delay, _timeProvider, ct).ConfigureAwait(false);
                 continue;
             }
             catch (Exception ex) when (IsTransient(ex))
             {
+                Safe.LogThrottled(ex, "MetroSyncPairingService.CandidateTransientError");
                 var delay = _options.PollDelay > TimeSpan.Zero ? _options.PollDelay : TimeSpan.FromMilliseconds(50);
                 await Task.Delay(delay, _timeProvider, ct).ConfigureAwait(false);
                 continue;

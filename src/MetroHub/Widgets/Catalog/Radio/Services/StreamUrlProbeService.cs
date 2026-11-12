@@ -10,6 +10,7 @@ using System.Net.Security;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
+using MetroHub.Core.Services;
 
 namespace MetroHub.Widgets.Catalog.Radio.Services;
 
@@ -168,8 +169,9 @@ public sealed partial class StreamUrlProbeService : IDisposable
                     headRes.Dispose();
                 }
             }
-            catch
+            catch (Exception ex)
             {
+                Safe.Ignore(ex, "StreamUrlProbeService.HeadProbe");
                 // HEAD request failed or rejected by server/proxy (e.g. FastCast4u/Centova proxy returning RPC-ERR or 405).
                 // Gracefully fall through to GET with byte range.
             }
@@ -233,7 +235,10 @@ public sealed partial class StreamUrlProbeService : IDisposable
                                 }
                             }
                         }
-                        catch { }
+                        catch (Exception ex)
+                        {
+                            Safe.Ignore(ex, "StreamUrlProbeService.ExtractIcecastHtmlMetadata");
+                        }
                     }
 
                     return new StreamProbeResult(false, null, null, contentType, 
@@ -300,16 +305,19 @@ public sealed partial class StreamUrlProbeService : IDisposable
                     BitrateKbps: bitrate);
             }
         }
-        catch (OperationCanceledException)
+        catch (OperationCanceledException ex)
         {
+            Safe.Ignore(ex, "StreamUrlProbeService.ProbeTimeout");
             return new StreamProbeResult(false, null, null, null, "Stream connection timed out after 4.5 seconds.");
         }
         catch (HttpRequestException ex)
         {
+            Safe.Ignore(ex, "StreamUrlProbeService.ProbeHttpError");
             return new StreamProbeResult(false, null, null, null, $"Network error connecting to stream: {ex.Message}");
         }
         catch (Exception ex)
         {
+            Safe.Ignore(ex, "StreamUrlProbeService.ProbeError");
             return new StreamProbeResult(false, null, null, null, $"Stream check failed: {ex.Message}");
         }
     }
@@ -361,6 +369,7 @@ public sealed partial class StreamUrlProbeService : IDisposable
         }
         catch (Exception ex)
         {
+            Safe.Ignore(ex, "StreamUrlProbeService.ParsePlaylist");
             return new StreamProbeResult(false, null, null, null, $"Failed to parse playlist: {ex.Message}");
         }
     }

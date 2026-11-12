@@ -3,6 +3,7 @@ using System.Net.Http;
 using System.Net.Sockets;
 using System.Text.Json;
 using System.Threading.Channels;
+using MetroHub.Core.Services;
 using MetroHub.Widgets.Catalog.MetroSync.Models;
 
 namespace MetroHub.Widgets.Catalog.MetroSync.Services;
@@ -140,22 +141,26 @@ public sealed class ConduitEngine : IAsyncDisposable, IDisposable
                     _attempt = 0;
                     SetState(EngineState.Online);
                 }
-                catch (OperationCanceledException) when (ct.IsCancellationRequested)
+                catch (OperationCanceledException ex) when (ct.IsCancellationRequested)
                 {
+                    Safe.Ignore(ex, "ConduitEngine.LoopCanceled");
                     break;
                 }
                 catch (TelegramApiException e) when (e.ErrorCode == 401)
                 {
+                    Safe.Log(e, "ConduitEngine.Unauthorized");
                     SetState(EngineState.Unauthorized); // terminal: token revoked
                     return;
                 }
                 catch (TelegramApiException e) when (e.ErrorCode == 409)
                 {
+                    Safe.LogThrottled(e, "ConduitEngine.Conflict");
                     SetState(EngineState.Conflict); // another poller or an active webhook
                     await Task.Delay(_opt.ConflictDelay, _time, ct).ConfigureAwait(false);
                 }
                 catch (TelegramApiException e)
                 {
+                    Safe.LogThrottled(e, "ConduitEngine.ApiError");
                     SetState(EngineState.Backoff);
                     var wait = e.ErrorCode == 429 && e.RetryAfterSeconds is { } seconds
                         ? TimeSpan.FromSeconds(seconds)
@@ -164,17 +169,20 @@ public sealed class ConduitEngine : IAsyncDisposable, IDisposable
                 }
                 catch (Exception e) when (IsTransient(e))
                 {
+                    Safe.LogThrottled(e, "ConduitEngine.TransientError");
                     SetState(EngineState.Backoff);
                     await Task.Delay(NextBackoff(), _time, ct).ConfigureAwait(false);
                 }
             }
         }
-        catch (OperationCanceledException) when (ct.IsCancellationRequested)
+        catch (OperationCanceledException ex) when (ct.IsCancellationRequested)
         {
             // normal shutdown (cancellation raised from a delay inside a catch block)
+            Safe.Ignore(ex, "ConduitEngine.Shutdown");
         }
-        catch
+        catch (Exception ex)
         {
+            Safe.Log(ex, "ConduitEngine.LoopFaulted");
             SetState(EngineState.Faulted);
             throw; // surfaces through Completion
         }
@@ -198,7 +206,7 @@ public sealed class ConduitEngine : IAsyncDisposable, IDisposable
         {
             Volatile.Write(ref _offset, newOffset);
             try { OffsetChanged?.Invoke(newOffset); }
-            catch { /* a faulty subscriber must never kill the loop */ }
+            catch (Exception ex) { Safe.Log(ex, "ConduitEngine.OffsetChangedSubscriber"); }
         }
     }
 
@@ -207,7 +215,7 @@ public sealed class ConduitEngine : IAsyncDisposable, IDisposable
         if (_state == state) return;
         _state = state;
         try { StateChanged?.Invoke(state); }
-        catch { /* a faulty subscriber must never kill the loop */ }
+        catch (Exception ex) { Safe.Log(ex, "ConduitEngine.StateChangedSubscriber"); }
     }
 
     public async ValueTask DisposeAsync()
@@ -220,14 +228,14 @@ public sealed class ConduitEngine : IAsyncDisposable, IDisposable
         var loop = _loop;
 
         try { cts?.Cancel(); } // 2. aborts the in-flight HTTP read
-        catch (ObjectDisposedException) { }
+        catch (ObjectDisposedException ex) { Safe.Ignore(ex, "ConduitEngine.DisposeAsync.Cancel"); }
 
         var exited = true;
         if (loop is not null)
         {
             try { await loop.WaitAsync(_opt.ShutdownTimeout, _time).ConfigureAwait(false); } // 3. bounded wait
-            catch (TimeoutException) { exited = false; }
-            catch { /* loop faulted or was cancelled: observed here so nothing goes unobserved */ }
+            catch (TimeoutException ex) { Safe.Ignore(ex, "ConduitEngine.DisposeAsync.Timeout"); exited = false; }
+            catch (Exception ex) { Safe.Ignore(ex, "ConduitEngine.DisposeAsync.Loop"); /* loop faulted or was cancelled: observed here so nothing goes unobserved */ }
         }
 
         if (exited) cts?.Dispose(); // 4. only after the loop has exited
@@ -242,7 +250,7 @@ public sealed class ConduitEngine : IAsyncDisposable, IDisposable
         StateChanged = null;
         OffsetChanged = null;
         try { _cts?.Cancel(); }
-        catch (ObjectDisposedException) { }
+        catch (ObjectDisposedException ex) { Safe.Ignore(ex, "ConduitEngine.Dispose.Cancel"); }
 
         _out.Writer.TryComplete();
         _state = EngineState.Stopped;

@@ -11,7 +11,9 @@ using System.Windows.Media;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using CommunityToolkit.Mvvm.Messaging;
+using MetroHub.Core;
 using MetroHub.Core.Models;
+using MetroHub.Core.Services;
 using MetroHub.Widgets.Catalog.Weather.Services;
 using MetroHub.Presentation.Messaging;
 using MetroHub.Widgets.Serialization;
@@ -185,7 +187,10 @@ public sealed partial class WeatherWidgetViewModel : WidgetViewModelBase, IWidge
                 }
             }
         }
-        catch { }
+        catch (Exception ex)
+        {
+            Safe.Log(ex, "WeatherWidgetViewModel.LoadSettings");
+        }
     }
 
     public void SetStyle(WeatherBackgroundStyle style)
@@ -216,7 +221,10 @@ public sealed partial class WeatherWidgetViewModel : WidgetViewModelBase, IWidge
             Model.SettingsJson = WidgetSerializer.Serialize(_settings);
             NotifySettingsChanged();
         }
-        catch { }
+        catch (Exception ex)
+        {
+            Safe.Log(ex, "WeatherWidgetViewModel.SaveSettings");
+        }
     }
 
     [RelayCommand]
@@ -253,7 +261,7 @@ public sealed partial class WeatherWidgetViewModel : WidgetViewModelBase, IWidge
             WidgetMenu.Item("Ambient Glow", () => SetStyle(WeatherBackgroundStyle.AmbientGlow), isCheckable: true, isChecked: BackgroundStyle == WeatherBackgroundStyle.AmbientGlow),
             WidgetMenu.Item("None", () => SetStyle(WeatherBackgroundStyle.None), isCheckable: true, isChecked: BackgroundStyle == WeatherBackgroundStyle.None));
         yield return WidgetMenu.Divider();
-        yield return WidgetMenu.Item("Refresh Weather", SymbolRegular.ArrowSync24, () => _ = RefreshAsync());
+        yield return WidgetMenu.Item("Refresh Weather", SymbolRegular.ArrowSync24, () => RefreshAsync().FireAndForget("WeatherWidgetViewModel.RefreshMenu"));
     }
 
     public async Task<bool> SetCustomCityAsync(string cityName, CancellationToken cancellationToken = default)
@@ -320,7 +328,7 @@ public sealed partial class WeatherWidgetViewModel : WidgetViewModelBase, IWidge
         // If resume occurs after threshold (15 minutes), refresh immediately
         if (_latestData == null || (DateTime.UtcNow - _lastFetchTime) >= ResumeThreshold)
         {
-            _ = FetchWeatherCoreAsync(forceRefresh: false, token);
+            FetchWeatherCoreAsync(forceRefresh: false, token).FireAndForget("WeatherWidgetViewModel.ResumeFetch");
         }
 
         // Arm 30-minute async periodic loop (zero ThreadPool thread hopping, 0 CPU idle)
@@ -336,7 +344,10 @@ public sealed partial class WeatherWidgetViewModel : WidgetViewModelBase, IWidge
             {
                 cts.Cancel();
             }
-            catch (ObjectDisposedException) { }
+            catch (ObjectDisposedException ex)
+            {
+                Safe.Ignore(ex, "WeatherWidgetViewModel.PauseCts");
+            }
             cts.Dispose();
         }
         _refreshLoopTask = null;
@@ -352,9 +363,10 @@ public sealed partial class WeatherWidgetViewModel : WidgetViewModelBase, IWidge
                 await FetchWeatherCoreAsync(forceRefresh: false, token).ConfigureAwait(false);
             }
         }
-        catch (OperationCanceledException)
+        catch (OperationCanceledException ex)
         {
             // Expected on Pause
+            Safe.Ignore(ex, "WeatherWidgetViewModel.PeriodicLoopCanceled");
         }
     }
 
@@ -428,12 +440,14 @@ public sealed partial class WeatherWidgetViewModel : WidgetViewModelBase, IWidge
                 });
             }
         }
-        catch (OperationCanceledException)
+        catch (OperationCanceledException ex)
         {
             // Expected on Pause
+            Safe.Ignore(ex, "WeatherWidgetViewModel.FetchCanceled");
         }
         catch (Exception ex)
         {
+            Safe.LogThrottled(ex, "WeatherWidgetViewModel.FetchCore");
             await SafeDispatchAsync(() =>
             {
                 if (shouldShowLoading) IsLoading = false;

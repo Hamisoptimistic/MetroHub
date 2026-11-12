@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using MetroHub.Core.Models;
+using MetroHub.Core.Services;
 using MetroHub.Widgets.Catalog.BrightnessControls;
 using MetroHub.Widgets.Catalog.Media;
 using MetroHub.Widgets.Catalog.AudioControls;
@@ -78,7 +79,10 @@ public sealed partial class QuickControlsWidgetViewModel : WidgetViewModelBase
         {
             var settings = WidgetSerializer.Deserialize<QuickControlsWidgetSettings>(settingsJson);
         }
-        catch { }
+        catch (Exception ex)
+        {
+            Safe.Log(ex, "QuickControlsWidget.LoadSettings");
+        }
     }
 
     public override void SaveSettings()

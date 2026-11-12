@@ -230,11 +230,12 @@ public sealed class MetroSyncDownloader
             progress?.Report(1.0);
             return destinationPath;
         }
-        catch
+        catch (Exception ex)
         {
+            Safe.Log(ex, "MetroSyncDownloader.DownloadTelegramFile");
             if (File.Exists(tmpPath))
             {
-                try { File.Delete(tmpPath); } catch { /* best effort cleanup */ }
+                try { File.Delete(tmpPath); } catch (Exception delEx) { Safe.Ignore(delEx, "MetroSyncDownloader.DeleteTmpFile"); }
             }
             throw;
         }

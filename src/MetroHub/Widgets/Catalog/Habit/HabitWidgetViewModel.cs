@@ -180,8 +180,9 @@ public sealed partial class HabitWidgetViewModel : WidgetViewModelBase, IWidgetC
                 // Case-insensitive on purpose: pre-split payloads were PascalCase.
                 settings = JsonSerializer.Deserialize<HabitWidgetSettings>(settingsJson, _jsonOpts);
             }
-            catch
+            catch (Exception ex)
             {
+                Safe.Log(ex, "HabitWidget.LoadSettings");
                 settings = null;
             }
         }
@@ -220,8 +221,9 @@ public sealed partial class HabitWidgetViewModel : WidgetViewModelBase, IWidgetC
             state.Normalize();
             return state;
         }
-        catch
+        catch (Exception ex)
         {
+            Safe.Log(ex, "HabitWidget.TryReadStateFile");
             return null;
         }
     }
@@ -258,9 +260,9 @@ public sealed partial class HabitWidgetViewModel : WidgetViewModelBase, IWidgetC
             _lastSavedStateJson = json;
             _stateStore.Write(WidgetId, Model.Id, json);
         }
-        catch
+        catch (Exception ex)
         {
-            // Suppress serialization error
+            Safe.Log(ex, "HabitWidget.SaveContent");
         }
     }
 
@@ -289,9 +291,9 @@ public sealed partial class HabitWidgetViewModel : WidgetViewModelBase, IWidgetC
             _legacyPayloadPresent = false;
             NotifySettingsChanged();
         }
-        catch
+        catch (Exception ex)
         {
-            // Suppress serialization error
+            Safe.Log(ex, "HabitWidget.SaveLayoutIfNeeded");
         }
     }
 
@@ -352,7 +354,7 @@ public sealed partial class HabitWidgetViewModel : WidgetViewModelBase, IWidgetC
         var dispatcher = Application.Current?.Dispatcher;
         if (dispatcher != null && !dispatcher.CheckAccess())
         {
-            _ = dispatcher.InvokeAsync(ApplyDateRollover);
+            dispatcher.InvokeAsync(ApplyDateRollover).FireAndForget("HabitWidget.ApplyDateRollover");
         }
         else
         {

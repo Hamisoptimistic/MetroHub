@@ -5,6 +5,7 @@ using System.Windows.Controls;
 using System.Windows.Media;
 using System.Windows.Media.Animation;
 using CommunityToolkit.Mvvm.Messaging;
+using MetroHub.Core.Services;
 using MetroHub.Widgets.Messaging;
 
 namespace MetroHub.Widgets.Catalog.Photos;
@@ -31,7 +32,7 @@ public sealed partial class PhotosWidgetView : UserControl
         {
             if (recipient is PhotosWidgetView view)
             {
-                _ = view.Dispatcher.InvokeAsync(() =>
+                view.Dispatcher.InvokeAsync(() =>
                 {
                     if (msg.IsVisible)
                     {
@@ -44,7 +45,7 @@ public sealed partial class PhotosWidgetView : UserControl
                     {
                         view.StopAllAnimations();
                     }
-                });
+                }).FireAndForget("PhotosWidgetView.HubVisibilityChanged");
             }
         });
     }
@@ -65,11 +66,11 @@ public sealed partial class PhotosWidgetView : UserControl
 
         if (e.Delta < 0)
         {
-            _ = _vm.NextPhoto();
+            _vm.NextPhoto().FireAndForget("PhotosWidgetView.NextPhoto");
         }
         else if (e.Delta > 0)
         {
-            _ = _vm.PreviousPhoto();
+            _vm.PreviousPhoto().FireAndForget("PhotosWidgetView.PreviousPhoto");
         }
 
         e.Handled = true;

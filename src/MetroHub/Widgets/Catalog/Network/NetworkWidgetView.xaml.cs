@@ -6,6 +6,8 @@ using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Animation;
 using System.Windows.Threading;
+using MetroHub.Core;
+using MetroHub.Core.Services;
 
 namespace MetroHub.Widgets.Catalog.Network;
 
@@ -81,7 +83,7 @@ public sealed partial class NetworkWidgetView : UserControl
     {
         if (e.NewValue is true && sender is FrameworkElement drawer)
         {
-            _ = Dispatcher.InvokeAsync(() =>
+            Dispatcher.InvokeAsync(() =>
             {
                 EnsureItemFitsInView(drawer);
 
@@ -90,7 +92,7 @@ public sealed partial class NetworkWidgetView : UserControl
                 {
                     pb.Focus();
                 }
-            }, DispatcherPriority.Loaded);
+            }, DispatcherPriority.Loaded).FireAndForget("NetworkWidgetView.FocusPasswordBox");
         }
     }
 
@@ -142,8 +144,9 @@ public sealed partial class NetworkWidgetView : UserControl
                 scrollViewer.ScrollToVerticalOffset(Math.Max(0.0, targetOffset));
             }
         }
-        catch
+        catch (Exception ex)
         {
+            Safe.Log(ex, "NetworkWidgetView.EnsureItemFitsInView");
             drawer.BringIntoView();
         }
     }

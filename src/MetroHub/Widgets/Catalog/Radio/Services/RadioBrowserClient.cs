@@ -176,13 +176,13 @@ public sealed class RadioBrowserClient
                     return result;
                 }
             }
-            catch (OperationCanceledException) when (!ct.IsCancellationRequested)
+            catch (OperationCanceledException ex) when (!ct.IsCancellationRequested)
             {
-                Debug.WriteLine($"[RadioBrowserClient] Mirror {currentMirror} timed out, trying next...");
+                Safe.Ignore(ex, "RadioBrowserClient.MirrorTimeout");
             }
             catch (Exception ex)
             {
-                Debug.WriteLine($"[RadioBrowserClient] Mirror {currentMirror} failed ({ex.Message}), trying next...");
+                Safe.Log(ex, "RadioBrowserClient.ExecuteWithFailover");
             }
         }
 

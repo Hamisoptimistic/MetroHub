@@ -7,6 +7,7 @@ using System.Windows.Controls;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using MetroHub.Core.Models;
+using MetroHub.Core.Services;
 
 namespace MetroHub.Widgets.Catalog.Calendar;
 
@@ -146,7 +147,7 @@ public sealed partial class CalendarWidgetViewModel : WidgetViewModelBase, IWidg
     private void OnDateRollover()
     {
         _lastCheckedDate = DateTime.Today;
-        _ = Application.Current?.Dispatcher.InvokeAsync(() =>
+        Application.Current?.Dispatcher.InvokeAsync(() =>
         {
             RefreshTodayCard();
 
@@ -154,7 +155,7 @@ public sealed partial class CalendarWidgetViewModel : WidgetViewModelBase, IWidg
             {
                 RebuildCalendar();
             }
-        });
+        }).FireAndForget("CalendarWidget.DateRollover");
 
         StartMidnightTimer();
     }

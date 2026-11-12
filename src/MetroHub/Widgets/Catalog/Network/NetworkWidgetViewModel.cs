@@ -10,6 +10,7 @@ using System.Windows;
 using System.Windows.Media;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using MetroHub.Core;
 using MetroHub.Core.Models;
 using MetroHub.Core.Network;
 using MetroHub.Core.Network.Interop;
@@ -713,7 +714,7 @@ public sealed partial class NetworkWidgetViewModel : WidgetViewModelBase
         IsDataUsageRefreshing = true;
         var timeframe = SelectedDataUsageTimeframe;
 
-        _ = Task.Run(async () =>
+        Task.Run(async () =>
         {
             try
             {
@@ -741,7 +742,7 @@ public sealed partial class NetworkWidgetViewModel : WidgetViewModelBase
             }
             catch (Exception ex)
             {
-                Safe.Log("NetworkWidgetViewModel.RefreshDataUsage", ex);
+                Safe.Log(ex, "NetworkWidgetViewModel.RefreshDataUsage");
             }
             finally
             {
@@ -749,11 +750,11 @@ public sealed partial class NetworkWidgetViewModel : WidgetViewModelBase
                 {
                     if (Application.Current?.Dispatcher is { } dispatcher)
                     {
-                        _ = dispatcher.InvokeAsync(() => IsDataUsageRefreshing = false);
+                        dispatcher.InvokeAsync(() => IsDataUsageRefreshing = false).FireAndForget("NetworkWidgetViewModel.RefreshDataUsage.Reset");
                     }
                 }
             }
-        });
+        }).FireAndForget("NetworkWidgetViewModel.RefreshDataUsage");
     }
 
 
@@ -801,7 +802,10 @@ public sealed partial class NetworkWidgetViewModel : WidgetViewModelBase
             NetworkChange.NetworkAddressChanged += OnNetworkAddressChanged;
             NetworkChange.NetworkAvailabilityChanged += OnNetworkAvailabilityChanged;
         }
-        catch { }
+        catch (Exception ex)
+        {
+            Safe.Log(ex, "NetworkWidgetViewModel.RegisterNetworkEvents");
+        }
 
         RefreshAll();
         _throughputService.Start();
@@ -848,7 +852,10 @@ public sealed partial class NetworkWidgetViewModel : WidgetViewModelBase
                 IsBitsMode = settings.UseBitsPerSecond;
             }
         }
-        catch { }
+        catch (Exception ex)
+        {
+            Safe.Log(ex, "NetworkWidgetViewModel.LoadSettings");
+        }
     }
 
     public override void SaveSettings()
@@ -879,7 +886,7 @@ public sealed partial class NetworkWidgetViewModel : WidgetViewModelBase
         }
         else if (IsSpeedPanel)
         {
-            _ = Task.Run(async () =>
+            Task.Run(async () =>
             {
                 try
                 {
@@ -887,9 +894,9 @@ public sealed partial class NetworkWidgetViewModel : WidgetViewModelBase
                 }
                 catch (Exception ex)
                 {
-                    Safe.Log("NetworkWidgetViewModel.EvaluateHealth", ex);
+                    Safe.Log(ex, "NetworkWidgetViewModel.EvaluateHealth");
                 }
-            });
+            }).FireAndForget("NetworkWidgetViewModel.EvaluateHealth");
         }
     }
 
@@ -1148,14 +1155,16 @@ public sealed partial class NetworkWidgetViewModel : WidgetViewModelBase
         {
             await Task.Run(() => _speedTestService.RunTestAsync(progress, token), token);
         }
-        catch (OperationCanceledException)
+        catch (OperationCanceledException ex)
         {
+            Safe.Ignore(ex, "NetworkWidgetViewModel.SpeedTestCanceled");
             SpeedTestPhase = SpeedTestPhase.Idle;
             SpeedTestStatusMessage = "Ready to test network speed";
             SpeedTestGaugeMbps = 0;
         }
         catch (Exception ex)
         {
+            Safe.LogThrottled(ex, "NetworkWidgetViewModel.SpeedTestFailed");
             SpeedTestPhase = SpeedTestPhase.Failed;
             SpeedTestStatusMessage = SpeedTestService.GetFriendlyErrorMessage(ex);
             SpeedTestGaugeMbps = 0;
@@ -1172,7 +1181,10 @@ public sealed partial class NetworkWidgetViewModel : WidgetViewModelBase
                 _speedTestCts.Cancel();
                 _speedTestCts.Dispose();
             }
-            catch { }
+            catch (Exception ex)
+            {
+                Safe.Ignore(ex, "NetworkWidgetViewModel.CancelSpeedTest");
+            }
             _speedTestCts = null;
         }
 
@@ -1237,7 +1249,7 @@ public sealed partial class NetworkWidgetViewModel : WidgetViewModelBase
         set
         {
             if (value == (HasEthernetAdapter && !IsEthernetAdapterDisabled)) return;
-            _ = HandleEthernetToggleAsync(value);
+            HandleEthernetToggleAsync(value).FireAndForget("NetworkWidgetViewModel.HandleEthernetToggle");
         }
     }
 
@@ -1365,7 +1377,7 @@ public sealed partial class NetworkWidgetViewModel : WidgetViewModelBase
         set
         {
             if (value == IsWifiRadioEnabled) return;
-            _ = HandleWifiRadioToggleAsync(value);
+            HandleWifiRadioToggleAsync(value).FireAndForget("NetworkWidgetViewModel.HandleWifiRadioToggle");
         }
     }
 
@@ -1642,7 +1654,7 @@ public sealed partial class NetworkWidgetViewModel : WidgetViewModelBase
                     }
                     if (i > 0 && i % 5 == 0)
                     {
-                        _ = Task.Run(() => _wifiService.SetRadioState(true));
+                        Task.Run(() => _wifiService.SetRadioState(true)).FireAndForget("NetworkWidgetViewModel.SetRadioStateRetry");
                     }
                 }
 
@@ -1654,14 +1666,14 @@ public sealed partial class NetworkWidgetViewModel : WidgetViewModelBase
                     try
                     {
                         var rawList = _wifiService.ScanAndGetAvailableNetworks(triggerScan: true);
-                        _ = Application.Current?.Dispatcher.InvokeAsync(() =>
+                        Application.Current?.Dispatcher.InvokeAsync(() =>
                         {
                             UpdateAvailableNetworksInPlace(rawList);
-                        });
+                        }).FireAndForget("NetworkWidgetViewModel.UpdateNetworksInPlace");
                     }
                     catch (Exception ex)
                     {
-                        Safe.Log("NetworkWidgetViewModel.ScanAndGetAvailableNetworks", ex);
+                        Safe.Log(ex, "NetworkWidgetViewModel.ScanAndGetAvailableNetworks");
                     }
                 });
 
@@ -1677,7 +1689,10 @@ public sealed partial class NetworkWidgetViewModel : WidgetViewModelBase
                         _wifiService.Disconnect();
                         _wifiService.SetRadioState(false);
                     }
-                    catch { }
+                    catch (Exception ex)
+                    {
+                        Safe.Ignore(ex, "NetworkWidgetViewModel.SetRadioOff");
+                    }
                 });
 
                 for (int i = 0; i < 6; i++)
@@ -1688,12 +1703,13 @@ public sealed partial class NetworkWidgetViewModel : WidgetViewModelBase
 
                 IsWifiRadioOn = false;
                 IsWifiConnected = false;
-                Application.Current?.Dispatcher.InvokeAsync(() => AvailableNetworks.Clear());
+                Application.Current?.Dispatcher.InvokeAsync(() => AvailableNetworks.Clear()).FireAndForget("NetworkWidgetViewModel.ClearNetworks");
                 ShowToast("Wi-Fi turned off.");
             }
         }
         catch (Exception ex)
         {
+            Safe.Log(ex, "NetworkWidgetViewModel.ToggleWifiRadio");
             ShowToast($"Wi-Fi error: {ex.Message}");
             IsWifiRadioOn = _wifiService.IsRadioOn;
         }
@@ -1992,6 +2008,7 @@ public sealed partial class NetworkWidgetViewModel : WidgetViewModelBase
         }
         catch (Exception ex)
         {
+            Safe.Log(ex, "NetworkWidgetViewModel.ConnectWifi");
             item.HasConnectionError = true;
             string errorMsg = string.IsNullOrWhiteSpace(ex.Message) ? "Connection failed." : ex.Message;
             item.ConnectionErrorMessage = errorMsg;
@@ -2010,7 +2027,7 @@ public sealed partial class NetworkWidgetViewModel : WidgetViewModelBase
         _reconnectCts = new CancellationTokenSource();
         var token = _reconnectCts.Token;
 
-        _ = Task.Run(async () =>
+        Task.Run(async () =>
         {
             try
             {
@@ -2035,12 +2052,15 @@ public sealed partial class NetworkWidgetViewModel : WidgetViewModelBase
                     if (isConnected) break;
                 }
             }
-            catch (OperationCanceledException) { }
+            catch (OperationCanceledException ex)
+            {
+                Safe.Ignore(ex, "NetworkWidgetViewModel.ReconnectionMonitoringCanceled");
+            }
             catch (Exception ex)
             {
-                Safe.Log("NetworkWidgetViewModel.StartReconnectionMonitoring", ex);
+                Safe.Log(ex, "NetworkWidgetViewModel.StartReconnectionMonitoring");
             }
-        }, token);
+        }, token).FireAndForget("NetworkWidgetViewModel.StartReconnectionMonitoring");
     }
 
 
@@ -2054,13 +2074,13 @@ public sealed partial class NetworkWidgetViewModel : WidgetViewModelBase
         ToastMessage = message;
         IsToastVisible = true;
 
-        _ = Task.Delay(3500, token).ContinueWith(t =>
+        Task.Delay(3500, token).ContinueWith(t =>
         {
             if (!t.IsCanceled)
             {
-                _ = Application.Current?.Dispatcher.InvokeAsync(() => IsToastVisible = false);
+                Application.Current?.Dispatcher.InvokeAsync(() => IsToastVisible = false).FireAndForget("NetworkWidgetViewModel.HideToast");
             }
-        }, TaskScheduler.Default);
+        }, TaskScheduler.Default).FireAndForget("NetworkWidgetViewModel.ShowToastTimer");
     }
 
     [ObservableProperty]
@@ -2079,13 +2099,16 @@ public sealed partial class NetworkWidgetViewModel : WidgetViewModelBase
             {
                 Clipboard.SetText(ip);
                 CopyEthernetIpTooltip = "Copied!";
-                _ = Task.Delay(1500).ContinueWith(t =>
+                Task.Delay(1500).ContinueWith(t =>
                 {
-                    _ = Application.Current?.Dispatcher.InvokeAsync(() => CopyEthernetIpTooltip = "Copy IPv4");
-                });
+                    Application.Current?.Dispatcher.InvokeAsync(() => CopyEthernetIpTooltip = "Copy IPv4").FireAndForget("NetworkWidgetViewModel.ResetEthIpTooltip");
+                }).FireAndForget("NetworkWidgetViewModel.CopyEthIpDelay");
             }
         }
-        catch { }
+        catch (Exception ex)
+        {
+            Safe.Log(ex, "NetworkWidgetViewModel.CopyEthernetIp");
+        }
     }
 
     [RelayCommand]
@@ -2098,13 +2121,16 @@ public sealed partial class NetworkWidgetViewModel : WidgetViewModelBase
             {
                 Clipboard.SetText(mac);
                 CopyEthernetMacTooltip = "Copied!";
-                _ = Task.Delay(1500).ContinueWith(t =>
+                Task.Delay(1500).ContinueWith(t =>
                 {
-                    _ = Application.Current?.Dispatcher.InvokeAsync(() => CopyEthernetMacTooltip = "Copy MAC");
-                });
+                    Application.Current?.Dispatcher.InvokeAsync(() => CopyEthernetMacTooltip = "Copy MAC").FireAndForget("NetworkWidgetViewModel.ResetEthMacTooltip");
+                }).FireAndForget("NetworkWidgetViewModel.CopyEthMacDelay");
             }
         }
-        catch { }
+        catch (Exception ex)
+        {
+            Safe.Log(ex, "NetworkWidgetViewModel.CopyEthernetMac");
+        }
     }
 
     [RelayCommand]
@@ -2117,13 +2143,16 @@ public sealed partial class NetworkWidgetViewModel : WidgetViewModelBase
             {
                 Clipboard.SetText(ip);
                 CopyIpTooltip = "Copied!";
-                _ = Task.Delay(1500).ContinueWith(t =>
+                Task.Delay(1500).ContinueWith(t =>
                 {
-                    _ = Application.Current?.Dispatcher.InvokeAsync(() => CopyIpTooltip = "Copy IPv4");
-                });
+                    Application.Current?.Dispatcher.InvokeAsync(() => CopyIpTooltip = "Copy IPv4").FireAndForget("NetworkWidgetViewModel.ResetIpTooltip");
+                }).FireAndForget("NetworkWidgetViewModel.CopyIpDelay");
             }
         }
-        catch { }
+        catch (Exception ex)
+        {
+            Safe.Log(ex, "NetworkWidgetViewModel.CopyIp");
+        }
     }
 
     [ObservableProperty]
@@ -2187,7 +2216,7 @@ public sealed partial class NetworkWidgetViewModel : WidgetViewModelBase
             IsEthernetConnected = !IsEthernetAdapterDisabled && eth.IsConnected;
 
             // 3. Defer netsh administrative state check to background so the UI thread NEVER stalls
-            _ = Task.Run(() =>
+            Task.Run(() =>
             {
                 try
                 {
@@ -2204,21 +2233,21 @@ public sealed partial class NetworkWidgetViewModel : WidgetViewModelBase
                         bool isDisabled = !ethStatus.IsAdminEnabled;
                         if (isDisabled != _disconnectService.IsEthernetDisabled)
                         {
-                            _ = Application.Current?.Dispatcher.InvokeAsync(() =>
+                            Application.Current?.Dispatcher.InvokeAsync(() =>
                             {
                                 HasEthernetAdapter = true;
                                 IsEthernetAdapterDisabled = isDisabled;
                                 _disconnectService.SetEthernetDisabledState(isDisabled);
                                 IsEthernetConnected = !isDisabled && eth.IsConnected;
-                            });
+                            }).FireAndForget("NetworkWidgetViewModel.UpdateEthNetshStatus");
                         }
                     }
                 }
                 catch (Exception ex)
                 {
-                    Safe.Log("NetworkWidgetViewModel.CheckNetshStatus", ex);
+                    Safe.Log(ex, "NetworkWidgetViewModel.CheckNetshStatus");
                 }
-            });
+            }).FireAndForget("NetworkWidgetViewModel.CheckNetshStatus");
 
             // 2. Wi-Fi Info
             HasWifiAdapter = _wifiService.HasWifiAdapter;
@@ -2245,7 +2274,7 @@ public sealed partial class NetworkWidgetViewModel : WidgetViewModelBase
 
                 // Hydrate full IP properties in background to never stall UI thread
                 var token = _probeCts?.Token ?? CancellationToken.None;
-                _ = Task.Run(async () =>
+                Task.Run(async () =>
                 {
                     try
                     {
@@ -2259,7 +2288,7 @@ public sealed partial class NetworkWidgetViewModel : WidgetViewModelBase
 
                         if (!_isHubVisible || token.IsCancellationRequested) return;
 
-                        _ = Application.Current?.Dispatcher.InvokeAsync(() =>
+                        Application.Current?.Dispatcher.InvokeAsync(() =>
                         {
                             if (!_isHubVisible || token.IsCancellationRequested) return;
                             WifiConnection = wifiConn;
@@ -2268,14 +2297,17 @@ public sealed partial class NetworkWidgetViewModel : WidgetViewModelBase
                             OnPropertyChanged(nameof(WifiPanelTitle));
                             OnPropertyChanged(nameof(WifiPanelSymbol));
                             OnPropertyChanged(nameof(WifiPanelTitleColor));
-                        });
+                        }).FireAndForget("NetworkWidgetViewModel.UpdateWifiDetailsUi");
                     }
-                    catch (OperationCanceledException) { }
+                    catch (OperationCanceledException ex)
+                    {
+                        Safe.Ignore(ex, "NetworkWidgetViewModel.GetConnectionDetailsCanceled");
+                    }
                     catch (Exception ex)
                     {
-                        Safe.Log("NetworkWidgetViewModel.GetConnectionDetails", ex);
+                        Safe.Log(ex, "NetworkWidgetViewModel.GetConnectionDetails");
                     }
-                }, token);
+                }, token).FireAndForget("NetworkWidgetViewModel.GetConnectionDetails");
             }
 
             // 3. Disconnect state: True only if neither Ethernet nor Wi-Fi is actively connected
@@ -2290,25 +2322,28 @@ public sealed partial class NetworkWidgetViewModel : WidgetViewModelBase
 
             // 6. Evaluate health in background
             var healthToken = _probeCts?.Token ?? CancellationToken.None;
-            _ = Task.Run(async () =>
+            Task.Run(async () =>
             {
                 try
                 {
                     if (!_isHubVisible || healthToken.IsCancellationRequested) return;
                     var h = await _healthService.EvaluateHealthAsync(healthToken);
                     if (!_isHubVisible || healthToken.IsCancellationRequested) return;
-                    _ = Application.Current?.Dispatcher.InvokeAsync(() =>
+                    Application.Current?.Dispatcher.InvokeAsync(() =>
                     {
                         if (!_isHubVisible || healthToken.IsCancellationRequested) return;
                         Health = h;
-                    });
+                    }).FireAndForget("NetworkWidgetViewModel.UpdateHealthUi");
                 }
-                catch (OperationCanceledException) { }
+                catch (OperationCanceledException ex)
+                {
+                    Safe.Ignore(ex, "NetworkWidgetViewModel.EvaluateHealthCanceled");
+                }
                 catch (Exception ex)
                 {
-                    Safe.Log("NetworkWidgetViewModel.EvaluateHealth", ex);
+                    Safe.Log(ex, "NetworkWidgetViewModel.EvaluateHealth");
                 }
-            }, healthToken);
+            }, healthToken).FireAndForget("NetworkWidgetViewModel.EvaluateHealth");
 
             // 7. Refresh Data Usage (only when active panel is Usage to conserve CPU/battery)
             if (IsDataUsagePanel)
@@ -2357,7 +2392,10 @@ public sealed partial class NetworkWidgetViewModel : WidgetViewModelBase
             RefreshPhysicalAdapters();
             OnPropertyChanged(nameof(AdaptersStatusBrush));
         }
-        catch { }
+        catch (Exception ex)
+        {
+            Safe.LogThrottled(ex, "NetworkWidgetViewModel.RefreshAll");
+        }
     }
 
     private void RefreshWifiNetworks(bool triggerScan = false)
@@ -2365,29 +2403,32 @@ public sealed partial class NetworkWidgetViewModel : WidgetViewModelBase
         if (!HasWifiAdapter || !IsWifiRadioOn) return;
         if (Interlocked.CompareExchange(ref _isScanningWifi, 1, 0) != 0) return;
 
-        _ = Task.Run(() =>
+        Task.Run(() =>
         {
             try
             {
                 var rawList = _wifiService.ScanAndGetAvailableNetworks(triggerScan);
-                _ = Application.Current?.Dispatcher.InvokeAsync(() =>
+                Application.Current?.Dispatcher.InvokeAsync(() =>
                 {
                     try
                     {
                         UpdateAvailableNetworksInPlace(rawList);
                     }
-                    catch { }
-                });
+                    catch (Exception ex)
+                    {
+                        Safe.Log(ex, "NetworkWidgetViewModel.UpdateAvailableNetworksInPlace");
+                    }
+                }).FireAndForget("NetworkWidgetViewModel.UpdateNetworksInPlaceDispatch");
             }
             catch (Exception ex)
             {
-                Safe.Log("NetworkWidgetViewModel.RefreshWifiNetworks", ex);
+                Safe.Log(ex, "NetworkWidgetViewModel.RefreshWifiNetworks");
             }
             finally
             {
                 Interlocked.Exchange(ref _isScanningWifi, 0);
             }
-        });
+        }).FireAndForget("NetworkWidgetViewModel.RefreshWifiNetworks");
     }
 
     private void UpdateAvailableNetworksInPlace(IReadOnlyList<WifiNetworkItem> rawList)
@@ -2502,12 +2543,12 @@ public sealed partial class NetworkWidgetViewModel : WidgetViewModelBase
     {
         if (Interlocked.CompareExchange(ref _isRefreshingAdapters, 1, 0) != 0) return;
 
-        _ = Task.Run(() =>
+        Task.Run(() =>
         {
             try
             {
                 var rawAdapters = DisconnectService.GetPhysicalAdapters();
-                _ = Application.Current?.Dispatcher.InvokeAsync(() =>
+                Application.Current?.Dispatcher.InvokeAsync(() =>
                 {
                     try
                     {
@@ -2517,14 +2558,14 @@ public sealed partial class NetworkWidgetViewModel : WidgetViewModelBase
                     {
                         Interlocked.Exchange(ref _isRefreshingAdapters, 0);
                     }
-                });
+                }).FireAndForget("NetworkWidgetViewModel.UpdateAdaptersInPlaceDispatch");
             }
             catch (Exception ex)
             {
-                Safe.Log("NetworkWidgetViewModel.RefreshPhysicalAdapters", ex);
+                Safe.Log(ex, "NetworkWidgetViewModel.RefreshPhysicalAdapters");
                 Interlocked.Exchange(ref _isRefreshingAdapters, 0);
             }
-        });
+        }).FireAndForget("NetworkWidgetViewModel.RefreshPhysicalAdapters");
     }
 
     private void UpdatePhysicalAdaptersInPlace(List<PhysicalAdapterInfo> rawList)
@@ -2639,6 +2680,7 @@ public sealed partial class NetworkWidgetViewModel : WidgetViewModelBase
         }
         catch (Exception ex)
         {
+            Safe.Log(ex, "NetworkWidgetViewModel.TogglePhysicalAdapter");
             adapter.IsAdminEnabled = originalState;
             ShowToast($"Error: {ex.Message}");
         }
@@ -2685,7 +2727,7 @@ public sealed partial class NetworkWidgetViewModel : WidgetViewModelBase
 
         if (throughputChanged || wifiChanged || radioChanged || ethChanged)
         {
-            _ = Application.Current?.Dispatcher.InvokeAsync(() =>
+            Application.Current?.Dispatcher.InvokeAsync(() =>
             {
                 try
                 {
@@ -2740,8 +2782,11 @@ public sealed partial class NetworkWidgetViewModel : WidgetViewModelBase
                         IsWifiNoInternet = false;
                     }
                 }
-                catch { }
-            });
+                catch (Exception ex)
+                {
+                    Safe.Log(ex, "NetworkWidgetViewModel.OnThroughputUpdatedDispatch");
+                }
+            }).FireAndForget("NetworkWidgetViewModel.OnThroughputUpdatedUi");
         }
 
         if (shouldProbeReachability)
@@ -2749,7 +2794,7 @@ public sealed partial class NetworkWidgetViewModel : WidgetViewModelBase
             _lastReachabilityProbeTime = DateTime.UtcNow;
             double currentBps = metrics.DownloadBytesPerSec;
             bool currentHasInternet = Health != null && Health.Connectivity == ConnectivityLevel.InternetAccess;
-            _ = Task.Run(async () =>
+            Task.Run(async () =>
             {
                 bool reachable = await _healthService.CheckPassiveOrActiveReachabilityAsync(currentBps, _isHubVisible, currentHasInternet);
                 if (Application.Current?.Dispatcher is { } dispatcher)
@@ -2778,7 +2823,7 @@ public sealed partial class NetworkWidgetViewModel : WidgetViewModelBase
                         }
                     });
                 }
-            });
+            }).FireAndForget("NetworkWidgetViewModel.ProbeReachability");
         }
 
         if (shouldProbeWifi)
@@ -2788,7 +2833,7 @@ public sealed partial class NetworkWidgetViewModel : WidgetViewModelBase
             if (!string.IsNullOrWhiteSpace(wifiIp))
             {
                 var wifiProbeToken = _probeCts?.Token ?? CancellationToken.None;
-                _ = Task.Run(async () =>
+                Task.Run(async () =>
                 {
                     if (!_isHubVisible || wifiProbeToken.IsCancellationRequested) return;
                     bool hasWan = await CheckAdapterHasInternetAsync(wifiIp, wifiProbeToken);
@@ -2806,7 +2851,7 @@ public sealed partial class NetworkWidgetViewModel : WidgetViewModelBase
                             }
                         });
                     }
-                }, wifiProbeToken);
+                }, wifiProbeToken).FireAndForget("NetworkWidgetViewModel.ProbeWifi");
             }
         }
     }
@@ -2849,41 +2894,41 @@ public sealed partial class NetworkWidgetViewModel : WidgetViewModelBase
         if (!_isHubVisible) return;
         if (Health != null && Health.LatencyMs == latency.PingMs) return;
 
-        _ = Application.Current?.Dispatcher.InvokeAsync(() =>
+        Application.Current?.Dispatcher.InvokeAsync(() =>
         {
             if (Health != null && Health.LatencyMs != latency.PingMs)
             {
                 Health.LatencyMs = latency.PingMs;
             }
-        });
+        }).FireAndForget("NetworkWidgetViewModel.OnLatencyUpdated");
     }
 
     private void OnDisconnectStateChanged(bool isDisconnected)
     {
         if (!_isHubVisible) return;
 
-        _ = Application.Current?.Dispatcher.InvokeAsync(() =>
+        Application.Current?.Dispatcher.InvokeAsync(() =>
         {
             IsInternetDisconnected = isDisconnected;
-        });
+        }).FireAndForget("NetworkWidgetViewModel.OnDisconnectStateChanged");
     }
 
     private void OnEthernetDisabledStateChanged(bool isDisabled)
     {
         if (!_isHubVisible) return;
 
-        _ = Application.Current?.Dispatcher.InvokeAsync(() =>
+        Application.Current?.Dispatcher.InvokeAsync(() =>
         {
             IsEthernetAdapterDisabled = isDisabled;
             RefreshAll();
-        });
+        }).FireAndForget("NetworkWidgetViewModel.OnEthernetDisabledStateChanged");
     }
 
     private void OnHealthServiceChanged(NetworkHealthStatus health)
     {
         if (!_isHubVisible) return;
 
-        _ = Application.Current?.Dispatcher.InvokeAsync(() =>
+        Application.Current?.Dispatcher.InvokeAsync(() =>
         {
             Health = health;
             if (IsWifiConnected && (health.Connectivity is ConnectivityLevel.LocalAccess or ConnectivityLevel.ConstrainedInternet))
@@ -2891,7 +2936,7 @@ public sealed partial class NetworkWidgetViewModel : WidgetViewModelBase
                 IsWifiNoInternet = true;
             }
             NotifyReachabilityChanged();
-        });
+        }).FireAndForget("NetworkWidgetViewModel.OnHealthServiceChanged");
     }
 
     private void OnNetworkChanged()
@@ -2908,18 +2953,21 @@ public sealed partial class NetworkWidgetViewModel : WidgetViewModelBase
         _networkRefreshCts = new CancellationTokenSource();
         var token = _networkRefreshCts.Token;
 
-        _ = Task.Delay(350, token).ContinueWith(t =>
+        Task.Delay(350, token).ContinueWith(t =>
         {
             if (t.IsCanceled) return;
-            _ = Application.Current?.Dispatcher.InvokeAsync(() =>
+            Application.Current?.Dispatcher.InvokeAsync(() =>
             {
                 try
                 {
                     RefreshAll();
                 }
-                catch { }
-            });
-        }, TaskScheduler.Default);
+                catch (Exception ex)
+                {
+                    Safe.Log(ex, "NetworkWidgetViewModel.OnNetworkChangedRefresh");
+                }
+            }).FireAndForget("NetworkWidgetViewModel.OnNetworkChangedDispatch");
+        }, TaskScheduler.Default).FireAndForget("NetworkWidgetViewModel.OnNetworkChangedDelay");
     }
 
     private void OnNetworkAddressChanged(object? sender, EventArgs e) => OnNetworkChanged();
@@ -2983,13 +3031,15 @@ public sealed partial class NetworkWidgetViewModel : WidgetViewModelBase
                     return true;
                 }
             }
-            catch (OperationCanceledException)
+            catch (OperationCanceledException ex)
             {
+                Safe.Ignore(ex, "NetworkWidgetViewModel.SocketConnectCanceled");
                 if (cancellationToken.IsCancellationRequested) return false;
             }
-            catch
+            catch (Exception ex)
             {
                 // Socket error on this endpoint, try next
+                Safe.Ignore(ex, "NetworkWidgetViewModel.SocketConnectFailed");
             }
         }
 
@@ -3025,7 +3075,10 @@ public sealed partial class NetworkWidgetViewModel : WidgetViewModelBase
                 NetworkChange.NetworkAddressChanged -= OnNetworkAddressChanged;
                 NetworkChange.NetworkAvailabilityChanged -= OnNetworkAvailabilityChanged;
             }
-            catch { }
+            catch (Exception ex)
+            {
+                Safe.Ignore(ex, "NetworkWidgetViewModel.UnregisterNetworkEvents");
+            }
 
             _throughputService.Stop();
             AvailableNetworks.Clear();

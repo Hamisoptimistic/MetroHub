@@ -9,6 +9,7 @@ using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
+using MetroHub.Core.Services;
 using MetroHub.Presentation.Dialogs;
 using MetroHub.Widgets.Catalog.MetroSync.Services;
 
@@ -129,11 +130,11 @@ public sealed partial class MetroSyncSetupDialog : MetroDialog
         {
             if (state == SetupVisualState.PollingWait)
             {
-                _ = Dispatcher.InvokeAsync(() =>
+                Dispatcher.InvokeAsync(() =>
                 {
                     PollingProgressRing.IsIndeterminate = false;
                     PollingProgressRing.IsIndeterminate = true;
-                }, System.Windows.Threading.DispatcherPriority.Loaded);
+                }, System.Windows.Threading.DispatcherPriority.Loaded).FireAndForget("MetroSyncSetupDialog.SetIndeterminate");
             }
             else
             {
@@ -175,9 +176,10 @@ public sealed partial class MetroSyncSetupDialog : MetroDialog
             _pollingCts?.Cancel();
             _pollingCts?.Dispose();
         }
-        catch
+        catch (Exception ex)
         {
             // Ignored on cleanup
+            Safe.Ignore(ex, "MetroSyncSetupDialog.CancelPolling");
         }
         finally
         {
@@ -198,15 +200,29 @@ public sealed partial class MetroSyncSetupDialog : MetroDialog
 
     private async void OnContinueClick(object sender, RoutedEventArgs e)
     {
-        await ProcessTokenContinueAsync();
+        try
+        {
+            await ProcessTokenContinueAsync();
+        }
+        catch (Exception ex)
+        {
+            Safe.Log(ex, "MetroSyncSetupDialog.OnContinueClick");
+        }
     }
 
     private async void OnBotTokenInputKeyDown(object sender, KeyEventArgs e)
     {
-        if (e.Key == Key.Enter && _currentState == SetupVisualState.TokenEntry)
+        try
         {
-            e.Handled = true;
-            await ProcessTokenContinueAsync();
+            if (e.Key == Key.Enter && _currentState == SetupVisualState.TokenEntry)
+            {
+                e.Handled = true;
+                await ProcessTokenContinueAsync();
+            }
+        }
+        catch (Exception ex)
+        {
+            Safe.Log(ex, "MetroSyncSetupDialog.OnBotTokenInputKeyDown");
         }
     }
 
@@ -244,8 +260,9 @@ public sealed partial class MetroSyncSetupDialog : MetroDialog
             {
                 _botAvatarBytes = await _transport.GetBotPhotoBytesAsync(_botUser.Username, _botUser.Id, CancellationToken.None).ConfigureAwait(true);
             }
-            catch
+            catch (Exception ex)
             {
+                Safe.Ignore(ex, "MetroSyncSetupDialog.GetBotPhoto");
                 _botAvatarBytes = null;
             }
 
@@ -270,14 +287,17 @@ public sealed partial class MetroSyncSetupDialog : MetroDialog
         }
         catch (TelegramApiException ex) when (ex.ErrorCode == 401)
         {
+            Safe.Log(ex, "MetroSyncSetupDialog.ProcessToken.Unauthorized");
             ShowError("Token not valid.");
         }
         catch (TelegramApiException ex) when (ex.ErrorCode == 409)
         {
+            Safe.Log(ex, "MetroSyncSetupDialog.ProcessToken.Conflict");
             ShowError("Another app or webhook is already using this bot.");
         }
         catch (Exception ex)
         {
+            Safe.Log(ex, "MetroSyncSetupDialog.ProcessToken");
             ShowError(MetroSyncWidgetViewModel.RedactBotToken(ex.Message, token));
         }
         finally
@@ -294,7 +314,7 @@ public sealed partial class MetroSyncSetupDialog : MetroDialog
         _pollingCts = new CancellationTokenSource();
         var ct = _pollingCts.Token;
 
-        _ = Task.Run(async () =>
+        Task.Run(async () =>
         {
             try
             {
@@ -309,9 +329,10 @@ public sealed partial class MetroSyncSetupDialog : MetroDialog
                             avatarBytes = await _transport.GetBotPhotoBytesAsync(_botUser.Username, _botUser.Id, ct).ConfigureAwait(false);
                             _botAvatarBytes = avatarBytes;
                         }
-                        catch
+                        catch (Exception ex)
                         {
                             // Best effort bot avatar retrieval
+                            Safe.Ignore(ex, "MetroSyncSetupDialog.PollingAvatarRetrieval");
                         }
                     }
 
@@ -326,6 +347,7 @@ public sealed partial class MetroSyncSetupDialog : MetroDialog
             }
             catch (TelegramApiException ex) when (ex.ErrorCode == 401)
             {
+                Safe.Log(ex, "MetroSyncSetupDialog.Polling.Unauthorized");
                 await Dispatcher.InvokeAsync(() =>
                 {
                     ShowError("Token not valid.");
@@ -334,25 +356,28 @@ public sealed partial class MetroSyncSetupDialog : MetroDialog
             }
             catch (TelegramApiException ex) when (ex.ErrorCode == 409)
             {
+                Safe.Log(ex, "MetroSyncSetupDialog.Polling.Conflict");
                 await Dispatcher.InvokeAsync(() =>
                 {
                     ShowError("Another app or webhook is already using this bot.");
                     SetVisualState(SetupVisualState.TokenEntry);
                 });
             }
-            catch (OperationCanceledException)
+            catch (OperationCanceledException ex)
             {
                 // Normal cancellation
+                Safe.Ignore(ex, "MetroSyncSetupDialog.PollingCanceled");
             }
             catch (Exception ex)
             {
+                Safe.Log(ex, "MetroSyncSetupDialog.Polling");
                 await Dispatcher.InvokeAsync(() =>
                 {
                     ShowError(MetroSyncWidgetViewModel.RedactBotToken(ex.Message, _currentBotToken));
                     SetVisualState(SetupVisualState.TokenEntry);
                 });
             }
-        }, ct);
+        }, ct).FireAndForget("MetroSyncSetupDialog.PollingTask");
     }
 
     internal void SetCandidatePreview(CandidateSender candidate, byte[]? avatarBytes)
@@ -378,8 +403,9 @@ public sealed partial class MetroSyncSetupDialog : MetroDialog
                 ConfirmationAvatarImage.Visibility = Visibility.Visible;
                 ConfirmationAvatarFallback.Visibility = Visibility.Collapsed;
             }
-            catch
+            catch (Exception ex)
             {
+                Safe.Ignore(ex, "MetroSyncSetupDialog.ThumbnailCreation");
                 ConfirmationAvatarImage.Source = null;
                 ConfirmationAvatarImage.Visibility = Visibility.Collapsed;
                 ConfirmationAvatarFallback.Visibility = Visibility.Visible;
@@ -415,9 +441,10 @@ public sealed partial class MetroSyncSetupDialog : MetroDialog
                 UseShellExecute = true
             });
         }
-        catch
+        catch (Exception ex)
         {
             // Ignore shell launch failures
+            Safe.Ignore(ex, "MetroSyncSetupDialog.OpenTelegram");
         }
     }
 
@@ -474,15 +501,29 @@ public sealed partial class MetroSyncSetupDialog : MetroDialog
 
     private async void OnManualConnectClick(object sender, RoutedEventArgs e)
     {
-        await ProcessManualConnectAsync();
+        try
+        {
+            await ProcessManualConnectAsync();
+        }
+        catch (Exception ex)
+        {
+            Safe.Log(ex, "MetroSyncSetupDialog.OnManualConnectClick");
+        }
     }
 
     private async void OnManualUserIdInputKeyDown(object sender, KeyEventArgs e)
     {
-        if (e.Key == Key.Enter)
+        try
         {
-            e.Handled = true;
-            await ProcessManualConnectAsync();
+            if (e.Key == Key.Enter)
+            {
+                e.Handled = true;
+                await ProcessManualConnectAsync();
+            }
+        }
+        catch (Exception ex)
+        {
+            Safe.Log(ex, "MetroSyncSetupDialog.OnManualUserIdInputKeyDown");
         }
     }
 
@@ -516,8 +557,9 @@ public sealed partial class MetroSyncSetupDialog : MetroDialog
                 {
                     _botAvatarBytes = await _transport.GetBotPhotoBytesAsync(_botUser.Username, _botUser.Id, CancellationToken.None).ConfigureAwait(true);
                 }
-                catch
+                catch (Exception ex)
                 {
+                    Safe.Ignore(ex, "MetroSyncSetupDialog.ManualBotPhoto");
                     _botAvatarBytes = null;
                 }
             }
@@ -526,14 +568,17 @@ public sealed partial class MetroSyncSetupDialog : MetroDialog
         }
         catch (TelegramApiException ex) when (ex.ErrorCode == 401)
         {
+            Safe.Log(ex, "MetroSyncSetupDialog.ManualConnect.Unauthorized");
             ShowError("Token not valid.");
         }
         catch (TelegramApiException ex) when (ex.ErrorCode == 409)
         {
+            Safe.Log(ex, "MetroSyncSetupDialog.ManualConnect.Conflict");
             ShowError("Another app or webhook is already using this bot.");
         }
         catch (Exception ex)
         {
+            Safe.Log(ex, "MetroSyncSetupDialog.ManualConnect");
             ShowError(MetroSyncWidgetViewModel.RedactBotToken(ex.Message, token));
         }
     }
@@ -564,24 +609,26 @@ public sealed partial class MetroSyncSetupDialog : MetroDialog
                 }
             }
         }
-        catch
+        catch (Exception ex)
         {
             // Profile photo persistence is best-effort
+            Safe.Ignore(ex, "MetroSyncSetupDialog.SaveProfilePhoto");
         }
 
         _security.SaveCredentials(token, userId);
         if (_viewModel != null)
         {
-            _ = _viewModel.ConnectAsync(new MetroSyncCredentials(token, userId));
+            _viewModel.ConnectAsync(new MetroSyncCredentials(token, userId)).FireAndForget("MetroSyncSetupDialog.ConnectAsync");
         }
 
         try
         {
             DialogResult = true;
         }
-        catch (InvalidOperationException)
+        catch (InvalidOperationException ex)
         {
             // Ignored if window is not displayed modally via ShowDialog
+            Safe.Ignore(ex, "MetroSyncSetupDialog.CloseDialogResult");
         }
 
         Close();

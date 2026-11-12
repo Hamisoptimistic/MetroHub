@@ -9,6 +9,7 @@ using CommunityToolkit.Mvvm.Input;
 using MetroHub.Core.Display;
 using MetroHub.Core.Models;
 using MetroHub.Core.Power;
+using MetroHub.Core.Services;
 using MetroHub.Presentation.Controllers;
 using MetroHub.Presentation.Themes;
 using MetroHub.Widgets.Serialization;
@@ -229,7 +230,10 @@ public sealed partial class CaffeineSleepWidgetViewModel : WidgetViewModelBase
                 _powerService.SetKeepScreenOn(_settings.KeepScreenOn);
             }
         }
-        catch { }
+        catch (Exception ex)
+        {
+            Safe.Log(ex, "CaffeineSleepWidget.LoadSettings");
+        }
     }
 
     public override void SaveSettings()
@@ -240,7 +244,10 @@ public sealed partial class CaffeineSleepWidgetViewModel : WidgetViewModelBase
             Model.TargetPath = "caffeine_sleep";
             Model.SettingsJson = WidgetSerializer.Serialize(_settings);
         }
-        catch { }
+        catch (Exception ex)
+        {
+            Safe.Log(ex, "CaffeineSleepWidget.SaveSettings");
+        }
     }
 
     partial void OnCurrentPanelChanged(string value)
@@ -317,7 +324,7 @@ public sealed partial class CaffeineSleepWidgetViewModel : WidgetViewModelBase
 
     private void OnPowerServiceStateChanged(object? sender, EventArgs e)
     {
-        _ = Application.Current?.Dispatcher.InvokeAsync(() =>
+        Application.Current?.Dispatcher.InvokeAsync(() =>
         {
             OnPropertyChanged(nameof(CurrentMode));
             OnPropertyChanged(nameof(ModeTitle));
@@ -340,12 +347,12 @@ public sealed partial class CaffeineSleepWidgetViewModel : WidgetViewModelBase
             {
                 UpdateCountdownText(string.Empty);
             }
-        });
+        }).FireAndForget("CaffeineSleepWidget.PowerServiceStateChanged");
     }
 
     private void OnNightLightServiceStateChanged(object? sender, EventArgs e)
     {
-        _ = Application.Current?.Dispatcher.InvokeAsync(() =>
+        Application.Current?.Dispatcher.InvokeAsync(() =>
         {
             OnPropertyChanged(nameof(IsNightLightEnabled));
             OnPropertyChanged(nameof(IsWarmSunAnimating));
@@ -354,7 +361,7 @@ public sealed partial class CaffeineSleepWidgetViewModel : WidgetViewModelBase
             OnPropertyChanged(nameof(IsNightLightSupported));
             OnPropertyChanged(nameof(NightLightStatusSubtitle));
             OnPropertyChanged(nameof(NightLightTileIndicatorBrush));
-        });
+        }).FireAndForget("CaffeineSleepWidget.NightLightServiceStateChanged");
     }
 
     /// <summary>

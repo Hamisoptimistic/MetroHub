@@ -8,6 +8,7 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using MetroHub.Core.Display;
 using MetroHub.Core.Models;
+using MetroHub.Core.Services;
 using MetroHub.Widgets.Serialization;
 
 namespace MetroHub.Widgets.Catalog.BrightnessControls;
@@ -151,7 +152,10 @@ public sealed partial class BrightnessControlsWidgetViewModel : WidgetViewModelB
                 NightBrightness = settings.NightBrightness > 0 ? settings.NightBrightness : 25.0;
             }
         }
-        catch { }
+        catch (Exception ex)
+        {
+            Safe.Log(ex, "BrightnessControlsWidget.LoadSettings");
+        }
     }
 
     public override void SaveSettings()
@@ -378,7 +382,7 @@ public sealed partial class BrightnessControlsWidgetViewModel : WidgetViewModelB
     {
         if (!_isHubVisible) return;
 
-        _ = Task.Run(async () =>
+        Task.Run(async () =>
         {
             try
             {
@@ -395,9 +399,9 @@ public sealed partial class BrightnessControlsWidgetViewModel : WidgetViewModelB
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"[BrightnessControlsWidget] RefreshAll error: {ex.Message}");
+                Safe.Log(ex, "BrightnessControlsWidget.RefreshAll");
             }
-        });
+        }).FireAndForget("BrightnessControlsWidget.RefreshAll");
     }
 
     private void UpdateMonitorsCollection(IReadOnlyList<MonitorDevice> rawMonitors)
@@ -489,15 +493,15 @@ public sealed partial class BrightnessControlsWidgetViewModel : WidgetViewModelB
                 }
                 _pinnedCursorMonitorId = null;
 
-                _ = Application.Current?.Dispatcher.InvokeAsync(() =>
+                Application.Current?.Dispatcher.InvokeAsync(() =>
                 {
                     ProcessCursorMonitorChange(cursorMonitorId);
-                });
+                }).FireAndForget("BrightnessControlsWidget.CursorTracking");
             }
         }
         catch (Exception ex)
         {
-            System.Diagnostics.Debug.WriteLine($"[BrightnessControlsWidget] Cursor tracking error: {ex.Message}");
+            Safe.Log(ex, "BrightnessControlsWidget.CursorTracking");
         }
     }
 
@@ -505,10 +509,10 @@ public sealed partial class BrightnessControlsWidgetViewModel : WidgetViewModelB
     {
         if (!_isHubVisible) return;
 
-        _ = Application.Current?.Dispatcher.InvokeAsync(() =>
+        Application.Current?.Dispatcher.InvokeAsync(() =>
         {
             UpdateMonitorsCollection(updatedMonitors);
-        });
+        }).FireAndForget("BrightnessControlsWidget.MonitorsChanged");
     }
 
     public override void Pause()

@@ -11,6 +11,7 @@ using System.Windows.Threading;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using MetroHub.Core.Models;
+using MetroHub.Core.Services;
 using MetroHub.Widgets.Serialization;
 
 namespace MetroHub.Widgets.Catalog.Quotes;
@@ -115,9 +116,9 @@ public sealed partial class QuotesWidgetViewModel : WidgetViewModelBase, IWidget
                 }
             }
         }
-        catch
+        catch (Exception ex)
         {
-            // Ignore error and fall back to embedded resource
+            Safe.Log(ex, "QuotesWidget.LoadUserQuotes");
         }
 
         // 2. If no user override or file was empty, load from embedded resource
@@ -138,9 +139,9 @@ public sealed partial class QuotesWidgetViewModel : WidgetViewModelBase, IWidget
                     }
                 }
             }
-            catch
+            catch (Exception ex)
             {
-                // Fallback will supply defaults
+                Safe.Log(ex, "QuotesWidget.LoadEmbeddedQuotes");
             }
         }
 
@@ -249,7 +250,7 @@ public sealed partial class QuotesWidgetViewModel : WidgetViewModelBase, IWidget
             IsAuthorVisible = false;
             _typingCts = new CancellationTokenSource();
             var token = _typingCts.Token;
-            _ = RevealQuoteTypewriterAsync(DisplayText, token);
+            RevealQuoteTypewriterAsync(DisplayText, token).FireAndForget("QuotesWidget.RevealQuoteTypewriter");
         }
     }
 
@@ -288,8 +289,9 @@ public sealed partial class QuotesWidgetViewModel : WidgetViewModelBase, IWidget
             {
                 await Task.Delay(delayMs, token);
             }
-            catch (OperationCanceledException)
+            catch (OperationCanceledException ex)
             {
+                Safe.Ignore(ex, "QuotesWidget.TypewriterDelay");
                 return;
             }
         }
@@ -303,8 +305,9 @@ public sealed partial class QuotesWidgetViewModel : WidgetViewModelBase, IWidget
         {
             await Task.Delay(250, token);
         }
-        catch (OperationCanceledException)
+        catch (OperationCanceledException ex)
         {
+            Safe.Ignore(ex, "QuotesWidget.TypewriterHoldDelay");
             return;
         }
 
@@ -448,9 +451,9 @@ public sealed partial class QuotesWidgetViewModel : WidgetViewModelBase, IWidget
 
             TriggerCopyFeedback();
         }
-        catch
+        catch (Exception ex)
         {
-            // In case clipboard is locked by external process
+            Safe.Log(ex, "QuotesWidget.CopyQuote");
         }
     }
 

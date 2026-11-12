@@ -6,6 +6,7 @@ using System.Windows.Controls;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using MetroHub.Core.Models;
+using MetroHub.Core.Services;
 using MetroHub.Widgets.Serialization;
 
 namespace MetroHub.Widgets.Catalog.Template;
@@ -192,12 +193,13 @@ public sealed partial class TemplateWidgetViewModel : WidgetViewModelBase, IWidg
             await Task.Delay(200, token);
             LiveStatus = $"Updated at {DateTime.Now:T}";
         }
-        catch (OperationCanceledException)
+        catch (OperationCanceledException ex)
         {
-            // Clean cancellation, ignore
+            Safe.Ignore(ex, "TemplateWidget.RefreshAsync");
         }
         catch (Exception ex)
         {
+            Safe.Log(ex, "TemplateWidget.RefreshAsync");
             LiveStatus = $"Error: {ex.Message}";
         }
     }

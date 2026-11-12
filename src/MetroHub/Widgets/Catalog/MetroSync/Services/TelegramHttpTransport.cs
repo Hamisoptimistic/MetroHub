@@ -3,6 +3,7 @@ using System.IO;
 using System.Net;
 using System.Net.Http;
 using System.Text.Json;
+using MetroHub.Core.Services;
 
 namespace MetroHub.Widgets.Catalog.MetroSync.Services;
 
@@ -343,8 +344,9 @@ public sealed class TelegramHttpTransport : ITelegramTransport
         {
             throw;
         }
-        catch
+        catch (Exception ex)
         {
+            Safe.Log(ex, "TelegramHttpTransport.GetUserProfilePhotoBytes");
             return null;
         }
     }
@@ -423,8 +425,9 @@ public sealed class TelegramHttpTransport : ITelegramTransport
         {
             throw;
         }
-        catch
+        catch (Exception ex)
         {
+            Safe.Log(ex, "TelegramHttpTransport.GetBotPhotoBytes");
             return null;
         }
     }

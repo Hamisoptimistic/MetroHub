@@ -9,6 +9,7 @@ using System.Windows.Controls;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using MetroHub.Core.Models;
+using MetroHub.Core.Services;
 using MetroHub.Widgets.Serialization;
 using Windows.Media.Control;
 using WindowsMediaController;
@@ -189,7 +190,7 @@ public sealed partial class RoverWidgetViewModel : WidgetViewModelBase, IWidgetA
         _secondsUntilNextAmbient = RandomNumberGenerator.GetInt32(15, 31);
 
         // Initialize zero-polling Windows Media SMTC monitor
-        _ = InitMediaControllerAsync();
+        InitMediaControllerAsync().FireAndForget("RoverWidget.InitMediaController");
     }
 
     private void OnSoundTriggered(string soundId)
@@ -213,7 +214,7 @@ public sealed partial class RoverWidgetViewModel : WidgetViewModelBase, IWidgetA
         }
         catch (Exception ex)
         {
-            Debug.WriteLine($"[RoverWidget] MediaManager init failed: {ex.Message}");
+            Safe.Log(ex, "RoverWidget.InitMediaController");
         }
     }
 
@@ -231,7 +232,7 @@ public sealed partial class RoverWidgetViewModel : WidgetViewModelBase, IWidgetA
     {
         if (playbackInfo == null) return;
         bool isPlaying = playbackInfo.PlaybackStatus == GlobalSystemMediaTransportControlsSessionPlaybackStatus.Playing;
-        _ = App.Current?.Dispatcher?.InvokeAsync(() =>
+        App.Current?.Dispatcher?.InvokeAsync(() =>
         {
             if (isPlaying)
             {
@@ -241,7 +242,7 @@ public sealed partial class RoverWidgetViewModel : WidgetViewModelBase, IWidgetA
             {
                 CheckCurrentMediaPlayback();
             }
-        });
+        }).FireAndForget("RoverWidget.MediaPlaybackStateChanged");
     }
 
     private void CheckCurrentMediaPlayback()
@@ -277,11 +278,11 @@ public sealed partial class RoverWidgetViewModel : WidgetViewModelBase, IWidgetA
                 }
             }
 
-            _ = App.Current?.Dispatcher?.InvokeAsync(() => SetMediaPlaying(anyPlaying));
+            App.Current?.Dispatcher?.InvokeAsync(() => SetMediaPlaying(anyPlaying)).FireAndForget("RoverWidget.SetMediaPlaying");
         }
         catch (Exception ex)
         {
-            Debug.WriteLine($"[RoverWidget] CheckCurrentMediaPlayback error: {ex.Message}");
+            Safe.Log(ex, "RoverWidget.CheckCurrentMediaPlayback");
         }
     }
 
@@ -639,7 +640,10 @@ public sealed partial class RoverWidgetViewModel : WidgetViewModelBase, IWidgetA
                     _mediaManager.OnAnySessionClosed -= MediaManager_OnAnySessionClosed;
                     _mediaManager.Dispose();
                 }
-                catch { }
+                catch (Exception ex)
+                {
+                    Safe.Ignore(ex, "RoverWidget.DisposeMediaManager");
+                }
                 _mediaManager = null;
             }
 

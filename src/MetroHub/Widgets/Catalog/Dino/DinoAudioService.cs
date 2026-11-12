@@ -2,6 +2,7 @@ using System;
 using System.Diagnostics;
 using System.IO;
 using System.Media;
+using MetroHub.Core.Services;
 
 namespace MetroHub.Widgets.Catalog.Dino;
 
@@ -58,8 +59,9 @@ public sealed class DinoAudioService : IDisposable
             _gameOverPlayer = new SoundPlayer(_gameOverStream);
             _gameOverPlayer.Load();
         }
-        catch
+        catch (Exception ex)
         {
+            Safe.LogThrottled(ex, "DinoAudioService.InitializeSounds");
             _audioAvailable = false;
         }
     }
@@ -79,8 +81,9 @@ public sealed class DinoAudioService : IDisposable
             _jumpStream!.Position = 0;
             _jumpPlayer?.Play();
         }
-        catch
+        catch (Exception ex)
         {
+            Safe.LogThrottled(ex, "DinoAudioService.PlayJump");
             _audioAvailable = false;
         }
     }
@@ -96,8 +99,9 @@ public sealed class DinoAudioService : IDisposable
             _milestoneStream!.Position = 0;
             _milestonePlayer?.Play();
         }
-        catch
+        catch (Exception ex)
         {
+            Safe.LogThrottled(ex, "DinoAudioService.PlayMilestone");
             _audioAvailable = false;
         }
     }
@@ -113,8 +117,9 @@ public sealed class DinoAudioService : IDisposable
             _gameOverStream!.Position = 0;
             _gameOverPlayer?.Play();
         }
-        catch
+        catch (Exception ex)
         {
+            Safe.LogThrottled(ex, "DinoAudioService.PlayGameOver");
             _audioAvailable = false;
         }
     }

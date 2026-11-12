@@ -178,9 +178,10 @@ public sealed class MetroSyncHistoryStore : IItemIndex, IDisposable
 
                         allItems.Add(item);
                     }
-                    catch (JsonException)
+                    catch (JsonException ex)
                     {
                         // Tolerates trailing truncated line on unexpected shutdown or corrupt line.
+                        Safe.Ignore(ex, "MetroSyncHistoryStore.ReadRecentLine");
                         continue;
                     }
                 }
@@ -253,7 +254,7 @@ public sealed class MetroSyncHistoryStore : IItemIndex, IDisposable
             {
                 if (File.Exists(tmpPath))
                 {
-                    try { File.Delete(tmpPath); } catch { }
+                    try { File.Delete(tmpPath); } catch (Exception ex) { Safe.Ignore(ex, "MetroSyncHistoryStore.DeleteTmpState"); }
                 }
             }
         }
@@ -285,8 +286,9 @@ public sealed class MetroSyncHistoryStore : IItemIndex, IDisposable
                 var state = JsonSerializer.Deserialize(bytes, MetroSyncHistoryStoreJsonContext.Default.MetroSyncState);
                 return state?.LastAcknowledgedUpdateId ?? 0;
             }
-            catch
+            catch (Exception ex)
             {
+                Safe.Log(ex, "MetroSyncHistoryStore.LoadLastAcknowledgedUpdateId");
                 return 0;
             }
         }
@@ -308,7 +310,10 @@ public sealed class MetroSyncHistoryStore : IItemIndex, IDisposable
                 File.Delete(_statePath);
             }
         }
-        catch { }
+        catch (Exception ex)
+        {
+            Safe.Ignore(ex, "MetroSyncHistoryStore.DeleteState");
+        }
 
         try
         {
@@ -316,11 +321,14 @@ public sealed class MetroSyncHistoryStore : IItemIndex, IDisposable
             {
                 foreach (var file in Directory.EnumerateFiles(_directoryPath, "state.json*.tmp"))
                 {
-                    try { File.Delete(file); } catch { }
+                    try { File.Delete(file); } catch (Exception ex) { Safe.Ignore(ex, "MetroSyncHistoryStore.DeleteTmpStateFile"); }
                 }
             }
         }
-        catch { }
+        catch (Exception ex)
+        {
+            Safe.Ignore(ex, "MetroSyncHistoryStore.EnumerateTmpFiles");
+        }
     }
 
     private void EnsureIndexLoadedSync()
@@ -347,13 +355,15 @@ public sealed class MetroSyncHistoryStore : IItemIndex, IDisposable
                         if (item.MessageId > 0) _seenMessageIds.Add(item.MessageId);
                     }
                 }
-                catch (JsonException)
+                catch (JsonException ex)
                 {
+                    Safe.Ignore(ex, "MetroSyncHistoryStore.EnsureIndexLoadedSyncLine");
                 }
             }
         }
-        catch
+        catch (Exception ex)
         {
+            Safe.Log(ex, "MetroSyncHistoryStore.EnsureIndexLoadedSync");
         }
     }
 
@@ -390,9 +400,10 @@ public sealed class MetroSyncHistoryStore : IItemIndex, IDisposable
                         if (item.MessageId > 0) messageIds.Add(item.MessageId);
                     }
                 }
-                catch (JsonException)
+                catch (JsonException ex)
                 {
                     // Ignore corrupt/truncated line
+                    Safe.Ignore(ex, "MetroSyncHistoryStore.EnsureIndexLoadedAsyncLine");
                 }
             }
 
@@ -403,8 +414,9 @@ public sealed class MetroSyncHistoryStore : IItemIndex, IDisposable
                 _isIndexLoaded = true;
             }
         }
-        catch
+        catch (Exception ex)
         {
+            Safe.Log(ex, "MetroSyncHistoryStore.EnsureIndexLoadedAsync");
             lock (_indexLock) { _isIndexLoaded = true; }
         }
     }

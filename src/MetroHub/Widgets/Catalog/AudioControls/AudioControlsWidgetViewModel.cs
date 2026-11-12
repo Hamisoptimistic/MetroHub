@@ -157,7 +157,7 @@ public sealed partial class AudioControlsWidgetViewModel : WidgetViewModelBase
         ActiveDeviceName = device.Name;
         ActiveDeviceIcon = device.IconGlyph;
 
-        _ = Task.Run(() =>
+        Task.Run(() =>
         {
             try
             {
@@ -167,7 +167,7 @@ public sealed partial class AudioControlsWidgetViewModel : WidgetViewModelBase
             {
                 Safe.Log("AudioControlsWidget.SetDefaultPlaybackDevice", ex);
             }
-        });
+        }).FireAndForget("AudioControlsWidget.SetDefaultPlaybackDevice");
     }
 
     public void RefreshAll()
@@ -239,7 +239,7 @@ public sealed partial class AudioControlsWidgetViewModel : WidgetViewModelBase
     {
         if (!_isHubVisible) return;
 
-        _ = Application.Current?.Dispatcher.InvokeAsync(() =>
+        Application.Current?.Dispatcher.InvokeAsync(() =>
         {
             _isUpdatingMasterInternally = true;
             try
@@ -251,19 +251,19 @@ public sealed partial class AudioControlsWidgetViewModel : WidgetViewModelBase
             {
                 _isUpdatingMasterInternally = false;
             }
-        });
+        }).FireAndForget("AudioControlsWidget.MasterVolumeChanged");
     }
 
     private void OnAudioServiceDefaultDeviceChanged()
     {
         if (!_isHubVisible) return;
-        _ = Application.Current?.Dispatcher.InvokeAsync(RefreshAll);
+        Application.Current?.Dispatcher.InvokeAsync(RefreshAll).FireAndForget("AudioControlsWidget.RefreshAll");
     }
 
     private void OnAudioServiceDeviceListChanged()
     {
         if (!_isHubVisible) return;
-        _ = Application.Current?.Dispatcher.InvokeAsync(RefreshDevices);
+        Application.Current?.Dispatcher.InvokeAsync(RefreshDevices).FireAndForget("AudioControlsWidget.RefreshDevices");
     }
 
     public override void Pause()

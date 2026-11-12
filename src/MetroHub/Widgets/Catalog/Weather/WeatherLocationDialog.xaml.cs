@@ -7,6 +7,7 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
+using MetroHub.Core;
 using MetroHub.Core.Models.Geocoding;
 using MetroHub.Core.Services;
 using MetroHub.Presentation.Dialogs;
@@ -63,57 +64,68 @@ public sealed partial class WeatherLocationDialog : MetroDialog
 
     private async void OnWeatherInputTextChanged(object sender, TextChangedEventArgs e)
     {
-        WeatherStatusMessage.Visibility = Visibility.Collapsed;
-        if (_suppressSearch) return;
-
-        var raw = WeatherCityInput.Text;
-        string? normalized = WeatherLocationService.NormalizeQuery(raw);
-
-        if (string.IsNullOrEmpty(normalized))
-        {
-            CancelPendingSearch();
-            HideSuggestions();
-            _selectedLocation = null;
-            return;
-        }
-
-        var (location, _) = WeatherLocationService.ParseQuery(normalized);
-        if (!WeatherLocationService.LongEnough(location))
-        {
-            CancelPendingSearch();
-            HideSuggestions();
-            _selectedLocation = null;
-            return;
-        }
-
-        if (string.Equals(normalized, _activeKey, StringComparison.Ordinal))
-        {
-            return;
-        }
-
-        CancelPendingSearch();
-        _selectedLocation = null;
-
-        _searchCts = new CancellationTokenSource();
-        var token = _searchCts.Token;
-        int generation = ++_searchGeneration;
-        _activeKey = normalized;
-
         try
         {
-            await Task.Delay(300, token);
-            if (generation != _searchGeneration || token.IsCancellationRequested) return;
+            WeatherStatusMessage.Visibility = Visibility.Collapsed;
+            if (_suppressSearch) return;
 
-            var results = await WeatherLocationService.Instance.SearchLocationsAsync(normalized, token);
-            if (generation != _searchGeneration || token.IsCancellationRequested) return;
+            var raw = WeatherCityInput.Text;
+            string? normalized = WeatherLocationService.NormalizeQuery(raw);
 
-            ShowSuggestions(results);
+            if (string.IsNullOrEmpty(normalized))
+            {
+                CancelPendingSearch();
+                HideSuggestions();
+                _selectedLocation = null;
+                return;
+            }
+
+            var (location, _) = WeatherLocationService.ParseQuery(normalized);
+            if (!WeatherLocationService.LongEnough(location))
+            {
+                CancelPendingSearch();
+                HideSuggestions();
+                _selectedLocation = null;
+                return;
+            }
+
+            if (string.Equals(normalized, _activeKey, StringComparison.Ordinal))
+            {
+                return;
+            }
+
+            CancelPendingSearch();
+            _selectedLocation = null;
+
+            _searchCts = new CancellationTokenSource();
+            var token = _searchCts.Token;
+            int generation = ++_searchGeneration;
+            _activeKey = normalized;
+
+            try
+            {
+                await Task.Delay(300, token);
+                if (generation != _searchGeneration || token.IsCancellationRequested) return;
+
+                var results = await WeatherLocationService.Instance.SearchLocationsAsync(normalized, token);
+                if (generation != _searchGeneration || token.IsCancellationRequested) return;
+
+                ShowSuggestions(results);
+            }
+            catch (OperationCanceledException ex)
+            {
+                Safe.Ignore(ex, "WeatherLocationDialog.SearchCanceled");
+            }
+            catch (Exception ex)
+            {
+                Safe.Log(ex, "WeatherLocationDialog.SearchFailed");
+                WeatherStatusMessage.Text = $"Location search failed: {ex.Message}";
+                WeatherStatusMessage.Visibility = Visibility.Visible;
+            }
         }
-        catch (OperationCanceledException) { }
         catch (Exception ex)
         {
-            WeatherStatusMessage.Text = $"Location search failed: {ex.Message}";
-            WeatherStatusMessage.Visibility = Visibility.Visible;
+            Safe.Log(ex, "WeatherLocationDialog.OnWeatherInputTextChanged");
         }
     }
 
@@ -153,7 +165,10 @@ public sealed partial class WeatherLocationDialog : MetroDialog
             cts?.Cancel();
             cts?.Dispose();
         }
-        catch { }
+        catch (Exception ex)
+        {
+            Safe.Ignore(ex, "WeatherLocationDialog.CancelPendingSearch");
+        }
     }
 
     private void OnWeatherInputPreviewKeyDown(object sender, KeyEventArgs e)
@@ -235,79 +250,95 @@ public sealed partial class WeatherLocationDialog : MetroDialog
 
     private async void OnWeatherAutoLocationClick(object sender, RoutedEventArgs e)
     {
-        if (_weatherVm == null) return;
-
-        HideSuggestions();
-        CancelPendingSearch();
-
-        WeatherActionSpinner.Visibility = Visibility.Visible;
-        WeatherStatusMessage.Visibility = Visibility.Collapsed;
-
         try
         {
-            await _weatherVm.UseAutoLocationAsync();
-            DialogResult = true;
-            Close();
-        }
-        catch (Exception ex)
-        {
-            WeatherActionSpinner.Visibility = Visibility.Collapsed;
-            WeatherStatusMessage.Text = $"Error: {ex.Message}";
-            WeatherStatusMessage.Visibility = Visibility.Visible;
-        }
-    }
+            if (_weatherVm == null) return;
 
-    private async void OnSaveLocationClick(object sender, RoutedEventArgs e)
-    {
-        if (_weatherVm == null) return;
-        string query = WeatherCityInput.Text.Trim();
-        if (string.IsNullOrWhiteSpace(query))
-        {
-            WeatherStatusMessage.Text = "Please enter a city or location name.";
-            WeatherStatusMessage.Visibility = Visibility.Visible;
-            WeatherCityInput.Focus();
-            return;
-        }
+            HideSuggestions();
+            CancelPendingSearch();
 
-        HideSuggestions();
-        CancelPendingSearch();
+            WeatherActionSpinner.Visibility = Visibility.Visible;
+            WeatherStatusMessage.Visibility = Visibility.Collapsed;
 
-        WeatherActionSpinner.Visibility = Visibility.Visible;
-        WeatherStatusMessage.Visibility = Visibility.Collapsed;
-
-        try
-        {
-            bool success;
-            if (_selectedLocation != null &&
-                _selectedLocation.Latitude.HasValue &&
-                _selectedLocation.Longitude.HasValue &&
-                string.Equals(_selectedLocation.Name.Trim(), query, StringComparison.OrdinalIgnoreCase))
+            try
             {
-                success = await _weatherVm.SetCustomLocationAsync(_selectedLocation.Name, _selectedLocation.Latitude.Value, _selectedLocation.Longitude.Value);
-            }
-            else
-            {
-                success = await _weatherVm.SetCustomCityAsync(query);
-            }
-
-            WeatherActionSpinner.Visibility = Visibility.Collapsed;
-
-            if (success)
-            {
+                await _weatherVm.UseAutoLocationAsync();
                 DialogResult = true;
                 Close();
             }
-            else
+            catch (Exception ex)
             {
-                WeatherStatusMessage.Text = $"City \"{query}\" not found. Try including region/country.";
+                Safe.Log(ex, "WeatherLocationDialog.UseAutoLocationAsync");
+                WeatherActionSpinner.Visibility = Visibility.Collapsed;
+                WeatherStatusMessage.Text = $"Error: {ex.Message}";
                 WeatherStatusMessage.Visibility = Visibility.Visible;
             }
         }
         catch (Exception ex)
         {
-            WeatherActionSpinner.Visibility = Visibility.Collapsed;
-            WeatherStatusMessage.Text = $"Search failed: {ex.Message}";
-            WeatherStatusMessage.Visibility = Visibility.Visible;
+            Safe.Log(ex, "WeatherLocationDialog.OnWeatherAutoLocationClick");
+        }
+    }
+
+    private async void OnSaveLocationClick(object sender, RoutedEventArgs e)
+    {
+        try
+        {
+            if (_weatherVm == null) return;
+            string query = WeatherCityInput.Text.Trim();
+            if (string.IsNullOrWhiteSpace(query))
+            {
+                WeatherStatusMessage.Text = "Please enter a city or location name.";
+                WeatherStatusMessage.Visibility = Visibility.Visible;
+                WeatherCityInput.Focus();
+                return;
+            }
+
+            HideSuggestions();
+            CancelPendingSearch();
+
+            WeatherActionSpinner.Visibility = Visibility.Visible;
+            WeatherStatusMessage.Visibility = Visibility.Collapsed;
+
+            try
+            {
+                bool success;
+                if (_selectedLocation != null &&
+                    _selectedLocation.Latitude.HasValue &&
+                    _selectedLocation.Longitude.HasValue &&
+                    string.Equals(_selectedLocation.Name.Trim(), query, StringComparison.OrdinalIgnoreCase))
+                {
+                    success = await _weatherVm.SetCustomLocationAsync(_selectedLocation.Name, _selectedLocation.Latitude.Value, _selectedLocation.Longitude.Value);
+                }
+                else
+                {
+                    success = await _weatherVm.SetCustomCityAsync(query);
+                }
+
+                WeatherActionSpinner.Visibility = Visibility.Collapsed;
+
+                if (success)
+                {
+                    DialogResult = true;
+                    Close();
+                }
+                else
+                {
+                    WeatherStatusMessage.Text = $"City \"{query}\" not found. Try including region/country.";
+                    WeatherStatusMessage.Visibility = Visibility.Visible;
+                }
+            }
+            catch (Exception ex)
+            {
+                Safe.Log(ex, "WeatherLocationDialog.SetCustomLocationAsync");
+                WeatherActionSpinner.Visibility = Visibility.Collapsed;
+                WeatherStatusMessage.Text = $"Search failed: {ex.Message}";
+                WeatherStatusMessage.Visibility = Visibility.Visible;
+            }
+        }
+        catch (Exception ex)
+        {
+            Safe.Log(ex, "WeatherLocationDialog.OnSaveLocationClick");
         }
     }
 

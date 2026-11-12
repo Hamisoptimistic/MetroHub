@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Windows;
 using System.Windows.Media;
+using MetroHub.Core.Services;
 
 namespace MetroHub.Widgets.Catalog.Weather;
 
@@ -237,7 +238,7 @@ public static class WeatherPalettes
 
     private static WeatherConditionInfo HandleUnknownWeatherCode(int weatherCode)
     {
-        Debug.WriteLine($"[WeatherPalettes] Warning: Received unmapped WMO weather code: {weatherCode}. Falling back to 'not-available'.");
+        Safe.LogThrottled(new ArgumentOutOfRangeException(nameof(weatherCode), weatherCode, "Received unmapped WMO weather code"), "WeatherPalettes.UnknownWeatherCode");
         return new WeatherConditionInfo("not-available", "Unknown", DefaultGlow, "\uE9C5");
     }
 

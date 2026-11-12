@@ -9,6 +9,7 @@ using System.Windows.Input;
 using System.Windows.Markup;
 using System.Windows.Media;
 using System.Windows.Threading;
+using MetroHub.Core.Services;
 
 namespace MetroHub.Widgets.Catalog.Notepad;
 
@@ -428,9 +429,9 @@ public sealed partial class NotepadWidgetView : UserControl
             var plainText = range.Text.TrimEnd('\r', '\n');
             vm.UpdateTextMetrics(plainText);
         }
-        catch
+        catch (Exception ex)
         {
-            // Suppress intermediate parsing faults
+            Safe.Log(ex, "NotepadWidgetView.OnEditorTextChanged");
         }
     }
 
@@ -501,9 +502,9 @@ public sealed partial class NotepadWidgetView : UserControl
                 BulletListIcon.Foreground = isBulleted ? accentBrush : primaryBrush;
             }
         }
-        catch
+        catch (Exception ex)
         {
-            // Ignore format inspection faults on transitional edits
+            Safe.Log(ex, "NotepadWidgetView.UpdateFormattingState");
         }
     }
 
@@ -609,16 +610,18 @@ public sealed partial class NotepadWidgetView : UserControl
             {
                 xaml = XamlWriter.Save(EditorBox.Document);
             }
-            catch
+            catch (Exception ex)
             {
+                Safe.Log(ex, "NotepadWidgetView.SynchronizeDocumentMetrics.SaveXaml");
                 // Fall back to empty string so serialization failure doesn't lose notes
                 xaml = string.Empty;
             }
 
             vm.UpdateTextMetrics(plainText, xaml);
         }
-        catch
+        catch (Exception ex)
         {
+            Safe.Log(ex, "NotepadWidgetView.SynchronizeDocumentMetrics");
             if (!string.IsNullOrEmpty(plainText))
             {
                 vm.UpdateTextMetrics(plainText, string.Empty);
@@ -656,9 +659,9 @@ public sealed partial class NotepadWidgetView : UserControl
                 e.CancelCommand();
             }
         }
-        catch
+        catch (Exception ex)
         {
-            // Suppress paste validation faults
+            Safe.Log(ex, "NotepadWidgetView.OnEditorPasting");
         }
     }
 
@@ -666,11 +669,11 @@ public sealed partial class NotepadWidgetView : UserControl
     {
         if (sender is TextBox textBox && textBox.IsVisible)
         {
-            _ = Dispatcher.BeginInvoke(DispatcherPriority.Input, () =>
+            Dispatcher.BeginInvoke(DispatcherPriority.Input, () =>
             {
                 textBox.Focus();
                 textBox.SelectAll();
-            });
+            }).FireAndForget("NotepadWidgetView.TaskEditBoxFocus");
         }
     }
 
@@ -723,8 +726,9 @@ public sealed partial class NotepadWidgetView : UserControl
                 _isDocumentDirty = false;
             }
         }
-        catch
+        catch (Exception ex)
         {
+            Safe.Log(ex, "NotepadWidgetView.LoadDocumentXaml");
             // Retain plain text fallback on corrupt XAML
             if (!string.IsNullOrEmpty(vm.PlainText))
             {

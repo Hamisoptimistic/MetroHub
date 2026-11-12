@@ -5,6 +5,7 @@ using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 
+using MetroHub.Core;
 using MetroHub.Core.Services;
 
 namespace MetroHub.Widgets.Catalog.Weather.Services;
@@ -107,10 +108,11 @@ public sealed class LocationService
                 };
             }
         }
-        catch
+        catch (Exception ex)
         {
             // Windows Location services may be disabled, disallowed, or throw on Windows N/LTSC editions.
             // Fall through gracefully.
+            Safe.Ignore(ex, "LocationService.TryGetWinRtLocation");
         }
 
         return null;
@@ -151,9 +153,10 @@ public sealed class LocationService
                 };
             }
         }
-        catch
+        catch (Exception ex)
         {
             // Network failure or timeout; fall through gracefully.
+            Safe.LogThrottled(ex, "LocationService.TryGetIpLocation");
         }
 
         return null;
@@ -185,9 +188,10 @@ public sealed class LocationService
                 };
             }
         }
-        catch
+        catch (Exception ex)
         {
             // Geocoding network error
+            Safe.LogThrottled(ex, "LocationService.SearchCity");
         }
 
         return null;
@@ -203,9 +207,10 @@ public sealed class LocationService
                 return JsonSerializer.Deserialize<LocationCacheEntry>(json, JsonOptions);
             }
         }
-        catch
+        catch (Exception ex)
         {
             // Cache read error; ignore and re-resolve
+            Safe.Ignore(ex, "LocationService.LoadLocationFromCache");
         }
 
         return null;
@@ -221,9 +226,10 @@ public sealed class LocationService
             string json = JsonSerializer.Serialize(entry, JsonOptions);
             File.WriteAllText(LocationCachePath, json);
         }
-        catch
+        catch (Exception ex)
         {
             // Disk write failure
+            Safe.Log(ex, "LocationService.SaveLocationToCache");
         }
     }
 }

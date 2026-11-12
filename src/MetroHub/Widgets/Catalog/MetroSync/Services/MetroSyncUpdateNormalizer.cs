@@ -1,4 +1,5 @@
 using System.Text.Json;
+using MetroHub.Core.Services;
 using MetroHub.Widgets.Catalog.MetroSync.Models;
 
 namespace MetroHub.Widgets.Catalog.MetroSync.Services;
@@ -26,8 +27,9 @@ public sealed class MetroSyncUpdateNormalizer : IUpdateNormalizer
 
             return NormalizeMessage(message, receivedAt, isOutgoing: false, updateId: update.UpdateId);
         }
-        catch
+        catch (Exception ex)
         {
+            Safe.Log(ex, "MetroSyncUpdateNormalizer.NormalizeInbound");
             // Must never throw for malformed shapes
             return new TextPayloadItem
             {
@@ -65,8 +67,9 @@ public sealed class MetroSyncUpdateNormalizer : IUpdateNormalizer
 
             return NormalizeMessage(message, sentAt, isOutgoing: true, updateId: 0);
         }
-        catch
+        catch (Exception ex)
         {
+            Safe.Log(ex, "MetroSyncUpdateNormalizer.NormalizeOutbound");
             return new TextPayloadItem
             {
                 UpdateId = 0,

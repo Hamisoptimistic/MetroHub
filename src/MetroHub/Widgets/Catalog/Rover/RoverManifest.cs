@@ -5,6 +5,7 @@ using System.IO;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Windows;
+using MetroHub.Core.Services;
 
 namespace MetroHub.Widgets.Catalog.Rover;
 
@@ -129,7 +130,10 @@ public static class RoverManifest
             var info = Application.GetResourceStream(uri);
             if (info != null) return info.Stream;
         }
-        catch { }
+        catch (Exception ex)
+        {
+            Safe.Log(ex, "RoverManifest.TryOpenResource.ComponentQualified");
+        }
 
         // 2. Try simple pack URI
         try
@@ -138,7 +142,10 @@ public static class RoverManifest
             var info = Application.GetResourceStream(uri);
             if (info != null) return info.Stream;
         }
-        catch { }
+        catch (Exception ex)
+        {
+            Safe.Log(ex, "RoverManifest.TryOpenResource.Simple");
+        }
 
         // 3. Walk up the directory tree to find source or output files
         string? current = AppDomain.CurrentDomain.BaseDirectory;

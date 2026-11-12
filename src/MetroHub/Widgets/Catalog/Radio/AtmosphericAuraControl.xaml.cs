@@ -2,6 +2,7 @@ using System;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
+using MetroHub.Core.Services;
 using MetroHub.Widgets.Catalog.Radio.Services;
 
 namespace MetroHub.Widgets.Catalog.Radio;
@@ -106,8 +107,9 @@ public sealed partial class AtmosphericAuraControl : UserControl
             UpdateBatterySaverState();
             Windows.System.Power.PowerManager.EnergySaverStatusChanged += (_, _) => UpdateBatterySaverState();
         }
-        catch
+        catch (Exception ex)
         {
+            Safe.Log(ex, "AtmosphericAuraControl.StaticCtor");
             _isBatterySaver = false;
         }
     }
@@ -118,8 +120,9 @@ public sealed partial class AtmosphericAuraControl : UserControl
         {
             _isBatterySaver = Windows.System.Power.PowerManager.EnergySaverStatus == Windows.System.Power.EnergySaverStatus.On;
         }
-        catch
+        catch (Exception ex)
         {
+            Safe.Log(ex, "AtmosphericAuraControl.UpdateBatterySaverState");
             _isBatterySaver = false;
         }
     }

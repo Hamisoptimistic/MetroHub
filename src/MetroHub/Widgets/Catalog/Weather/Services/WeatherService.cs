@@ -5,6 +5,7 @@ using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 
+using MetroHub.Core;
 using MetroHub.Core.Services;
 
 namespace MetroHub.Widgets.Catalog.Weather.Services;
@@ -41,9 +42,10 @@ public sealed class WeatherService
                 return entry;
             }
         }
-        catch
+        catch (Exception ex)
         {
             // Cache read error; ignore
+            Safe.Ignore(ex, "WeatherService.GetCachedWeather");
         }
 
         return null;
@@ -95,9 +97,15 @@ public sealed class WeatherService
             await SaveWeatherCacheAsync(entry, cancellationToken).ConfigureAwait(false);
             return entry;
         }
-        catch
+        catch (OperationCanceledException ex)
         {
-            // Network failure or cancellation; return cached if available and coordinates match
+            Safe.Ignore(ex, "WeatherService.FetchWeatherCanceled");
+            return GetMatchingCachedWeather(latitude, longitude);
+        }
+        catch (Exception ex)
+        {
+            Safe.LogThrottled(ex, "WeatherService.FetchWeather");
+            // Network failure or error; return cached if available and coordinates match
             return GetMatchingCachedWeather(latitude, longitude);
         }
     }
@@ -125,8 +133,14 @@ public sealed class WeatherService
             await using var stream = await response.Content.ReadAsStreamAsync(cancellationToken).ConfigureAwait(false);
             return await JsonSerializer.DeserializeAsync<T>(stream, JsonOptions, cancellationToken).ConfigureAwait(false);
         }
-        catch
+        catch (OperationCanceledException ex)
         {
+            Safe.Ignore(ex, "WeatherService.FetchJsonCanceled");
+            return null;
+        }
+        catch (Exception ex)
+        {
+            Safe.LogThrottled(ex, "WeatherService.FetchJson");
             return null;
         }
     }
@@ -147,9 +161,10 @@ public sealed class WeatherService
             await File.WriteAllTextAsync(WeatherCachePath, json, cancellationToken).ConfigureAwait(false);
             _lastSavedCurrentTime = currentTime;
         }
-        catch
+        catch (Exception ex)
         {
             // Cache write error
+            Safe.Log(ex, "WeatherService.SaveWeatherCache");
         }
     }
 }

@@ -71,7 +71,7 @@ public sealed partial class RadioStationDialog : MetroDialog
 
     private void OnCatalogChanged(object? sender, EventArgs e)
     {
-        _ = Dispatcher.InvokeAsync(() =>
+        Dispatcher.InvokeAsync(() =>
         {
             string currentSelectedId = GetSelectedCategoryId();
             LoadCategories();
@@ -81,7 +81,7 @@ public sealed partial class RadioStationDialog : MetroDialog
             {
                 RadioCategoryComboBox.SelectedItem = match;
             }
-        });
+        }).FireAndForget("RadioStationDialog.OnCatalogChanged");
     }
 
     private void LoadCategories()
@@ -208,7 +208,7 @@ public sealed partial class RadioStationDialog : MetroDialog
         {
             if (RadioSearchResultsList.SelectedItem != null)
             {
-                _ = ApplyRadioStationAsync();
+                ApplyRadioStationAsync().FireAndForget("RadioStationDialog.ApplyStationOnEnter");
                 e.Handled = true;
             }
         }
@@ -239,7 +239,7 @@ public sealed partial class RadioStationDialog : MetroDialog
         RadioSearchPlaceholderText.Visibility = Visibility.Collapsed;
         RadioSearchSpinner.Visibility = Visibility.Visible;
 
-        _ = Task.Run(async () =>
+        Task.Run(async () =>
         {
             try
             {
@@ -290,7 +290,10 @@ public sealed partial class RadioStationDialog : MetroDialog
                     }
                 });
             }
-            catch (OperationCanceledException) { }
+            catch (OperationCanceledException ex)
+            {
+                Safe.Ignore(ex, "RadioStationDialog.SearchStationsCancelled");
+            }
             catch (Exception ex)
             {
                 Safe.Log("RadioStationDialog.SearchStations", ex);
@@ -305,7 +308,7 @@ public sealed partial class RadioStationDialog : MetroDialog
                     });
                 }
             }
-        }, token);
+        }, token).FireAndForget("RadioStationDialog.SearchStations");
     }
 
     private void OnRadioSearchResultsSelectionChanged(object sender, SelectionChangedEventArgs e)
@@ -332,7 +335,7 @@ public sealed partial class RadioStationDialog : MetroDialog
         {
             if (PrimaryActionButton.IsEnabled)
             {
-                _ = ApplyRadioStationAsync();
+                ApplyRadioStationAsync().FireAndForget("RadioStationDialog.ApplyStationOnDirectEnter");
                 e.Handled = true;
             }
         }
@@ -372,7 +375,7 @@ public sealed partial class RadioStationDialog : MetroDialog
         RadioProbeStatusText.Text = "Validating stream...";
         RadioProbeStatusText.Foreground = ProbeStatusActiveBrush;
 
-        _ = Task.Run(async () =>
+        Task.Run(async () =>
         {
             try
             {
@@ -413,7 +416,10 @@ public sealed partial class RadioStationDialog : MetroDialog
                                     string inferred = dot > 0 ? char.ToUpperInvariant(host[0]) + host[1..dot] : host;
                                     RadioDirectNameInput.Text = inferred;
                                 }
-                                catch { }
+                                catch (Exception ex)
+                                {
+                                    Safe.Log(ex, "RadioStationDialog.InferHostName");
+                                }
                             }
                         }
                     }
@@ -430,7 +436,10 @@ public sealed partial class RadioStationDialog : MetroDialog
                     UpdateDirectButtonState();
                 });
             }
-            catch (OperationCanceledException) { }
+            catch (OperationCanceledException ex)
+            {
+                Safe.Ignore(ex, "RadioStationDialog.ProbeUrlCancelled");
+            }
             catch (Exception ex)
             {
                 Safe.Log("RadioStationDialog.ProbeUrl", ex);
@@ -448,7 +457,7 @@ public sealed partial class RadioStationDialog : MetroDialog
                     });
                 }
             }
-        }, token);
+        }, token).FireAndForget("RadioStationDialog.ProbeUrl");
     }
 
     private void UpdateDirectButtonState()
@@ -556,6 +565,7 @@ public sealed partial class RadioStationDialog : MetroDialog
             }
             catch (Exception ex)
             {
+                Safe.Log(ex, "RadioStationDialog.AddCustomStation");
                 PrimaryActionButton.IsEnabled = true;
                 var targetStatus = RadioModeTabSelector.SelectedIndex == 0 ? RadioSearchStatusMessage : RadioDirectStatusMessage;
                 targetStatus.Text = $"Failed to save station: {ex.Message}";
@@ -597,7 +607,14 @@ public sealed partial class RadioStationDialog : MetroDialog
 
     private async void OnPrimaryActionButtonClick(object sender, RoutedEventArgs e)
     {
-        await ApplyRadioStationAsync();
+        try
+        {
+            await ApplyRadioStationAsync();
+        }
+        catch (Exception ex)
+        {
+            Safe.Log(ex, "RadioStationDialog.OnPrimaryActionButtonClick");
+        }
     }
 
     private void OnCloseButtonClick(object sender, RoutedEventArgs e)

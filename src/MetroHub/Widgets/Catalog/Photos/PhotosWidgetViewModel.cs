@@ -11,6 +11,7 @@ using System.Windows.Media.Imaging;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using MetroHub.Core.Models;
+using MetroHub.Core.Services;
 using MetroHub.Widgets.Messaging;
 using MetroHub.Widgets.Serialization;
 
@@ -109,16 +110,16 @@ public sealed partial class PhotosWidgetViewModel : WidgetViewModelBase, IWidget
         _slideshowTimer = new System.Threading.Timer(_ =>
         {
             if (!_isHubVisible || _isHovered || PhotoCount <= 1 || _isTransitioning) return;
-            _ = Application.Current?.Dispatcher.InvokeAsync(async () =>
+            Application.Current?.Dispatcher.InvokeAsync(async () =>
             {
                 if (!_isHubVisible || _isHovered || PhotoCount <= 1 || _isTransitioning) return;
                 await TransitionToNextPhotoAsync(forward: true);
-            });
+            }).FireAndForget("PhotosWidget.SlideshowTick");
         }, null, Timeout.Infinite, Timeout.Infinite);
 
         if (HasFolder)
         {
-            _ = ScanFolderAsync(FolderPath!, keepIndex: false);
+            ScanFolderAsync(FolderPath!, keepIndex: false).FireAndForget("PhotosWidget.InitScanFolder");
         }
     }
 
@@ -199,7 +200,7 @@ public sealed partial class PhotosWidgetViewModel : WidgetViewModelBase, IWidget
         }
         catch (Exception ex)
         {
-            System.Diagnostics.Debug.WriteLine($"[PhotosWidget] Failed to open folder picker: {ex.Message}");
+            Safe.Log(ex, "PhotosWidget.ChooseFolder");
         }
     }
 
@@ -216,7 +217,7 @@ public sealed partial class PhotosWidgetViewModel : WidgetViewModelBase, IWidget
         }
         catch (Exception ex)
         {
-            System.Diagnostics.Debug.WriteLine($"[PhotosWidget] Failed to open photo: {ex.Message}");
+            Safe.Log(ex, "PhotosWidget.OpenCurrentPhoto");
         }
     }
 
@@ -235,10 +236,10 @@ public sealed partial class PhotosWidgetViewModel : WidgetViewModelBase, IWidget
             {
                 if (!string.IsNullOrWhiteSpace(CurrentPhotoPath) && File.Exists(CurrentPhotoPath))
                 {
-                    try { System.Diagnostics.Process.Start("explorer.exe", $"/select,\"{CurrentPhotoPath}\""); } catch { }
+                    try { System.Diagnostics.Process.Start("explorer.exe", $"/select,\"{CurrentPhotoPath}\""); } catch (Exception ex) { Safe.Log(ex, "PhotosWidget.OpenContainingFolder"); }
                 }
             });
-            yield return WidgetMenu.Item("Next Photo", SymbolRegular.ArrowRight24, () => _ = NextPhoto());
+            yield return WidgetMenu.Item("Next Photo", SymbolRegular.ArrowRight24, () => NextPhoto().FireAndForget("PhotosWidget.NextPhoto"));
             yield return WidgetMenu.Divider();
         }
 
@@ -280,7 +281,7 @@ public sealed partial class PhotosWidgetViewModel : WidgetViewModelBase, IWidget
         if (string.IsNullOrWhiteSpace(FolderName)) FolderName = path;
 
         SaveSettings();
-        _ = ScanFolderAsync(path, keepIndex: false);
+        ScanFolderAsync(path, keepIndex: false).FireAndForget("PhotosWidget.ScanFolder");
     }
 
     public async Task ScanFolderAsync(string path, bool keepIndex = false)
@@ -306,8 +307,9 @@ public sealed partial class PhotosWidgetViewModel : WidgetViewModelBase, IWidget
                     .Where(f => SupportedExtensions.Contains(Path.GetExtension(f)))
                     .ToList();
             }
-            catch
+            catch (Exception ex)
             {
+                Safe.Log(ex, "PhotosWidget.ScanFolderEnumerateFiles");
                 return new List<string>();
             }
         });
@@ -504,8 +506,9 @@ public sealed partial class PhotosWidgetViewModel : WidgetViewModelBase, IWidget
                         }
                     }
                 }
-                catch
+                catch (Exception ex)
                 {
+                    Safe.Log(ex, "PhotosWidget.DecodeDimensions");
                     targetWidth = 640;
                     targetHeight = 0;
                 }
@@ -533,8 +536,9 @@ public sealed partial class PhotosWidgetViewModel : WidgetViewModelBase, IWidget
 
                 return new DecodedPhotoResult(image, isPortrait);
             }
-            catch
+            catch (Exception ex)
             {
+                Safe.Log(ex, "PhotosWidget.DecodePhotoStream");
                 return null;
             }
         });
@@ -561,7 +565,7 @@ public sealed partial class PhotosWidgetViewModel : WidgetViewModelBase, IWidget
     {
         IncludeSubfolders = !IncludeSubfolders;
         SaveSettings();
-        if (HasFolder) _ = ScanFolderAsync(FolderPath!, keepIndex: false);
+        if (HasFolder) ScanFolderAsync(FolderPath!, keepIndex: false).FireAndForget("PhotosWidget.ToggleIncludeSubfolders");
     }
 
     public void SetFitMode(string mode)

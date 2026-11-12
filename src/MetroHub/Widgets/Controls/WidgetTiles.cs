@@ -7,6 +7,7 @@ using System.Windows.Media;
 using System.Windows.Media.Animation;
 using System.Windows.Media.Effects;
 using System.Windows.Threading;
+using MetroHub.Core.Services;
 using MetroHub.Presentation.Themes;
 using Wpf.Ui.Controls;
 
@@ -263,7 +264,7 @@ public sealed class WidgetTiles : Selector
     private void OnLoaded(object sender, RoutedEventArgs e)
     {
         SyncSelectionFromValue(SelectedValue);
-        _ = Dispatcher.InvokeAsync(() => UpdateIndicator(animate: false), DispatcherPriority.Loaded);
+        Dispatcher.InvokeAsync(() => UpdateIndicator(animate: false), DispatcherPriority.Loaded).FireAndForget("WidgetTiles.OnLoaded");
     }
 
     private void OnTilesMouseMove(object sender, MouseEventArgs e)
@@ -331,7 +332,7 @@ public sealed class WidgetTiles : Selector
             }
             else
             {
-                _ = Dispatcher.InvokeAsync(() => UpdateIndicator(false), DispatcherPriority.Loaded);
+                Dispatcher.InvokeAsync(() => UpdateIndicator(false), DispatcherPriority.Loaded).FireAndForget("WidgetTiles.UpdateIndicator");
                 return;
             }
         }

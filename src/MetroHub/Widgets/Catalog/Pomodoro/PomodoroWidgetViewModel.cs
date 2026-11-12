@@ -11,6 +11,7 @@ using System.Windows.Threading;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using MetroHub.Core.Models;
+using MetroHub.Core.Services;
 using MetroHub.Widgets.Serialization;
 
 namespace MetroHub.Widgets.Catalog.Pomodoro;
@@ -177,7 +178,10 @@ public sealed partial class PomodoroWidgetViewModel : WidgetViewModelBase, IWidg
             {
                 SystemSounds.Asterisk.Play();
             }
-            catch { }
+            catch (Exception ex)
+            {
+                Safe.Log(ex, "PomodoroWidget.PlaySound");
+            }
         }
 
         AdvancePhase(isNaturalCompletion: true);

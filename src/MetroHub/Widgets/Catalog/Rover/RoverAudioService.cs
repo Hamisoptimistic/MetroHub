@@ -5,6 +5,7 @@ using System.IO;
 using System.Runtime.InteropServices;
 using System.Security.Cryptography;
 using System.Text;
+using MetroHub.Core.Services;
 
 namespace MetroHub.Widgets.Catalog.Rover;
 
@@ -57,7 +58,10 @@ public sealed class RoverAudioService : IDisposable
         {
             Directory.CreateDirectory(localCacheDir);
         }
-        catch { }
+        catch (Exception ex)
+        {
+            Safe.LogThrottled(ex, "RoverAudioService.CreateDirectory");
+        }
 
         // Find source/output directory if present
         string? candidateDir = FindExistingSoundsDirectory();
@@ -96,9 +100,9 @@ public sealed class RoverAudioService : IDisposable
                     _soundPaths[key] = targetPath;
                 }
             }
-            catch
+            catch (Exception ex)
             {
-                // Fallback ignore
+                Safe.LogThrottled(ex, "RoverAudioService.ExtractResource");
             }
         }
     }
@@ -164,9 +168,9 @@ public sealed class RoverAudioService : IDisposable
                     _ = mciSendString($"play {alias} from 0", IntPtr.Zero, 0, IntPtr.Zero);
                 }
             }
-            catch
+            catch (Exception ex)
             {
-                // Graceful fallback
+                Safe.LogThrottled(ex, "RoverAudioService.PlaySound");
             }
         }
     }

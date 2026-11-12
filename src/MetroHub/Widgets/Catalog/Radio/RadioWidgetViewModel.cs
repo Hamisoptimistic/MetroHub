@@ -8,6 +8,7 @@ using System.Windows;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using MetroHub.Core.Models;
+using MetroHub.Core.Services;
 using MetroHub.Widgets.Catalog.Radio.Services;
 using MetroHub.Widgets.Serialization;
 
@@ -134,7 +135,7 @@ public sealed partial class RadioWidgetViewModel : WidgetViewModelBase
         }
         catch (Exception ex)
         {
-            Debug.WriteLine($"[RadioWidgetViewModel] Failed to load settings: {ex.Message}");
+            Safe.Log(ex, "RadioWidgetViewModel.LoadSettings");
         }
     }
 
@@ -153,7 +154,7 @@ public sealed partial class RadioWidgetViewModel : WidgetViewModelBase
         }
         catch (Exception ex)
         {
-            Debug.WriteLine($"[RadioWidgetViewModel] Failed to save settings: {ex.Message}");
+            Safe.Log(ex, "RadioWidgetViewModel.SaveSettings");
         }
     }
 
@@ -334,7 +335,7 @@ public sealed partial class RadioWidgetViewModel : WidgetViewModelBase
         }
         catch (Exception ex)
         {
-            Debug.WriteLine($"[RadioWidgetViewModel] Failed to copy URL: {ex.Message}");
+            Safe.Log(ex, "RadioWidgetViewModel.CopyUrl");
         }
     }
 
@@ -417,7 +418,7 @@ public sealed partial class RadioWidgetViewModel : WidgetViewModelBase
         var dispatcher = Application.Current?.Dispatcher;
         if (dispatcher != null && !dispatcher.CheckAccess() && dispatcher.Thread.IsAlive && !dispatcher.HasShutdownStarted)
         {
-            _ = dispatcher.BeginInvoke(action);
+            dispatcher.BeginInvoke(action).FireAndForget("RadioWidgetViewModel.DispatchToUi");
             return;
         }
 

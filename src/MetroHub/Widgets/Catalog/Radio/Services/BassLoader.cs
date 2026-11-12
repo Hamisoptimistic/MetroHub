@@ -5,6 +5,7 @@ using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Threading;
 using ManagedBass;
+using MetroHub.Core.Services;
 
 namespace MetroHub.Widgets.Catalog.Radio.Services;
 
@@ -87,7 +88,7 @@ public static class BassLoader
         }
         catch (Exception ex)
         {
-            Debug.WriteLine($"[BassLoader] Failed to register DllImportResolver: {ex.Message}");
+            Safe.Log(ex, "BassLoader.RegisterResolver");
         }
     }
 }

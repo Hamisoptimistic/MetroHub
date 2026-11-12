@@ -276,7 +276,7 @@ public sealed partial class MediaWidgetViewModel : WidgetViewModelBase, IWidgetC
 
         LoadSettings(model.SettingsJson);
 
-        _ = InitializeMediaControllerAsync();
+        InitializeMediaControllerAsync().FireAndForget("MediaWidget.InitializeMediaController");
     }
 
     private void OnModelPropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
@@ -325,7 +325,7 @@ public sealed partial class MediaWidgetViewModel : WidgetViewModelBase, IWidgetC
         catch (Exception ex)
         {
             _isMediaManagerStarted = false;
-            Debug.WriteLine($"[MediaWidget] Init failed: {ex.Message}");
+            Safe.Log(ex, "MediaWidget.InitializeMediaController");
             RunOnUi(ResetToNoMedia);
         }
     }
@@ -353,13 +353,14 @@ public sealed partial class MediaWidgetViewModel : WidgetViewModelBase, IWidgetC
                     : sessions.Values.FirstOrDefault(s => s.Id != excludeSessionId);
             }
         }
-        catch (InvalidOperationException)
+        catch (InvalidOperationException ex)
         {
             // Thrown if MediaManager has not completed StartAsync or is currently shutting down
+            Safe.Log(ex, "MediaWidget.SafeGetFallbackSession");
         }
         catch (Exception ex)
         {
-            Debug.WriteLine($"[MediaWidget] SafeGetFallbackSession failed: {ex.Message}");
+            Safe.Log(ex, "MediaWidget.SafeGetFallbackSession");
         }
 
         return null;
@@ -385,13 +386,13 @@ public sealed partial class MediaWidgetViewModel : WidgetViewModelBase, IWidgetC
                 else
                 {
                     LogArt($"focus lost, no fallback — grace period {NoMediaGraceMs}ms before reset");
-                    _ = ScheduleNoMediaGraceCheckAsync(_activeSession?.Id ?? string.Empty);
+                    ScheduleNoMediaGraceCheckAsync(_activeSession?.Id ?? string.Empty).FireAndForget("MediaWidget.ScheduleNoMediaGraceCheck");
                 }
             }
         }
         catch (Exception ex)
         {
-            Debug.WriteLine($"[MediaWidget] OnFocusedSessionChanged failed: {ex.Message}");
+            Safe.Log(ex, "MediaWidget.OnFocusedSessionChanged");
         }
     }
 
@@ -408,7 +409,7 @@ public sealed partial class MediaWidgetViewModel : WidgetViewModelBase, IWidgetC
         }
         catch (Exception ex)
         {
-            Debug.WriteLine($"[MediaWidget] OnAnySessionOpened failed: {ex.Message}");
+            Safe.Log(ex, "MediaWidget.OnAnySessionOpened");
         }
     }
 
@@ -433,13 +434,13 @@ public sealed partial class MediaWidgetViewModel : WidgetViewModelBase, IWidgetC
                     // churns its SMTC session on every track change / skip).
                     // Grace-period instead of wiping artwork immediately.
                     LogArt($"active session closed — grace period {NoMediaGraceMs}ms before reset");
-                    _ = ScheduleNoMediaGraceCheckAsync(mediaSession.Id);
+                    ScheduleNoMediaGraceCheckAsync(mediaSession.Id).FireAndForget("MediaWidget.ScheduleNoMediaGraceCheck");
                 }
             }
         }
         catch (Exception ex)
         {
-            Debug.WriteLine($"[MediaWidget] OnAnySessionClosed failed: {ex.Message}");
+            Safe.Log(ex, "MediaWidget.OnAnySessionClosed");
         }
     }
 
@@ -466,7 +467,7 @@ public sealed partial class MediaWidgetViewModel : WidgetViewModelBase, IWidgetC
         }
         catch (Exception ex)
         {
-            Debug.WriteLine($"[MediaWidget] OnAnyPlaybackStateChanged failed: {ex.Message}");
+            Safe.Log(ex, "MediaWidget.OnAnyPlaybackStateChanged");
         }
     }
 
@@ -484,7 +485,7 @@ public sealed partial class MediaWidgetViewModel : WidgetViewModelBase, IWidgetC
 
             if (_activeSession.Id == mediaSession.Id)
             {
-                _ = ApplyMediaPropertiesAsync(mediaSession, mediaProperties);
+                ApplyMediaPropertiesAsync(mediaSession, mediaProperties).FireAndForget("MediaWidget.ApplyMediaProperties");
             }
             else
             {
@@ -493,7 +494,7 @@ public sealed partial class MediaWidgetViewModel : WidgetViewModelBase, IWidgetC
         }
         catch (Exception ex)
         {
-            Debug.WriteLine($"[MediaWidget] OnAnyMediaPropertyChanged failed: {ex.Message}");
+            Safe.Log(ex, "MediaWidget.OnAnyMediaPropertyChanged");
         }
     }
 
@@ -522,7 +523,7 @@ public sealed partial class MediaWidgetViewModel : WidgetViewModelBase, IWidgetC
                     if (playback != null) ApplyPlaybackInfo(playback);
                 });
 
-                _ = Task.Run(async () =>
+                Task.Run(async () =>
                 {
                     try
                     {
@@ -532,13 +533,16 @@ public sealed partial class MediaWidgetViewModel : WidgetViewModelBase, IWidgetC
                             await ApplyMediaPropertiesAsync(session, props);
                         }
                     }
-                    catch { }
-                });
+                    catch (Exception ex)
+                    {
+                        Safe.Log(ex, "MediaWidget.GetMediaProperties");
+                    }
+                }).FireAndForget("MediaWidget.GetMediaProperties");
             }
         }
         catch (Exception ex)
         {
-            Debug.WriteLine($"[MediaWidget] SetActiveSession error: {ex.Message}");
+            Safe.Log(ex, "MediaWidget.SetActiveSession");
         }
     }
 
@@ -813,7 +817,7 @@ public sealed partial class MediaWidgetViewModel : WidgetViewModelBase, IWidgetC
 
         if (scheduleRetry)
         {
-            _ = RetryMissingArtworkAsync(session, artTrackId);
+            RetryMissingArtworkAsync(session, artTrackId).FireAndForget("MediaWidget.RetryMissingArtwork");
         }
     }
 
@@ -836,8 +840,9 @@ public sealed partial class MediaWidgetViewModel : WidgetViewModelBase, IWidgetC
 
             File.AppendAllText(path, $"{DateTime.Now:HH:mm:ss.fff} {message}{Environment.NewLine}");
         }
-        catch
+        catch (Exception ex)
         {
+            Safe.Ignore(ex, "MediaWidget.LogArt");
             // Diagnostics must never break playback.
         }
     }
@@ -932,7 +937,7 @@ public sealed partial class MediaWidgetViewModel : WidgetViewModelBase, IWidgetC
         }
         catch (Exception ex)
         {
-            Debug.WriteLine($"[MediaWidget] Artwork retry failed: {ex.Message}");
+            Safe.Log(ex, "MediaWidget.ArtworkRetry");
         }
         finally
         {
@@ -970,7 +975,7 @@ public sealed partial class MediaWidgetViewModel : WidgetViewModelBase, IWidgetC
         }
         catch (Exception ex)
         {
-            Debug.WriteLine($"[MediaWidget] Grace check failed: {ex.Message}");
+            Safe.Log(ex, "MediaWidget.ScheduleNoMediaGraceCheck");
         }
     }
 
@@ -1001,7 +1006,7 @@ public sealed partial class MediaWidgetViewModel : WidgetViewModelBase, IWidgetC
         }
         catch (Exception ex)
         {
-            Debug.WriteLine($"[MediaWidget] TogglePlayPause error: {ex.Message}");
+            Safe.Log(ex, "MediaWidget.TogglePlayPause");
         }
     }
 
@@ -1017,7 +1022,7 @@ public sealed partial class MediaWidgetViewModel : WidgetViewModelBase, IWidgetC
         }
         catch (Exception ex)
         {
-            Debug.WriteLine($"[MediaWidget] SkipNext error: {ex.Message}");
+            Safe.Log(ex, "MediaWidget.SkipNext");
         }
     }
 
@@ -1033,7 +1038,7 @@ public sealed partial class MediaWidgetViewModel : WidgetViewModelBase, IWidgetC
         }
         catch (Exception ex)
         {
-            Debug.WriteLine($"[MediaWidget] SkipPrevious error: {ex.Message}");
+            Safe.Log(ex, "MediaWidget.SkipPrevious");
         }
     }
 
@@ -1118,7 +1123,10 @@ public sealed partial class MediaWidgetViewModel : WidgetViewModelBase, IWidgetC
                     });
                 }
             }
-            catch { }
+            catch (Exception ex)
+            {
+                Safe.Log(ex, "MediaWidget.Resume");
+            }
         }
     }
 
@@ -1133,7 +1141,10 @@ public sealed partial class MediaWidgetViewModel : WidgetViewModelBase, IWidgetC
                 _settings = parsed;
             }
         }
-        catch { }
+        catch (Exception ex)
+        {
+            Safe.Log(ex, "MediaWidget.LoadSettings");
+        }
     }
 
     public override void SaveSettings()
@@ -1153,7 +1164,7 @@ public sealed partial class MediaWidgetViewModel : WidgetViewModelBase, IWidgetC
         }
         else if (!app.Dispatcher.HasShutdownStarted)
         {
-            _ = app.Dispatcher.InvokeAsync(action);
+            app.Dispatcher.InvokeAsync(action).FireAndForget("MediaWidget.RunOnUi");
         }
     }
 
@@ -1176,9 +1187,7 @@ public sealed partial class MediaWidgetViewModel : WidgetViewModelBase, IWidgetC
         }
         catch (Exception ex)
         {
-            Debug.WriteLine(
-                $"[MediaWidget] ReadThumbnailBytesAsync failed: {ex.Message}");
-
+            Safe.Log(ex, "MediaWidget.ReadThumbnailBytesAsync");
             return null;
         }
     }
@@ -1201,8 +1210,9 @@ public sealed partial class MediaWidgetViewModel : WidgetViewModelBase, IWidgetC
 
             return (frame.PixelWidth, frame.PixelHeight);
         }
-        catch
+        catch (Exception ex)
         {
+            Safe.Log(ex, "MediaWidget.ReadSourceDimensions");
             return (0, 0);
         }
     }
@@ -1218,8 +1228,9 @@ public sealed partial class MediaWidgetViewModel : WidgetViewModelBase, IWidgetC
         {
             return BitConverter.ToUInt64(SHA256.HashData(bytes), 0);
         }
-        catch
+        catch (Exception ex)
         {
+            Safe.Log(ex, "MediaWidget.Fingerprint");
             return 0;
         }
     }
@@ -1248,9 +1259,7 @@ public sealed partial class MediaWidgetViewModel : WidgetViewModelBase, IWidgetC
         }
         catch (Exception ex)
         {
-            Debug.WriteLine(
-                $"[MediaWidget] DecodeBackdrop failed: {ex.Message}");
-
+            Safe.Log(ex, "MediaWidget.DecodeBackdrop");
             return null;
         }
     }
@@ -1318,8 +1327,9 @@ public sealed partial class MediaWidgetViewModel : WidgetViewModelBase, IWidgetC
                 originalWidth = frame.PixelWidth;
                 originalHeight = frame.PixelHeight;
             }
-            catch
+            catch (Exception ex)
             {
+                Safe.Log(ex, "MediaWidget.DecodeArtwork.Header");
                 // Header unreadable: fall through and decode at native size.
                 memory.Position = 0;
             }
@@ -1366,9 +1376,7 @@ public sealed partial class MediaWidgetViewModel : WidgetViewModelBase, IWidgetC
         }
         catch (Exception ex)
         {
-            Debug.WriteLine(
-                $"[MediaWidget] DecodeArtwork failed: {ex.Message}");
-
+            Safe.Log(ex, "MediaWidget.DecodeArtwork");
             return null;
         }
     }
@@ -1400,9 +1408,7 @@ public sealed partial class MediaWidgetViewModel : WidgetViewModelBase, IWidgetC
         }
         catch (Exception ex)
         {
-            Debug.WriteLine(
-                $"[MediaWidget] EncodeThumbnailCache failed: {ex.Message}");
-
+            Safe.Log(ex, "MediaWidget.EncodeThumbnailCache");
             return null;
         }
     }
@@ -1517,7 +1523,10 @@ public sealed partial class MediaWidgetViewModel : WidgetViewModelBase, IWidgetC
                 }
             }
         }
-        catch { }
+        catch (Exception ex)
+        {
+            Safe.Log(ex, "MediaWidget.ResolveAppDisplayName");
+        }
         return null;
     }
 

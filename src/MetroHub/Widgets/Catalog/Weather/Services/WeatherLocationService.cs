@@ -8,6 +8,7 @@ using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 using MetroHub.Core.Models.Geocoding;
+using MetroHub.Core.Services;
 
 
 namespace MetroHub.Widgets.Catalog.Weather.Services;
@@ -58,8 +59,9 @@ public sealed class WeatherLocationService
         {
             throw;
         }
-        catch
+        catch (Exception ex)
         {
+            Safe.LogThrottled(ex, "WeatherLocationService.GeocodeOpenMeteo");
             openMeteoResult = ([], 0);
         }
 
@@ -79,8 +81,9 @@ public sealed class WeatherLocationService
             {
                 throw;
             }
-            catch
+            catch (Exception ex)
             {
+                Safe.LogThrottled(ex, "WeatherLocationService.GeocodePhoton");
                 results = [];
             }
 
@@ -136,8 +139,9 @@ public sealed class WeatherLocationService
             if (sb.Length > 0 && char.IsHighSurrogate(sb[^1])) sb.Length--;
             return sb.ToString();
         }
-        catch (ArgumentException)
+        catch (ArgumentException ex)
         {
+            Safe.Ignore(ex, "WeatherLocationService.NormalizeQuery");
             return null;
         }
     }

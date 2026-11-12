@@ -206,9 +206,10 @@ public sealed partial class MetroSyncWidgetViewModel : WidgetViewModelBase, IWid
                 });
             }
         }
-        catch (OperationCanceledException)
+        catch (OperationCanceledException ex)
         {
             // Initialization cancelled
+            Safe.Ignore(ex, "MetroSyncWidgetViewModel.InitializeAsyncCanceled");
         }
         catch (Exception ex)
         {
@@ -299,7 +300,7 @@ public sealed partial class MetroSyncWidgetViewModel : WidgetViewModelBase, IWid
         }
         finally
         {
-            try { _engineLock.Release(); } catch (ObjectDisposedException) { }
+            try { _engineLock.Release(); } catch (ObjectDisposedException ex) { Safe.Ignore(ex, "MetroSyncWidgetViewModel.ReleaseEngineLock"); }
         }
     }
 
@@ -313,8 +314,9 @@ public sealed partial class MetroSyncWidgetViewModel : WidgetViewModelBase, IWid
             {
                 await _engine.DisposeAsync().ConfigureAwait(false);
             }
-            catch
+            catch (Exception ex)
             {
+                Safe.Ignore(ex, "MetroSyncWidgetViewModel.DisposeEngineAsync");
                 _engine.Dispose();
             }
             _engine = null;
@@ -326,9 +328,10 @@ public sealed partial class MetroSyncWidgetViewModel : WidgetViewModelBase, IWid
             {
                 await _consumerTask.ConfigureAwait(false);
             }
-            catch
+            catch (Exception ex)
             {
                 // Ignored on teardown
+                Safe.Ignore(ex, "MetroSyncWidgetViewModel.TeardownConsumer");
             }
             _consumerTask = null;
         }
@@ -398,9 +401,10 @@ public sealed partial class MetroSyncWidgetViewModel : WidgetViewModelBase, IWid
                 }
             }
         }
-        catch (OperationCanceledException)
+        catch (OperationCanceledException ex)
         {
             // Normal shutdown
+            Safe.Ignore(ex, "MetroSyncWidgetViewModel.ConsumeEngineCanceled");
         }
         catch (Exception ex)
         {
@@ -459,7 +463,7 @@ public sealed partial class MetroSyncWidgetViewModel : WidgetViewModelBase, IWid
         }
 
         // 2. Non-blocking background fetch via WebFaviconService
-        _ = Task.Run(async () =>
+        Task.Run(async () =>
         {
             try
             {
@@ -474,11 +478,15 @@ public sealed partial class MetroSyncWidgetViewModel : WidgetViewModelBase, IWid
                     }
                 }
             }
-            catch (Exception ex) when (ex is not OperationCanceledException)
+            catch (OperationCanceledException ex)
             {
-                Safe.Log(ex, $"Failed to fetch favicon for URL '{url}'");
+                Safe.Ignore(ex, "MetroSyncWidgetViewModel.FaviconFetchCanceled");
             }
-        });
+            catch (Exception ex)
+            {
+                Safe.Log(ex, "MetroSyncWidgetViewModel.FaviconFetch");
+            }
+        }).FireAndForget("MetroSyncWidgetViewModel.FetchFavicon");
     }
 
     internal void AddToFeed(MetroSyncMessageItem item)
@@ -508,17 +516,21 @@ public sealed partial class MetroSyncWidgetViewModel : WidgetViewModelBase, IWid
         long lastAck = newOffset - 1;
         if (lastAck > 0)
         {
-            _ = Task.Run(async () =>
+            Task.Run(async () =>
             {
                 try
                 {
                     await _historyStore.SaveLastAcknowledgedUpdateIdAsync(lastAck, _lifecycleCts.Token).ConfigureAwait(false);
                 }
-                catch (Exception ex) when (ex is not OperationCanceledException)
+                catch (OperationCanceledException ex)
                 {
-                    Safe.Log(ex, "Failed to persist acknowledged update ID offset");
+                    Safe.Ignore(ex, "MetroSyncWidgetViewModel.PersistOffsetCanceled");
                 }
-            });
+                catch (Exception ex)
+                {
+                    Safe.Log(ex, "MetroSyncWidgetViewModel.PersistOffset");
+                }
+            }).FireAndForget("MetroSyncWidgetViewModel.PersistOffset");
         }
     }
 
@@ -576,12 +588,13 @@ public sealed partial class MetroSyncWidgetViewModel : WidgetViewModelBase, IWid
                 AddToFeed(sentItem);
             });
         }
-        catch (OperationCanceledException)
+        catch (OperationCanceledException ex)
         {
-            // Cancelled
+            Safe.Ignore(ex, "MetroSyncWidgetViewModel.SendTextCanceled");
         }
         catch (Exception ex)
         {
+            Safe.Log(ex, "MetroSyncWidgetViewModel.SendText");
             RunOnUIThread(() =>
             {
                 ErrorMessage = RedactBotToken(ex.Message);
@@ -646,12 +659,13 @@ public sealed partial class MetroSyncWidgetViewModel : WidgetViewModelBase, IWid
             HydrateThumbnail(sentItem);
             AddToFeed(sentItem);
         }
-        catch (OperationCanceledException)
+        catch (OperationCanceledException ex)
         {
-            // Cancelled
+            Safe.Ignore(ex, "MetroSyncWidgetViewModel.SendClipboardImageCanceled");
         }
         catch (Exception ex)
         {
+            Safe.Log(ex, "MetroSyncWidgetViewModel.SendClipboardImage");
             RunOnUIThread(() =>
             {
                 ErrorMessage = RedactBotToken(ex.Message);
@@ -712,12 +726,14 @@ public sealed partial class MetroSyncWidgetViewModel : WidgetViewModelBase, IWid
 
                     AddToFeed(sentItem);
                 }
-                catch (OperationCanceledException)
+                catch (OperationCanceledException ex)
                 {
+                    Safe.Ignore(ex, "MetroSyncWidgetViewModel.AttachFileCanceled");
                     break;
                 }
                 catch (Exception ex)
                 {
+                    Safe.Log(ex, "MetroSyncWidgetViewModel.AttachFile");
                     RunOnUIThread(() =>
                     {
                         ErrorMessage = RedactBotToken(ex.Message);
@@ -842,16 +858,18 @@ public sealed partial class MetroSyncWidgetViewModel : WidgetViewModelBase, IWid
         {
             await downloader.DownloadFileAsync(item, ct: _lifecycleCts.Token).ConfigureAwait(false);
         }
-        catch (FileTooLargeException)
+        catch (FileTooLargeException ex)
         {
+            Safe.Log(ex, "MetroSyncWidgetViewModel.DownloadFileTooLarge");
             RunOnUIThread(() =>
             {
                 item.ErrorMessage = "Too large for bot download (20 MB limit)";
                 item.IsDownloading = false;
             });
         }
-        catch (OperationCanceledException)
+        catch (OperationCanceledException ex)
         {
+            Safe.Ignore(ex, "MetroSyncWidgetViewModel.DownloadFileCanceled");
             RunOnUIThread(() =>
             {
                 item.IsDownloading = false;
@@ -947,7 +965,7 @@ public sealed partial class MetroSyncWidgetViewModel : WidgetViewModelBase, IWid
             }
             else if (!string.IsNullOrWhiteSpace(imageItem.FileId) && Downloader != null)
             {
-                _ = DownloadAndOpenImageAsync(imageItem);
+                DownloadAndOpenImageAsync(imageItem).FireAndForget("MetroSyncWidgetViewModel.DownloadAndOpenImage");
                 return;
             }
             else
@@ -1099,16 +1117,18 @@ public sealed partial class MetroSyncWidgetViewModel : WidgetViewModelBase, IWid
                     SafeCopyFile(downloadedPath, destination);
                 }
             }
-            catch (FileTooLargeException)
+            catch (FileTooLargeException ex)
             {
+                Safe.Log(ex, "MetroSyncWidgetViewModel.SaveFileAsTooLarge");
                 RunOnUIThread(() =>
                 {
                     fileItem.ErrorMessage = "Too large for bot download (20 MB limit)";
                     fileItem.IsDownloading = false;
                 });
             }
-            catch (OperationCanceledException)
+            catch (OperationCanceledException ex)
             {
+                Safe.Ignore(ex, "MetroSyncWidgetViewModel.SaveFileAsCanceled");
                 RunOnUIThread(() => fileItem.IsDownloading = false);
             }
             catch (Exception ex)
@@ -1250,8 +1270,9 @@ public sealed partial class MetroSyncWidgetViewModel : WidgetViewModelBase, IWid
                 {
                     bitmapToCopy = MetroSyncThumbnails.LoadThumbnail(imageItem.LocalPath, maxDimension: 4096);
                 }
-                catch
+                catch (Exception ex)
                 {
+                    Safe.Ignore(ex, "MetroSyncWidgetViewModel.CopyImageLoadThumbnail");
                     // fallback
                 }
             }
@@ -1327,8 +1348,9 @@ public sealed partial class MetroSyncWidgetViewModel : WidgetViewModelBase, IWid
                     File.Delete(profilePath);
                 }
             }
-            catch
+            catch (Exception ex)
             {
+                Safe.Ignore(ex, "MetroSyncWidgetViewModel.DeleteProfilePhoto");
             }
 
             await _engineLock.WaitAsync(_lifecycleCts.Token).ConfigureAwait(false);
@@ -1347,12 +1369,13 @@ public sealed partial class MetroSyncWidgetViewModel : WidgetViewModelBase, IWid
             }
             finally
             {
-                try { _engineLock.Release(); } catch (ObjectDisposedException) { }
+                try { _engineLock.Release(); } catch (ObjectDisposedException ex) { Safe.Ignore(ex, "MetroSyncWidgetViewModel.DisconnectReleaseLock"); }
             }
         }
-        catch (OperationCanceledException)
+        catch (OperationCanceledException ex)
         {
             // Normal teardown cancellation
+            Safe.Ignore(ex, "MetroSyncWidgetViewModel.DisconnectCanceled");
         }
         catch (Exception ex)
         {
@@ -1410,7 +1433,7 @@ public sealed partial class MetroSyncWidgetViewModel : WidgetViewModelBase, IWid
             }
             else
             {
-                _ = dispatcher.InvokeAsync(action, DispatcherPriority.Background);
+                dispatcher.InvokeAsync(action, DispatcherPriority.Background).FireAndForget("MetroSyncWidgetViewModel.RunOnUIThread");
             }
         }
         else
@@ -1468,7 +1491,7 @@ public sealed partial class MetroSyncWidgetViewModel : WidgetViewModelBase, IWid
         if (dispatcher != null && !dispatcher.HasShutdownStarted && dispatcher.Thread.IsAlive)
         {
             if (dispatcher.CheckAccess()) copyAction();
-            else _ = dispatcher.InvokeAsync(copyAction, DispatcherPriority.Background);
+            else dispatcher.InvokeAsync(copyAction, DispatcherPriority.Background).FireAndForget("MetroSyncWidgetViewModel.DefaultCopyText");
         }
         else
         {
@@ -1597,7 +1620,7 @@ public sealed partial class MetroSyncWidgetViewModel : WidgetViewModelBase, IWid
         if (dispatcher != null && !dispatcher.HasShutdownStarted && dispatcher.Thread.IsAlive)
         {
             if (dispatcher.CheckAccess()) copyAction();
-            else _ = dispatcher.InvokeAsync(copyAction, DispatcherPriority.Background);
+            else dispatcher.InvokeAsync(copyAction, DispatcherPriority.Background).FireAndForget("MetroSyncWidgetViewModel.DefaultCopyImage");
         }
         else
         {
@@ -1616,7 +1639,10 @@ public sealed partial class MetroSyncWidgetViewModel : WidgetViewModelBase, IWid
             {
                 _lifecycleCts.Cancel();
             }
-            catch (ObjectDisposedException) { }
+            catch (ObjectDisposedException ex)
+            {
+                Safe.Ignore(ex, "MetroSyncWidgetViewModel.DisposeCancelLifecycle");
+            }
 
             if (_engine != null)
             {

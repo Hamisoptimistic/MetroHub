@@ -5,6 +5,7 @@ using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
 using ManagedBass;
+using MetroHub.Core.Services;
 
 namespace MetroHub.Widgets.Catalog.Radio.Services;
 
@@ -175,7 +176,7 @@ public sealed class RadioAudioService : IRadioAudioService
         }
         else
         {
-            Debug.WriteLine($"[RadioAudioService] BASS initialization failed: {Bass.LastError}");
+            Safe.LogThrottled(new InvalidOperationException($"BASS initialization failed: {Bass.LastError}"), "RadioAudioService.Init");
         }
     }
 
@@ -204,11 +205,11 @@ public sealed class RadioAudioService : IRadioAudioService
                         Debug.WriteLine($"[RadioAudioService] Loaded {fileName} from: {path} (handle={handle}).");
                         return handle;
                     }
-                    Debug.WriteLine($"[RadioAudioService] {fileName} found at {path} but PluginLoad returned 0 (error={Bass.LastError}).");
+                    Safe.LogThrottled(new InvalidOperationException($"{fileName} found at {path} but PluginLoad returned 0 (error={Bass.LastError})"), "RadioAudioService.PluginLoadZero");
                 }
                 catch (Exception ex)
                 {
-                    Debug.WriteLine($"[RadioAudioService] {fileName} load failed from {path}: {ex.Message}");
+                    Safe.LogThrottled(ex, "RadioAudioService.LoadBassPlugin");
                 }
             }
         }
@@ -279,7 +280,7 @@ public sealed class RadioAudioService : IRadioAudioService
 
                 if (shouldDiscard && stream != 0)
                 {
-                    try { Bass.StreamFree(stream); } catch { }
+                    try { Bass.StreamFree(stream); } catch (Exception ex) { Safe.Ignore(ex, "RadioAudioService.DiscardStreamFree"); }
                     return (Stream: 0, Error: Errors.OK);
                 }
 
@@ -324,7 +325,7 @@ public sealed class RadioAudioService : IRadioAudioService
                     }
                     catch (Exception healEx)
                     {
-                        Debug.WriteLine($"[RadioAudioService] Self-healing resolution exception: {healEx.Message}");
+                        Safe.LogThrottled(healEx, "RadioAudioService.SelfHealing");
                     }
                 }
 
@@ -333,7 +334,7 @@ public sealed class RadioAudioService : IRadioAudioService
                     Debug.WriteLine($"[RadioAudioService] Self-healing found new URL for '{station.Name}': {healedUrl}. Retrying playback...");
 
                     // Persist healed URL into local catalog atomically so subsequent launches use the fresh link
-                    _ = RadioCatalogService.Instance.UpdateStationUrlAsync(station.Id, healedUrl);
+                    RadioCatalogService.Instance.UpdateStationUrlAsync(station.Id, healedUrl).FireAndForget("RadioAudioService.UpdateStationUrl");
 
                     var healedStation = station with { StreamUrl = healedUrl };
                     lock (_gate)
@@ -366,7 +367,7 @@ public sealed class RadioAudioService : IRadioAudioService
 
                         if (shouldDiscard && stream != 0)
                         {
-                            try { Bass.StreamFree(stream); } catch { }
+                            try { Bass.StreamFree(stream); } catch (Exception ex) { Safe.Ignore(ex, "RadioAudioService.RetryStreamFree"); }
                             return (Stream: 0, Error: Errors.OK);
                         }
 
@@ -401,7 +402,7 @@ public sealed class RadioAudioService : IRadioAudioService
             }
             catch (Exception ex)
             {
-                Debug.WriteLine($"[RadioAudioService] BassFx beat callback registration note: {ex.Message}");
+                Safe.LogThrottled(ex, "RadioAudioService.BassFxBeatCallback");
             }
 
             bool started = Bass.ChannelPlay(newStream);
@@ -443,16 +444,18 @@ public sealed class RadioAudioService : IRadioAudioService
             PlaybackStateChanged?.Invoke(this, true);
             BufferingStateChanged?.Invoke(this, false);
         }
-        catch (OperationCanceledException)
+        catch (OperationCanceledException ex)
         {
-            // Debounced or superseded by a newer station click or Pause()
+            Safe.Ignore(ex, "RadioAudioService.PlayStationCancelled");
         }
-        catch (TimeoutException)
+        catch (TimeoutException ex)
         {
+            Safe.LogThrottled(ex, "RadioAudioService.PlayStationTimeout");
             HandlePlaybackError($"Connection timed out for {station.Name}", myVersion);
         }
         catch (Exception ex)
         {
+            Safe.LogThrottled(ex, "RadioAudioService.PlayStationError");
             HandlePlaybackError($"Playback exception on {station.Name}: {ex.Message}", myVersion);
         }
     }
@@ -496,7 +499,7 @@ public sealed class RadioAudioService : IRadioAudioService
 
         if (retiringSnapshot.Length > 0)
         {
-            _ = Task.Run(() =>
+            Task.Run(() =>
             {
                 foreach (int handle in retiringSnapshot)
                 {
@@ -507,26 +510,32 @@ public sealed class RadioAudioService : IRadioAudioService
                             Bass.ChannelStop(handle);
                             Bass.StreamFree(handle);
                         }
-                        catch { }
+                        catch (Exception ex)
+                        {
+                            Safe.Ignore(ex, "RadioAudioService.FreeRetiringHandle");
+                        }
                     }
                 }
-            });
+            }).FireAndForget("RadioAudioService.FreeRetiringStreams");
         }
     }
 
     private static void FreeStreamInBackground(int streamHandle)
     {
         if (streamHandle == 0) return;
-        _ = Task.Run(() =>
+        Task.Run(() =>
         {
             try
             {
-                try { ManagedBass.Fx.BassFx.BPMBeatFree(streamHandle); } catch { }
+                try { ManagedBass.Fx.BassFx.BPMBeatFree(streamHandle); } catch (Exception ex) { Safe.Ignore(ex, "RadioAudioService.BeatFree"); }
                 Bass.ChannelStop(streamHandle);
                 Bass.StreamFree(streamHandle);
             }
-            catch { }
-        });
+            catch (Exception ex)
+            {
+                Safe.Ignore(ex, "RadioAudioService.FreeStream");
+            }
+        }).FireAndForget("RadioAudioService.FreeStreamInBackground");
     }
 
     private void FadeAndFreeStream(int streamHandle, int durationMs)
@@ -538,14 +547,17 @@ public sealed class RadioAudioService : IRadioAudioService
             _retiringStreams.Add(streamHandle);
         }
 
-        _ = Task.Run(async () =>
+        Task.Run(async () =>
         {
             try
             {
                 Bass.ChannelSlideAttribute(streamHandle, ChannelAttribute.Volume, 0f, durationMs);
                 await Task.Delay(durationMs + 100).ConfigureAwait(false);
             }
-            catch { }
+            catch (Exception ex)
+            {
+                Safe.Ignore(ex, "RadioAudioService.ChannelSlide");
+            }
             finally
             {
                 lock (_gate)
@@ -554,13 +566,16 @@ public sealed class RadioAudioService : IRadioAudioService
                 }
                 try
                 {
-                    try { ManagedBass.Fx.BassFx.BPMBeatFree(streamHandle); } catch { }
+                    try { ManagedBass.Fx.BassFx.BPMBeatFree(streamHandle); } catch (Exception ex) { Safe.Ignore(ex, "RadioAudioService.FadeBeatFree"); }
                     Bass.ChannelStop(streamHandle);
                     Bass.StreamFree(streamHandle);
                 }
-                catch { }
+                catch (Exception ex)
+                {
+                    Safe.Ignore(ex, "RadioAudioService.FadeFreeStream");
+                }
             }
-        });
+        }).FireAndForget("RadioAudioService.FadeAndFreeStream");
     }
 
     public void Resume()
@@ -572,7 +587,7 @@ public sealed class RadioAudioService : IRadioAudioService
             station = _currentStation;
         }
 
-        _ = PlayStationAsync(station);
+        PlayStationAsync(station).FireAndForget("RadioAudioService.ResumePlayStation");
     }
 
     public void TogglePlayPause()
@@ -617,7 +632,8 @@ public sealed class RadioAudioService : IRadioAudioService
 
         if (streamToUpdate != 0)
         {
-            try { Bass.ChannelSetAttribute(streamToUpdate, ChannelAttribute.Volume, (float)clamped); } catch { }
+            try { Bass.ChannelSetAttribute(streamToUpdate, ChannelAttribute.Volume, (float)clamped); }
+            catch (Exception ex) { Safe.LogThrottled(ex, "RadioAudioService.SetVolume"); }
         }
 
         VolumeChanged?.Invoke(this, clamped);
@@ -641,7 +657,8 @@ public sealed class RadioAudioService : IRadioAudioService
 
         if (streamToUpdate != 0)
         {
-            try { Bass.ChannelSetAttribute(streamToUpdate, ChannelAttribute.Volume, targetVol); } catch { }
+            try { Bass.ChannelSetAttribute(streamToUpdate, ChannelAttribute.Volume, targetVol); }
+            catch (Exception ex) { Safe.LogThrottled(ex, "RadioAudioService.SetMuted"); }
         }
 
         MuteStateChanged?.Invoke(this, isMuted);
@@ -758,7 +775,7 @@ public sealed class RadioAudioService : IRadioAudioService
 
         if (shouldNotify)
         {
-            Debug.WriteLine($"[RadioAudioService] Error: {message}");
+            Safe.LogThrottled(new InvalidOperationException(message), "RadioAudioService.PlaybackError");
             PlaybackStateChanged?.Invoke(this, false);
             BufferingStateChanged?.Invoke(this, false);
             ErrorOccurred?.Invoke(this, message);
@@ -787,7 +804,7 @@ public sealed class RadioAudioService : IRadioAudioService
             _retiringStreams.Clear();
         }
 
-        _ = Task.Run(() =>
+        Task.Run(() =>
         {
             if (streamToFree != 0)
             {
@@ -796,7 +813,10 @@ public sealed class RadioAudioService : IRadioAudioService
                     Bass.ChannelStop(streamToFree);
                     Bass.StreamFree(streamToFree);
                 }
-                catch { }
+                catch (Exception ex)
+                {
+                    Safe.Ignore(ex, "RadioAudioService.Dispose.StreamFree");
+                }
             }
 
             foreach (int handle in retiringSnapshot)
@@ -808,7 +828,10 @@ public sealed class RadioAudioService : IRadioAudioService
                         Bass.ChannelStop(handle);
                         Bass.StreamFree(handle);
                     }
-                    catch { }
+                    catch (Exception ex)
+                    {
+                        Safe.Ignore(ex, "RadioAudioService.Dispose.RetiringStreamFree");
+                    }
                 }
             }
 
@@ -818,8 +841,8 @@ public sealed class RadioAudioService : IRadioAudioService
             }
             catch (Exception ex)
             {
-                Debug.WriteLine($"[RadioAudioService] BASS disposal error: {ex.Message}");
+                Safe.LogThrottled(ex, "RadioAudioService.Dispose.BassFree");
             }
-        });
+        }).FireAndForget("RadioAudioService.Dispose");
     }
 }

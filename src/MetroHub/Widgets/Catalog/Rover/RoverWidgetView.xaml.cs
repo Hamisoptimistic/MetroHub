@@ -1,6 +1,7 @@
 using System;
 using System.Windows;
 using System.Windows.Controls;
+using MetroHub.Core.Services;
 
 namespace MetroHub.Widgets.Catalog.Rover;
 
@@ -78,7 +79,10 @@ public sealed partial class RoverWidgetView : UserControl
             {
                 Dispatcher.Invoke(() => UpdateAllSpriteBrushes(x, y));
             }
-            catch { }
+            catch (Exception ex)
+            {
+                Safe.Log(ex, "RoverWidgetView.OnEngineFrameChanged");
+            }
         }
     }
 
