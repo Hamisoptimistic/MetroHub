@@ -8,7 +8,7 @@ namespace MetroHub.Core.Services;
 
 /// <summary>
 /// Diagnostic logger that captures system, memory, and handle telemetry.
-/// Emits non-blocking structured events via Serilog into the rolling log file and Seq,
+/// Emits non-blocking structured events via Serilog into the rolling log file,
 /// eliminating synchronous disk I/O and locks from the UI thread.
 /// </summary>
 public static class HiddenDiagnosticsLogger

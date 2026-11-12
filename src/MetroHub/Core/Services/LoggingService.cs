@@ -9,8 +9,7 @@ namespace MetroHub.Core.Services;
 
 /// <summary>
 /// Centralized bootstrap and lifecycle manager for Serilog structured logging.
-/// Configures asynchronous rolling file persistence, IDE debug sink, and Seq ingestion
-/// with zero-allocation/non-blocking fail-safe defaults.
+/// Configures asynchronous rolling file persistence with zero-allocation/non-blocking fail-safe defaults.
 /// </summary>
 public static class LoggingService
 {
@@ -50,9 +49,6 @@ public static class LoggingService
                     .MinimumLevel.Override("Microsoft", LogEventLevel.Warning)
                     .MinimumLevel.Override("System", LogEventLevel.Warning)
                     .Enrich.FromLogContext()
-                    .WriteTo.Debug(
-                        outputTemplate: "[{Timestamp:HH:mm:ss.fff} {Level:u3}] [{SourceContext}] {Message:lj}{NewLine}{Exception}",
-                        formatProvider: CultureInfo.InvariantCulture)
                     .WriteTo.File(
                         path: logFilePathPattern,
                         rollingInterval: RollingInterval.Day,
@@ -62,13 +58,6 @@ public static class LoggingService
                         buffered: true,
                         outputTemplate: "{Timestamp:yyyy-MM-dd HH:mm:ss.fff} [{Level:u3}] [{SourceContext}] {Message:lj}{NewLine}{Exception}",
                         formatProvider: CultureInfo.InvariantCulture);
-
-#if DEBUG
-                logConfig = logConfig.WriteTo.Seq(
-                    serverUrl: "http://localhost:5341",
-                    period: TimeSpan.FromSeconds(2),
-                    formatProvider: CultureInfo.InvariantCulture);
-#endif
 
                 Log.Logger = logConfig.CreateLogger();
                 _initialized = true;
