@@ -88,7 +88,7 @@ public sealed partial class MainWindow
         }
         catch (Exception ex)
         {
-            System.Diagnostics.Debug.WriteLine($"[MainWindow] Failed to open custom picture dialog: {ex.Message}");
+            Safe.Log(ex, "MainWindow.SelectCustomPicture");
         }
         finally
         {
@@ -184,7 +184,7 @@ public sealed partial class MainWindow
         }
         catch (Exception ex)
         {
-            System.Diagnostics.Debug.WriteLine($"[MainWindow] Failed to open custom video dialog: {ex.Message}");
+            Safe.Log(ex, "MainWindow.SelectCustomVideo");
         }
         finally
         {
@@ -234,7 +234,10 @@ public sealed partial class MainWindow
             WallpaperVideo.Position = TimeSpan.Zero;
             WallpaperVideo.Play();
         }
-        catch { }
+        catch (Exception ex)
+        {
+            Safe.Ignore(ex, "MainWindow.WallpaperVideoLoop");
+        }
     }
 
     private void OnWallpaperVideoMediaFailed(object? sender, ExceptionRoutedEventArgs e)

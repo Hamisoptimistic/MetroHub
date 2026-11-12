@@ -111,7 +111,7 @@ public sealed class BackdropManager : IDisposable
             {
                 _rootGrid.Background = System.Windows.Media.Brushes.Transparent;
             }
-            _ = UpdateLiveShaderDisplayAsync(ct);
+            UpdateLiveShaderDisplayAsync(ct).FireAndForget("BackdropManager.UpdateLiveShaderDisplay");
         }
         else if (isStaticWallpaper)
         {
@@ -121,7 +121,7 @@ public sealed class BackdropManager : IDisposable
             {
                 _rootGrid.Background = System.Windows.Media.Brushes.Transparent;
             }
-            _ = UpdateWallpaperDisplayAsync(ct);
+            UpdateWallpaperDisplayAsync(ct).FireAndForget("BackdropManager.UpdateWallpaperDisplay");
         }
         else
         {
@@ -223,10 +223,10 @@ public sealed class BackdropManager : IDisposable
     public void TeardownWallpaperVideo()
     {
         if (_wallpaperVideo == null) return;
-        try { _wallpaperVideo.BeginAnimation(UIElement.OpacityProperty, null); } catch { }
-        try { _wallpaperVideo.Stop(); } catch { }
-        try { _wallpaperVideo.Source = null; } catch { }
-        try { _wallpaperVideo.Close(); } catch { }
+        try { _wallpaperVideo.BeginAnimation(UIElement.OpacityProperty, null); } catch (Exception ex) { Safe.Ignore(ex, "BackdropManager.TeardownVideo.Opacity"); }
+        try { _wallpaperVideo.Stop(); } catch (Exception ex) { Safe.Ignore(ex, "BackdropManager.TeardownVideo.Stop"); }
+        try { _wallpaperVideo.Source = null; } catch (Exception ex) { Safe.Ignore(ex, "BackdropManager.TeardownVideo.Source"); }
+        try { _wallpaperVideo.Close(); } catch (Exception ex) { Safe.Ignore(ex, "BackdropManager.TeardownVideo.Close"); }
         _wallpaperVideo.Visibility = Visibility.Collapsed;
     }
 
@@ -240,7 +240,10 @@ public sealed class BackdropManager : IDisposable
                 _wallpaperCts.Cancel();
                 _wallpaperCts.Dispose();
             }
-            catch { }
+            catch (Exception ex)
+            {
+                Safe.Ignore(ex, "BackdropManager.WallpaperCts");
+            }
             _wallpaperCts = null;
         }
 
@@ -259,7 +262,10 @@ public sealed class BackdropManager : IDisposable
                 _wallpaperCts.Cancel();
                 _wallpaperCts.Dispose();
             }
-            catch { }
+            catch (Exception ex)
+            {
+                Safe.Ignore(ex, "BackdropManager.WallpaperCts");
+            }
             _wallpaperCts = null;
         }
     }
@@ -407,8 +413,9 @@ public sealed class BackdropManager : IDisposable
                         UpdateWallpaperParallax();
                         _wallpaperVideo.Play();
                     }
-                    catch (Exception)
+                    catch (Exception ex)
                     {
+                        Safe.Log(ex, "BackdropManager.LoadWallpaperVideo");
                         _currentLoadedWallpaperPath = null;
                         _currentLoadedEffect = null;
                         _currentLoadedIsLight = null;
@@ -480,13 +487,14 @@ public sealed class BackdropManager : IDisposable
                 }
             }
         }
-        catch (OperationCanceledException)
+        catch (OperationCanceledException ex)
         {
+            Safe.Ignore(ex, "BackdropManager.UpdateWallpaperDisplayAsync");
             return;
         }
         catch (Exception ex)
         {
-            System.Diagnostics.Debug.WriteLine($"[BackdropManager] UpdateWallpaperDisplayAsync error: {ex.Message}");
+            Safe.Log(ex, "BackdropManager.UpdateWallpaperDisplayAsync");
             lastError ??= ex.Message;
         }
 
@@ -595,8 +603,9 @@ public sealed class BackdropManager : IDisposable
             bitmap.Freeze();
             return bitmap;
         }
-        catch
+        catch (Exception ex)
         {
+            Safe.Log(ex, "BackdropManager.CreateFrozenBitmap");
             return null;
         }
     }
@@ -619,7 +628,10 @@ public sealed class BackdropManager : IDisposable
                 return regPath;
             }
         }
-        catch { }
+        catch (Exception ex)
+        {
+            Safe.Log(ex, "BackdropManager.GetActiveDesktopWallpaperPath");
+        }
 
         return null;
     }

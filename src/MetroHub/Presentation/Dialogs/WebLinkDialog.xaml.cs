@@ -124,8 +124,9 @@ public sealed partial class WebLinkDialog : MetroDialog
                 WebLinkFaviconImage.Visibility = Visibility.Visible;
                 WebLinkFallbackIcon.Visibility = Visibility.Collapsed;
             }
-            catch
+            catch (Exception ex)
             {
+                Safe.Log(ex, "WebLinkDialog.LoadInitialIcon");
                 WebLinkFaviconImage.Source = null;
                 WebLinkFaviconImage.Visibility = Visibility.Collapsed;
                 WebLinkFallbackIcon.Visibility = Visibility.Visible;
@@ -195,7 +196,7 @@ public sealed partial class WebLinkDialog : MetroDialog
             WebLinkTitleInput.Text = inferred;
         }
 
-        _ = Task.Run(async () =>
+        Task.Run(async () =>
         {
             try
             {
@@ -244,7 +245,10 @@ public sealed partial class WebLinkDialog : MetroDialog
                             }
                         }
                     }
-                    catch { }
+                    catch (Exception ex)
+                    {
+                        Safe.Ignore(ex, "WebLinkDialog.ReadCachedIconBytes");
+                    }
                 }
 
                 string queryUrl = normalized;
@@ -265,7 +269,10 @@ public sealed partial class WebLinkDialog : MetroDialog
                         _htmlHeadIconUrl = headInfo.IconUrl;
                     }
                 }
-                catch { }
+                catch (Exception ex)
+                {
+                    Safe.Ignore(ex, "WebLinkDialog.ExtractHtmlHeadInfo");
+                }
 
                 if (token.IsCancellationRequested) return;
 
@@ -343,10 +350,13 @@ public sealed partial class WebLinkDialog : MetroDialog
                     }
                 });
             }
-            catch (OperationCanceledException) { }
+            catch (OperationCanceledException ex)
+            {
+                Safe.Ignore(ex, "WebLinkDialog.FaviconProbe");
+            }
             catch (Exception ex)
             {
-                MetroHub.Core.Services.Safe.Log("WebLinkDialog.FaviconProbe", ex);
+                Safe.Log(ex, "WebLinkDialog.FaviconProbe");
                 if (!token.IsCancellationRequested)
                 {
                     await Dispatcher.InvokeAsync(() =>
@@ -356,7 +366,7 @@ public sealed partial class WebLinkDialog : MetroDialog
                     });
                 }
             }
-        }, token);
+        }, token).FireAndForget("WebLinkDialog.DebounceResolveFavicon");
     }
 
     private void OnWebLinkTitleTextChanged(object sender, TextChangedEventArgs e)
@@ -384,33 +394,35 @@ public sealed partial class WebLinkDialog : MetroDialog
 
     private async void OnChangeIconClick(object sender, RoutedEventArgs e)
     {
-        string raw = WebLinkUrlInput.Text.Trim();
-        if (string.IsNullOrWhiteSpace(raw))
-        {
-            WebLinkStatusMessage.Text = "Please enter a website URL first.";
-            WebLinkStatusMessage.Visibility = Visibility.Visible;
-            WebLinkUrlInput.Focus();
-            return;
-        }
-
-        string normalized = WebFaviconService.NormalizeUrl(raw);
-        if (string.IsNullOrWhiteSpace(normalized))
-        {
-            WebLinkStatusMessage.Text = "Please enter a valid website URL (e.g. www.google.com).";
-            WebLinkStatusMessage.Visibility = Visibility.Visible;
-            WebLinkUrlInput.Focus();
-            return;
-        }
-
-        WebLinkStatusMessage.Visibility = Visibility.Collapsed;
-
-        _debounceCts?.Cancel();
-        _cycleCts?.Cancel();
-        _cycleCts = new CancellationTokenSource();
-        var token = _cycleCts.Token;
-
         try
         {
+            string raw = WebLinkUrlInput.Text.Trim();
+            if (string.IsNullOrWhiteSpace(raw))
+            {
+                WebLinkStatusMessage.Text = "Please enter a website URL first.";
+                WebLinkStatusMessage.Visibility = Visibility.Visible;
+                WebLinkUrlInput.Focus();
+                return;
+            }
+
+            string normalized = WebFaviconService.NormalizeUrl(raw);
+            if (string.IsNullOrWhiteSpace(normalized))
+            {
+                WebLinkStatusMessage.Text = "Please enter a valid website URL (e.g. www.google.com).";
+                WebLinkStatusMessage.Visibility = Visibility.Visible;
+                WebLinkUrlInput.Focus();
+                return;
+            }
+
+            WebLinkStatusMessage.Visibility = Visibility.Collapsed;
+
+            _debounceCts?.Cancel();
+            _cycleCts?.Cancel();
+            _cycleCts = new CancellationTokenSource();
+            var token = _cycleCts.Token;
+
+            try
+            {
             WebLinkChangeIconButton.IsEnabled = false;
             WebLinkSidebarSpinner.Visibility = Visibility.Visible;
 
@@ -435,7 +447,10 @@ public sealed partial class WebLinkDialog : MetroDialog
                         var headInfo = await WebFaviconService.ExtractHtmlHeadInfoAsync(queryUrl, headCts.Token).ConfigureAwait(true);
                         _htmlHeadIconUrl = headInfo?.IconUrl;
                     }
-                    catch { }
+                    catch (Exception ex)
+                    {
+                        Safe.Ignore(ex, "WebLinkDialog.ExtractHtmlHeadInfo");
+                    }
                 }
 
                 var urls = WebFaviconService.GetCandidateSourceUrls(normalized, _htmlHeadIconUrl);
@@ -456,7 +471,10 @@ public sealed partial class WebLinkDialog : MetroDialog
                 {
                     existingBytes = await File.ReadAllBytesAsync(_resolvedIconPath, token).ConfigureAwait(true);
                 }
-                catch { }
+                catch (Exception ex)
+                {
+                    Safe.Ignore(ex, "WebLinkDialog.ReadExistingIconBytes");
+                }
             }
 
             byte[]? currentBytes = _pendingIconBytes ?? existingBytes;
@@ -513,10 +531,13 @@ public sealed partial class WebLinkDialog : MetroDialog
                 WebLinkStatusMessage.Visibility = Visibility.Visible;
             }
         }
-        catch (OperationCanceledException) { }
+        catch (OperationCanceledException ex)
+        {
+            Safe.Ignore(ex, "WebLinkDialog.CycleFavicon");
+        }
         catch (Exception ex)
         {
-            Safe.Log(ex, "Failed to cycle favicon source");
+            Safe.Log(ex, "WebLinkDialog.OnChangeIconClick");
         }
         finally
         {
@@ -524,6 +545,11 @@ public sealed partial class WebLinkDialog : MetroDialog
             WebLinkChangeIconButton.IsEnabled = true;
         }
     }
+    catch (Exception ex)
+    {
+        Safe.Log(ex, "WebLinkDialog.OnChangeIconClick");
+    }
+}
 
     private void OnAddWebLinkClick(object sender, RoutedEventArgs e)
     {

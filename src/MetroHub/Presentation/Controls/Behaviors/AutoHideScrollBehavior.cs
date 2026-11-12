@@ -6,6 +6,7 @@ using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Animation;
 using System.Windows.Threading;
+using MetroHub.Core.Services;
 
 namespace MetroHub.Presentation.Controls;
 
@@ -88,14 +89,14 @@ public static class AutoHideScrollBehavior
         }
         else
         {
-            _ = parent.Dispatcher.BeginInvoke(DispatcherPriority.Loaded, () =>
+            parent.Dispatcher.BeginInvoke(DispatcherPriority.Loaded, () =>
             {
                 var deferredSv = FindChild<ScrollViewer>(parent);
                 if (deferredSv != null)
                 {
                     ApplyToScrollViewer(deferredSv, true);
                 }
-            });
+            }).FireAndForget("AutoHideScrollBehavior.Attach");
         }
     }
 

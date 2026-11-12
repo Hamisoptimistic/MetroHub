@@ -71,7 +71,10 @@ namespace MetroHub.Presentation.Controls
                         var dir = Path.GetDirectoryName(Candidate.FullPathOrKey);
                         if (!string.IsNullOrEmpty(dir)) return dir;
                     }
-                    catch { }
+                    catch (Exception ex)
+                    {
+                        Safe.Ignore(ex, "SearchItemRowViewModel.Subtitle.DirectoryName");
+                    }
                 }
                 return Candidate.FullPathOrKey;
             }
@@ -214,10 +217,10 @@ namespace MetroHub.Presentation.Controls
                         }
                         else
                         {
-                            _ = dispatcher.InvokeAsync(() =>
+                            dispatcher.InvokeAsync(() =>
                             {
                                 if (!IsStale()) Icon = updatedIcon;
-                            }, System.Windows.Threading.DispatcherPriority.Background);
+                            }, System.Windows.Threading.DispatcherPriority.Background).FireAndForget("SearchItemRowViewModel.UpdateIcon");
                         }
                     },
                     cancellationToken: CancellationToken);
@@ -257,10 +260,10 @@ namespace MetroHub.Presentation.Controls
                 }
                 else
                 {
-                    _ = dispatcher.InvokeAsync(() =>
+                    dispatcher.InvokeAsync(() =>
                     {
                         if (!IsStale()) NotifyIconProperties();
-                    }, System.Windows.Threading.DispatcherPriority.Background);
+                    }, System.Windows.Threading.DispatcherPriority.Background).FireAndForget("SearchItemRowViewModel.NotifyIconProperties");
                 }
             }
         }
@@ -413,7 +416,10 @@ namespace MetroHub.Presentation.Controls
                     ApplyDrawerDensity(DrawerDensity);
                 }
             }
-            catch { }
+            catch (Exception ex)
+            {
+                Safe.Log(ex, "AllAppsDrawerControl.InitSettings");
+            }
 
             _searchOrchestrator = new SearchOrchestrator(appsProvider: () => _allApps);
             _searchOrchestrator.SnapshotUpdated += OnSearchSnapshotUpdated;
@@ -434,7 +440,7 @@ namespace MetroHub.Presentation.Controls
             {
                 if (prop is nameof(AppSettings.RecentViewMode) or nameof(AppSettings.ShowRecentApps) or nameof(AppSettings.DrawerDensity))
                 {
-                    _ = Dispatcher.InvokeAsync(() =>
+                    Dispatcher.InvokeAsync(() =>
                     {
                         var s = SettingsService.Instance.Current;
                         RecentViewMode = s.RecentViewMode;
@@ -445,7 +451,7 @@ namespace MetroHub.Presentation.Controls
                         {
                             RefreshRecentSuggestions();
                         }
-                    });
+                    }).FireAndForget("AllAppsDrawerControl.OnSettingChanged");
                 }
             };
 
@@ -796,7 +802,7 @@ namespace MetroHub.Presentation.Controls
 
         internal void OnSearchSnapshotUpdated(SearchSnapshot snapshot)
         {
-            _ = Dispatcher.BeginInvoke(System.Windows.Threading.DispatcherPriority.Normal, () =>
+            Dispatcher.BeginInvoke(System.Windows.Threading.DispatcherPriority.Normal, () =>
             {
                 if (string.IsNullOrWhiteSpace(SearchBox.Text) || snapshot.IsEmpty)
                 {
@@ -919,7 +925,7 @@ namespace MetroHub.Presentation.Controls
                         SearchResultsListBox.SelectedIndex = 0;
                     }
                 }
-            });
+            }).FireAndForget("AllAppsDrawerControl.OnSearchSnapshotUpdated");
         }
 
         private void UpdateNoResultsText(string? query)
@@ -950,7 +956,7 @@ namespace MetroHub.Presentation.Controls
             var primary = row.Candidate.PrimaryAction ?? (allActions.Count > 0 ? allActions[0] : null);
             if (primary != null)
             {
-                _ = ExecuteCandidateActionAsync(row.Candidate.Id, primary.ExecuteAsync);
+                ExecuteCandidateActionAsync(row.Candidate.Id, primary.ExecuteAsync).FireAndForget("AllAppsDrawerControl.ExecuteCandidateAction");
                 return;
             }
 
@@ -974,7 +980,7 @@ namespace MetroHub.Presentation.Controls
                 }
                 catch (Exception ex)
                 {
-                    Safe.Log("AllAppsDrawer.LaunchSearchItem", ex);
+                    Safe.Log(ex, "AllAppsDrawer.LaunchSearchItem");
                 }
             }
         }
@@ -992,8 +998,12 @@ namespace MetroHub.Presentation.Controls
             catch (Win32Exception ex) when (ex.NativeErrorCode == 1223)
             {
                 // User cancelled UAC elevation. Normal user action, not an error.
+                Safe.Ignore(ex, "AllAppsDrawerControl.UacCancelled");
             }
-            catch (OperationCanceledException) { }
+            catch (OperationCanceledException ex)
+            {
+                Safe.Ignore(ex, "AllAppsDrawerControl.CandidateActionCanceled");
+            }
             catch (Exception ex)
             {
                 Safe.Log(ex, "SearchActionRunner");
@@ -1305,11 +1315,11 @@ namespace MetroHub.Presentation.Controls
                 }
                 else
                 {
-                    _ = Dispatcher.BeginInvoke(System.Windows.Threading.DispatcherPriority.Loaded, new Action(() =>
+                    Dispatcher.BeginInvoke(System.Windows.Threading.DispatcherPriority.Loaded, new Action(() =>
                     {
                         var container = RecentSuggestionsListBox.ItemContainerGenerator.ContainerFromIndex(index) as ListBoxItem;
                         container?.Focus();
-                    }));
+                    })).FireAndForget("AllAppsDrawerControl.FocusRecentContainer");
                 }
             }
         }
@@ -1474,11 +1484,11 @@ namespace MetroHub.Presentation.Controls
                 }
                 else
                 {
-                    _ = Dispatcher.BeginInvoke(System.Windows.Threading.DispatcherPriority.Loaded, new Action(() =>
+                    Dispatcher.BeginInvoke(System.Windows.Threading.DispatcherPriority.Loaded, new Action(() =>
                     {
                         var container = SearchResultsListBox.ItemContainerGenerator.ContainerFromIndex(index) as ListBoxItem;
                         container?.Focus();
-                    }));
+                    })).FireAndForget("AllAppsDrawerControl.FocusSearchContainer");
                 }
             }
         }
@@ -1987,13 +1997,13 @@ namespace MetroHub.Presentation.Controls
 
             contextMenu.IsOpen = true;
 
-            _ = Dispatcher.BeginInvoke(System.Windows.Threading.DispatcherPriority.Input, new Action(() =>
+            Dispatcher.BeginInvoke(System.Windows.Threading.DispatcherPriority.Input, new Action(() =>
             {
                 if (contextMenu.Items.Count > 0 && contextMenu.Items[0] is MenuItem firstItem)
                 {
                     firstItem.Focus();
                 }
-            }));
+            })).FireAndForget("AllAppsDrawerControl.FocusContextMenuItem");
         }
 
         private void OpenContextMenuForCurrentSearchItem()
@@ -2084,7 +2094,7 @@ namespace MetroHub.Presentation.Controls
                     menu.IsOpen = false;
                     e.Handled = true;
 
-                    _ = Dispatcher.BeginInvoke(System.Windows.Threading.DispatcherPriority.Input, new Action(() =>
+                    Dispatcher.BeginInvoke(System.Windows.Threading.DispatcherPriority.Input, new Action(() =>
                     {
                         if (SearchResultsListBox.SelectedItem != null && SearchResultsListBox.SelectedIndex >= 0)
                         {
@@ -2095,7 +2105,7 @@ namespace MetroHub.Presentation.Controls
                             SearchBox.Focus();
                             SearchBox.CaretIndex = SearchBox.Text.Length;
                         }
-                    }));
+                    })).FireAndForget("AllAppsDrawerControl.DismissContextMenuLeft");
                 }
             }
             else if (e.Key == Key.Escape)
@@ -2105,7 +2115,7 @@ namespace MetroHub.Presentation.Controls
                     menu.IsOpen = false;
                     e.Handled = true;
 
-                    _ = Dispatcher.BeginInvoke(System.Windows.Threading.DispatcherPriority.Input, new Action(() =>
+                    Dispatcher.BeginInvoke(System.Windows.Threading.DispatcherPriority.Input, new Action(() =>
                     {
                         if (SearchResultsListBox.SelectedItem != null && SearchResultsListBox.SelectedIndex >= 0)
                         {
@@ -2115,7 +2125,7 @@ namespace MetroHub.Presentation.Controls
                         {
                             SearchBox.Focus();
                         }
-                    }));
+                    })).FireAndForget("AllAppsDrawerControl.DismissContextMenuEscape");
                 }
             }
         }
@@ -2268,7 +2278,7 @@ namespace MetroHub.Presentation.Controls
             }
             catch (Exception ex)
             {
-                Safe.Log("AllAppsDrawer.RunAsAdmin", ex);
+                Safe.Log(ex, "AllAppsDrawer.RunAsAdmin");
             }
         }
 

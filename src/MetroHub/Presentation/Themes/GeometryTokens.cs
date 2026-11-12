@@ -38,7 +38,7 @@ public static class GeometryTokens
                     var app = Application.Current;
                     if (app != null && app.Dispatcher != null && !app.Dispatcher.CheckAccess())
                     {
-                        _ = app.Dispatcher.InvokeAsync(() => ApplyCornerRadius(SettingsService.Instance.Current.TileCornerRadius));
+                        app.Dispatcher.InvokeAsync(() => ApplyCornerRadius(SettingsService.Instance.Current.TileCornerRadius)).FireAndForget("GeometryTokens.ApplyCornerRadius");
                     }
                     else
                     {

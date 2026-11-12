@@ -270,11 +270,11 @@ public sealed class TileManager
             if (container != null)
             {
                 Panel.SetZIndex(container, 50);
-                _ = _dispatcher.InvokeAsync(async () =>
+                _dispatcher.InvokeAsync(async () =>
                 {
                     await Task.Delay(260);
                     Panel.SetZIndex(container, 0);
-                });
+                }).FireAndForget("TileManager.ResetZIndex");
             }
         }
 
@@ -801,7 +801,7 @@ public sealed class TileManager
         // Asynchronously fetch high-resolution favicon if not yet available
         if (string.IsNullOrWhiteSpace(iconPath))
         {
-            _ = Task.Run(async () =>
+            Task.Run(async () =>
             {
                 string? fetched = await WebFaviconService.GetFaviconPathAsync(normalized);
                 if (!string.IsNullOrWhiteSpace(fetched))
@@ -812,7 +812,7 @@ public sealed class TileManager
                         SaveLayoutAndWorkspace(tiles);
                     });
                 }
-            });
+            }).FireAndForget("TileManager.FetchFavicon");
         }
     }
 
@@ -996,7 +996,7 @@ public sealed class TileManager
         var pendingWebTiles = newTiles.Where(t => t.TileType == TileType.WebUrl && string.IsNullOrWhiteSpace(t.IconPath)).ToList();
         if (pendingWebTiles.Count > 0)
         {
-            _ = Task.Run(async () =>
+            Task.Run(async () =>
             {
                 var fetchTasks = pendingWebTiles.Select(async wt =>
                 {
@@ -1022,7 +1022,7 @@ public sealed class TileManager
                 {
                     await _dispatcher.InvokeAsync(() => SaveLayoutAndWorkspace(tiles));
                 }
-            });
+            }).FireAndForget("TileManager.BatchFetchFavicons");
         }
     }
 
@@ -1038,8 +1038,9 @@ public sealed class TileManager
 
             return IconExtractorService.ExtractAndCacheIcon("explorer.exe");
         }
-        catch
+        catch (Exception ex)
         {
+            Safe.Log(ex, "TileManager.ResolveFallbackWebIcon");
             return null;
         }
     }
@@ -1112,7 +1113,7 @@ public sealed class TileManager
             {
                 string targetUrl = item.TargetPath;
                 var createdTile = groupTile;
-                _ = Task.Run(async () =>
+                Task.Run(async () =>
                 {
                     string? fetched = await WebFaviconService.GetFaviconPathAsync(targetUrl).ConfigureAwait(false);
                     if (!string.IsNullOrWhiteSpace(fetched))
@@ -1123,7 +1124,7 @@ public sealed class TileManager
                             SaveLayoutAndWorkspace(tiles);
                         });
                     }
-                });
+                }).FireAndForget("TileManager.FetchFaviconForGroupTile");
             }
             var mod = GridPlacementService.PlaceTileInGroup(
                 groupTile, pinSlotCol, pinSlotRow, pinSlotCol, pinSlotRow, targetGroup, tiles);
@@ -1182,7 +1183,7 @@ public sealed class TileManager
         {
             string targetUrl = item.TargetPath;
             var createdTile = tile;
-            _ = Task.Run(async () =>
+            Task.Run(async () =>
             {
                 string? fetched = await WebFaviconService.GetFaviconPathAsync(targetUrl).ConfigureAwait(false);
                 if (!string.IsNullOrWhiteSpace(fetched))
@@ -1193,7 +1194,7 @@ public sealed class TileManager
                         SaveLayoutAndWorkspace(tiles);
                     });
                 }
-            });
+            }).FireAndForget("TileManager.FetchFaviconForTile");
         }
 
         if (groups.Count > 0)
@@ -1596,7 +1597,7 @@ public sealed class TileManager
             if (!isNote && !isImage && !string.IsNullOrWhiteSpace(targetUrl))
             {
                 string? thumbUrl = request.ThumbnailUrl;
-                _ = Task.Run(async () =>
+                Task.Run(async () =>
                 {
                     string? iconPath = null;
                     if (!string.IsNullOrWhiteSpace(thumbUrl))
@@ -1629,7 +1630,7 @@ public sealed class TileManager
                             }
                         }).ConfigureAwait(false);
                     }
-                });
+                }).FireAndForget("TileManager.DownloadCompanionImage");
             }
 
             return new CompanionPinResult(
@@ -1791,7 +1792,7 @@ public sealed class TileManager
             }
 
             // 7. Background asynchronous favicon fetching for each tile (concurrent)
-            _ = Task.Run(async () =>
+            Task.Run(async () =>
             {
                 var fetchTasks = createdTiles.Select(async tile =>
                 {
@@ -1815,7 +1816,7 @@ public sealed class TileManager
                     }
                     catch (Exception ex)
                     {
-                        Safe.Log(ex, $"[TileManager] Background favicon extraction failed for '{tile.TargetPath}'");
+                        Safe.Log(ex, "TileManager.BackgroundFaviconExtraction");
                     }
                     return false;
                 });
@@ -1835,7 +1836,7 @@ public sealed class TileManager
                         }
                     }).ConfigureAwait(false);
                 }
-            });
+            }).FireAndForget("TileManager.FetchAllFavicons");
 
             return new CompanionTileGroupResult(
                 Success: true,

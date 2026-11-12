@@ -495,7 +495,7 @@ public sealed class WorkspaceManager : INotifyPropertyChanged
     public void ScheduleSaveManifestDebounced(int delayMs = 250)
     {
         long seq = Interlocked.Increment(ref _manifestSaveSeq);
-        _ = Task.Run(async () =>
+        Task.Run(async () =>
         {
             try
             {
@@ -507,9 +507,9 @@ public sealed class WorkspaceManager : INotifyPropertyChanged
             }
             catch (Exception ex)
             {
-                Safe.Log("WorkspaceManager.ScheduleSaveManifestDebounced", ex);
+                Safe.Log(ex, "WorkspaceManager.ScheduleSaveManifestDebounced");
             }
-        });
+        }).FireAndForget("WorkspaceManager.ScheduleSaveManifestDebounced");
     }
 
     public void ScheduleBackgroundFlush()
@@ -518,7 +518,7 @@ public sealed class WorkspaceManager : INotifyPropertyChanged
         {
             if (_backgroundFlushTask == null || _backgroundFlushTask.IsCompleted)
             {
-                _backgroundFlushTask = Task.Run(async () =>
+                var flushTask = Task.Run(async () =>
                 {
                     while (true)
                     {
@@ -535,6 +535,8 @@ public sealed class WorkspaceManager : INotifyPropertyChanged
                         }
                     }
                 });
+                flushTask.FireAndForget("WorkspaceManager.BackgroundFlush");
+                _backgroundFlushTask = flushTask;
             }
         }
     }

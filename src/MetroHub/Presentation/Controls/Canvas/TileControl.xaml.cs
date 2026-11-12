@@ -86,7 +86,7 @@ public sealed partial class TileControl : UserControl, IShaderInputBlocker
                 }
                 else
                 {
-                    _ = tile.Dispatcher.InvokeAsync(() => tile.ApplyShaderCacheMode(active));
+                    tile.Dispatcher.InvokeAsync(() => tile.ApplyShaderCacheMode(active)).FireAndForget("TileControl.ApplyShaderCacheMode");
                 }
             }
         }
@@ -131,8 +131,9 @@ public sealed partial class TileControl : UserControl, IShaderInputBlocker
                 dpi = VisualTreeHelper.GetDpi(this).DpiScaleX;
                 if (dpi <= 0 || double.IsNaN(dpi)) dpi = 1.0;
             }
-            catch
+            catch (Exception ex)
             {
+                Safe.Ignore(ex, "TileControl.GetDpi");
                 dpi = 1.0;
             }
 
@@ -535,18 +536,21 @@ public sealed partial class TileControl : UserControl, IShaderInputBlocker
                 var iconPath = tile.IconPath;
                 if (!string.IsNullOrWhiteSpace(iconPath))
                 {
-                    _ = Task.Run(() =>
+                    Task.Run(() =>
                     {
                         var hex = ColorExtractorService.ExtractAccentColor(iconPath);
-                        _ = App.Current?.Dispatcher?.InvokeAsync(() =>
+                        if (App.Current?.Dispatcher is { } dispatcher)
                         {
-                            if (DataContext == tile)
+                            dispatcher.InvokeAsync(() =>
                             {
-                                tile.AccentColor = hex;
-                                ApplyTileStyle(animate: true);
-                            }
-                        });
-                    });
+                                if (DataContext == tile)
+                                {
+                                    tile.AccentColor = hex;
+                                    ApplyTileStyle(animate: true);
+                                }
+                            }).FireAndForget("TileControl.ApplyExtractedAccentColor");
+                        }
+                    }).FireAndForget("TileControl.ExtractAccentColor");
                 }
             }
             targetColor = ColorExtractorService.GetTintedColor(tile.AccentColor);
@@ -1108,8 +1112,9 @@ public sealed partial class TileControl : UserControl, IShaderInputBlocker
                         };
                         item.Icon = ellipse;
                     }
-                    catch
+                    catch (Exception ex)
                     {
+                        Safe.Ignore(ex, "TileControl.ConvertHeaderColor");
                         item.Icon = new Wpf.Ui.Controls.SymbolIcon
                         {
                             Symbol = Wpf.Ui.Controls.SymbolRegular.Folder24,
@@ -1307,7 +1312,10 @@ public sealed partial class TileControl : UserControl, IShaderInputBlocker
                     Process.Start(new ProcessStartInfo("explorer.exe", $"/select,\"{target}\"") { UseShellExecute = true });
                 }
             }
-            catch { }
+            catch (Exception ex)
+            {
+                Safe.Log(ex, "TileControl.OpenFolder");
+            }
         }
     }
 

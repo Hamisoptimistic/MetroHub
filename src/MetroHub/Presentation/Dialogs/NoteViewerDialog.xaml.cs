@@ -158,6 +158,7 @@ public sealed partial class NoteViewerDialog : MetroDialog
             }
             catch (Exception ex)
             {
+                Safe.Log(ex, "NoteViewerDialog.LoadNoteContent");
                 NoteContentBox.Text = $"Error reading note: {ex.Message}";
                 UpdateReadingMetadata(string.Empty);
             }
@@ -245,6 +246,7 @@ public sealed partial class NoteViewerDialog : MetroDialog
         catch (System.ComponentModel.Win32Exception win32Ex) when (win32Ex.NativeErrorCode == 1223)
         {
             // 1223 = ERROR_CANCELLED: User clicked "Cancel" in Open With picker.
+            Safe.Ignore(win32Ex, "NoteViewerDialog.OpenWithCancelled");
         }
         catch (Exception ex)
         {

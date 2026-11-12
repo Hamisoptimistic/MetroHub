@@ -5,6 +5,7 @@ using System.IO;
 using System.Linq;
 using System.Windows.Data;
 using System.Windows.Media.Imaging;
+using MetroHub.Core.Services;
 
 namespace MetroHub.Presentation.Converters;
 
@@ -62,8 +63,9 @@ public sealed class IconPathToBitmapConverter : IValueConverter
             bmp.Freeze();
             return bmp;
         }
-        catch
+        catch (Exception ex)
         {
+            Safe.Ignore(ex, "IconPathToBitmapConverter.LoadFromBytes");
             return null;
         }
     }
@@ -117,8 +119,9 @@ public sealed class IconPathToBitmapConverter : IValueConverter
             _iconCache[cacheKey] = bmp;
             return bmp;
         }
-        catch
+        catch (Exception ex)
         {
+            Safe.Ignore(ex, "IconPathToBitmapConverter.LoadClampedIcon");
             return null;
         }
     }

@@ -5,6 +5,7 @@ using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
 using System.Windows.Input;
 using System.Windows.Media;
+using MetroHub.Core.Services;
 
 namespace MetroHub.Presentation.Controls;
 
@@ -115,7 +116,7 @@ public static class SmoothPhysicsScrollBehavior
         }
         else
         {
-            _ = parent.Dispatcher.BeginInvoke(System.Windows.Threading.DispatcherPriority.Loaded, () =>
+            parent.Dispatcher.BeginInvoke(System.Windows.Threading.DispatcherPriority.Loaded, () =>
             {
                 var deferredSv = AutoHideScrollBehavior.FindChild<ScrollViewer>(parent);
                 if (deferredSv != null)
@@ -123,7 +124,7 @@ public static class SmoothPhysicsScrollBehavior
                     InheritTuningProperties(parent, deferredSv);
                     ApplyToScrollViewer(deferredSv, true);
                 }
-            });
+            }).FireAndForget("SmoothPhysicsScrollBehavior.Attach");
         }
     }
 

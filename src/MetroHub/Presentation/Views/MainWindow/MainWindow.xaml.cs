@@ -94,7 +94,7 @@ public sealed partial class MainWindow : BorderlessFluentWindow, INotifyProperty
                     if (current <= 0) break;
                 } while (System.Threading.Interlocked.CompareExchange(ref _dialogOpenCount, current - 1, current) != current);
             }
-            _ = Dispatcher.InvokeAsync(UpdateDialogScrim);
+            Dispatcher.InvokeAsync(UpdateDialogScrim).FireAndForget("MainWindow.UpdateDialogScrim");
         }
     }
 
@@ -146,7 +146,7 @@ public sealed partial class MainWindow : BorderlessFluentWindow, INotifyProperty
         if (win == null) return ActionDisposable.Empty;
 
         Interlocked.Increment(ref _dialogScopeDepth);
-        _ = win.Dispatcher.InvokeAsync(win.UpdateDialogScrim);
+        win.Dispatcher.InvokeAsync(win.UpdateDialogScrim).FireAndForget("MainWindow.EnterDialogScope.Scrim");
 
         return new ActionDisposable(() =>
         {
@@ -155,8 +155,8 @@ public sealed partial class MainWindow : BorderlessFluentWindow, INotifyProperty
             {
                 Interlocked.Exchange(ref _dialogScopeDepth, 0);
                 win._lastShownTime = DateTime.UtcNow;
-                _ = win.Dispatcher.InvokeAsync(win.UpdateDialogScrim);
-                _ = win.Dispatcher.InvokeAsync(() =>
+                win.Dispatcher.InvokeAsync(win.UpdateDialogScrim).FireAndForget("MainWindow.ExitDialogScope.Scrim");
+                win.Dispatcher.InvokeAsync(() =>
                 {
                     try
                     {
@@ -166,9 +166,9 @@ public sealed partial class MainWindow : BorderlessFluentWindow, INotifyProperty
                     }
                     catch (Exception ex)
                     {
-                        Safe.Log("MainWindow.Activate", ex);
+                        Safe.Log(ex, "MainWindow.Activate");
                     }
-                });
+                }).FireAndForget("MainWindow.ExitDialogScope.Activate");
             }
         });
     }
@@ -187,7 +187,7 @@ public sealed partial class MainWindow : BorderlessFluentWindow, INotifyProperty
             win.UpdateDialogScrim();
             if (!isOpen)
             {
-                try { win.Activate(); win.Focus(); Keyboard.Focus(win); } catch (Exception ex) { Safe.Log("MainWindow.Activate", ex); }
+                try { win.Activate(); win.Focus(); Keyboard.Focus(win); } catch (Exception ex) { Safe.Log(ex, "MainWindow.Activate"); }
                 if (!win.Settings.SidebarPinned && (win.AllAppsDrawer == null || !win.AllAppsDrawer.IsOpen))
                 {
                     Point mousePos = Mouse.GetPosition(win);
@@ -206,7 +206,7 @@ public sealed partial class MainWindow : BorderlessFluentWindow, INotifyProperty
         }
         else
         {
-            _ = win.Dispatcher.InvokeAsync(action);
+            win.Dispatcher.InvokeAsync(action).FireAndForget("MainWindow.SetDialogOpen");
         }
     }
 
@@ -328,14 +328,14 @@ public sealed partial class MainWindow : BorderlessFluentWindow, INotifyProperty
             this,
             (r, msg) =>
             {
-                _ = r.Dispatcher.InvokeAsync(() =>
+                r.Dispatcher.InvokeAsync(() =>
                 {
                     if (!r.IsVisible)
                     {
                         r.ShowScreen();
                     }
                     r.ShowToast($"Could not launch {msg.Title}: {msg.Exception.Message}", isError: true);
-                });
+                }).FireAndForget("MainWindow.TargetLaunchFailedMessage");
             });
 
         RegisterCanvasMessageHandlers();
@@ -369,7 +369,7 @@ public sealed partial class MainWindow : BorderlessFluentWindow, INotifyProperty
 
         if (Settings.BrowserExtensionCompanionEnabled)
         {
-            _ = service.StartAsync();
+            service.StartAsync().FireAndForget("MainWindow.StartCompanionService");
         }
     }
 
@@ -518,10 +518,10 @@ public sealed partial class MainWindow : BorderlessFluentWindow, INotifyProperty
         }
         else
         {
-            _ = Dispatcher.InvokeAsync(() =>
+            Dispatcher.InvokeAsync(() =>
             {
                 if (Topmost != topmost) Topmost = topmost;
-            });
+            }).FireAndForget("MainWindow.EnsureTopmost");
         }
     }
 
@@ -574,7 +574,7 @@ public sealed partial class MainWindow : BorderlessFluentWindow, INotifyProperty
 
         if (AllAppsDrawer == null || !AllAppsDrawer.IsOpen)
         {
-            _ = Dispatcher.InvokeAsync(() =>
+            Dispatcher.InvokeAsync(() =>
             {
                 if (AllAppsDrawer == null || !AllAppsDrawer.IsOpen)
                 {
@@ -584,7 +584,7 @@ public sealed partial class MainWindow : BorderlessFluentWindow, INotifyProperty
                     Focus();
                     Keyboard.Focus(this);
                 }
-            }, DispatcherPriority.Input);
+            }, DispatcherPriority.Input).FireAndForget("MainWindow.OnWindowActivated.Focus");
         }
     }
 
@@ -694,14 +694,14 @@ public sealed partial class MainWindow : BorderlessFluentWindow, INotifyProperty
 
         if (activeWs.ScrollOffset > 0 && ContentScrollViewer != null)
         {
-            _ = Dispatcher.BeginInvoke(DispatcherPriority.Loaded, () =>
+            Dispatcher.BeginInvoke(DispatcherPriority.Loaded, () =>
             {
                 if (ContentScrollViewer != null)
                 {
                     ContentScrollViewer.UpdateLayout();
                     SmoothPhysicsScrollBehavior.ResetOffset(ContentScrollViewer, activeWs.ScrollOffset);
                 }
-            });
+            }).FireAndForget("MainWindow.RestoreScrollOffset");
         }
     }
 
@@ -741,7 +741,7 @@ public sealed partial class MainWindow : BorderlessFluentWindow, INotifyProperty
         }
         catch (Exception ex)
         {
-            Safe.Log("MainWindow.SHChangeNotifyRegister", ex);
+            Safe.Log(ex, "MainWindow.SHChangeNotifyRegister");
         }
 
         SnapToWorkArea();
@@ -776,7 +776,7 @@ public sealed partial class MainWindow : BorderlessFluentWindow, INotifyProperty
                 return;
             }
 
-            _ = Dispatcher.InvokeAsync(() =>
+            Dispatcher.InvokeAsync(() =>
             {
                 if (IsVisible && !_isDismissing)
                 {
@@ -786,7 +786,7 @@ public sealed partial class MainWindow : BorderlessFluentWindow, INotifyProperty
                         HideScreen(restorePreviousFocus: false);
                     }
                 }
-            });
+            }).FireAndForget("MainWindow.DismissOnDeactivate");
         }
     }
 
@@ -833,9 +833,10 @@ public sealed partial class MainWindow : BorderlessFluentWindow, INotifyProperty
                     return true;
                 }
             }
-            catch
+            catch (Exception ex)
             {
                 // Process may have exited or access denied
+                Safe.Ignore(ex, "MainWindow.IsShellSurface.ProcessLookup");
             }
         }
 
@@ -913,7 +914,7 @@ public sealed partial class MainWindow : BorderlessFluentWindow, INotifyProperty
             }
             else if (window != this)
             {
-                try { window.Close(); } catch { }
+                try { window.Close(); } catch (Exception ex) { Safe.Ignore(ex, "MainWindow.DismissOpenDialogs.Close"); }
             }
         }
     }
@@ -946,11 +947,11 @@ public sealed partial class MainWindow : BorderlessFluentWindow, INotifyProperty
         if (RootGrid != null) RootGrid.IsHitTestVisible = true;
 
         // Log diagnostic snapshot at idle priority after window is hidden (without forced GC or WorkingSet flush)
-        _ = Dispatcher.InvokeAsync(() =>
+        Dispatcher.InvokeAsync(() =>
         {
             var currentMB = GC.GetTotalMemory(false) / (1024.0 * 1024.0);
             MetroHub.Core.Services.HiddenDiagnosticsLogger.LogMemorySnapshot("HUB HIDE", currentMB);
-        }, DispatcherPriority.ApplicationIdle);
+        }, DispatcherPriority.ApplicationIdle).FireAndForget("MainWindow.LogMemorySnapshot");
     }
 
     private const int WM_SETTINGCHANGE = 0x001A;
@@ -979,7 +980,7 @@ public sealed partial class MainWindow : BorderlessFluentWindow, INotifyProperty
         }
         else if (msg == WM_DISPLAYCHANGE)
         {
-            _ = Dispatcher.InvokeAsync(async () =>
+            Dispatcher.InvokeAsync(async () =>
             {
                 try
                 {
@@ -996,9 +997,9 @@ public sealed partial class MainWindow : BorderlessFluentWindow, INotifyProperty
                 }
                 catch (Exception ex)
                 {
-                    Safe.Log("MainWindow.WndProc.WM_DISPLAYCHANGE", ex);
+                    Safe.Log(ex, "MainWindow.WndProc.WM_DISPLAYCHANGE");
                 }
-            });
+            }).FireAndForget("MainWindow.WndProc.WM_DISPLAYCHANGE");
         }
         else if (msg == WM_DPICHANGED)
         {
@@ -1017,7 +1018,7 @@ public sealed partial class MainWindow : BorderlessFluentWindow, INotifyProperty
                 SnapToWorkArea(force: true);
             }
             IconExtractorService.InvalidateAssociationCache();
-            _ = Dispatcher.InvokeAsync(async () =>
+            Dispatcher.InvokeAsync(async () =>
             {
                 try
                 {
@@ -1056,9 +1057,9 @@ public sealed partial class MainWindow : BorderlessFluentWindow, INotifyProperty
                 }
                 catch (Exception ex)
                 {
-                    Safe.Log("MainWindow.WndProc.WM_SETTINGCHANGE", ex);
+                    Safe.Log(ex, "MainWindow.WndProc.WM_SETTINGCHANGE");
                 }
-            });
+            }).FireAndForget("MainWindow.WndProc.WM_SETTINGCHANGE");
         }
 
         return IntPtr.Zero;
@@ -1133,7 +1134,7 @@ public sealed partial class MainWindow : BorderlessFluentWindow, INotifyProperty
         TeardownWallpaperVideo();
         _backdropManager?.Dispose();
         ClipboardSource.Instance?.Dispose();
-        _ = LocalCompanionService.Instance.StopAsync();
+        LocalCompanionService.Instance.StopAsync().FireAndForget("MainWindow.StopCompanionService");
         DismissOpenDialogs(force: true);
         base.OnClosed(e);
     }
@@ -1145,16 +1146,19 @@ public sealed partial class MainWindow : BorderlessFluentWindow, INotifyProperty
         {
             try
             {
-                _ = Dispatcher.BeginInvoke(new Action(() =>
+                Dispatcher.BeginInvoke(new Action(() =>
                 {
                     if (!IsVisible)
                     {
                         // Microscopic read to touch the framework page tables without doing heavy work
                         _ = this.IsLoaded;
                     }
-                }), DispatcherPriority.SystemIdle);
+                }), DispatcherPriority.SystemIdle).FireAndForget("MainWindow.KeepWarm");
             }
-            catch { }
+            catch (Exception ex)
+            {
+                Safe.Ignore(ex, "MainWindow.KeepWarm");
+            }
         }, null, TimeSpan.FromMinutes(10), TimeSpan.FromMinutes(10));
     }
 
@@ -1224,7 +1228,7 @@ public sealed partial class MainWindow : BorderlessFluentWindow, INotifyProperty
         bool isVideoActive = WallpaperVideo != null && WallpaperVideo.Visibility == Visibility.Visible && WallpaperVideo.Source != null;
         if (isVideoActive)
         {
-            try { WallpaperVideo!.Play(); } catch (Exception ex) { Safe.Log("MainWindow.WallpaperPlay", ex); }
+            try { WallpaperVideo!.Play(); } catch (Exception ex) { Safe.Log(ex, "MainWindow.WallpaperPlay"); }
         }
 
         if (myHwnd != IntPtr.Zero)
@@ -1250,7 +1254,7 @@ public sealed partial class MainWindow : BorderlessFluentWindow, INotifyProperty
 
         // Stagger widget wake-up and background service resumption so window restore and initial scroll do not compete with 14 widgets resuming simultaneously
         int showToken = ++_showSequence;
-        _ = Dispatcher.InvokeAsync(async () =>
+        Dispatcher.InvokeAsync(async () =>
         {
             await Task.Delay(120).ConfigureAwait(false);
             await Dispatcher.InvokeAsync(() =>
@@ -1268,7 +1272,7 @@ public sealed partial class MainWindow : BorderlessFluentWindow, INotifyProperty
 
                 InstalledAppsService.ResumeWatchers();
             }, DispatcherPriority.Background);
-        });
+        }).FireAndForget("MainWindow.StaggerWidgetWakeup");
 
         MetroHub.Core.Services.HubState.SetVisibility(true);
         MetroHub.Core.Services.HiddenDiagnosticsLogger.LogTransition(true);
@@ -1337,7 +1341,7 @@ public sealed partial class MainWindow : BorderlessFluentWindow, INotifyProperty
         UninstallWinEventHook();
 
         // Auto-pause video wallpaper when hidden to ensure 0.0% CPU and 0.0% GPU decode
-        try { WallpaperVideo?.Pause(); } catch (Exception ex) { Safe.Log("MainWindow.WallpaperPause", ex); }
+        try { WallpaperVideo?.Pause(); } catch (Exception ex) { Safe.Log(ex, "MainWindow.WallpaperPause"); }
 
         // Dismiss immediately without UI freeze (GC cleanup is deferred to ApplicationIdle in DismissWithAnimation)
         DismissWithAnimation();
@@ -1415,7 +1419,7 @@ public sealed partial class MainWindow : BorderlessFluentWindow, INotifyProperty
             }
 
             e.Handled = true;
-            _ = ExecuteCanvasPasteAsync();
+            ExecuteCanvasPasteAsync().FireAndForget("MainWindow.ExecuteCanvasPaste");
             return;
         }
     }
@@ -1615,7 +1619,10 @@ public sealed partial class MainWindow : BorderlessFluentWindow, INotifyProperty
             {
                 NativeMethods.SHChangeNotifyDeregister(_shellChangeNotifyId);
             }
-            catch { }
+            catch (Exception ex)
+            {
+                Safe.Ignore(ex, "MainWindow.UninstallShellChangeNotify");
+            }
             _shellChangeNotifyId = 0;
         }
     }

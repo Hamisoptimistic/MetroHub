@@ -178,7 +178,7 @@ public sealed partial class MainWindow
 
         if (launchableTiles.Count == 0) return;
 
-        _ = Task.Run(async () =>
+        Task.Run(async () =>
         {
             try
             {
@@ -190,13 +190,13 @@ public sealed partial class MainWindow
             }
             catch (Exception ex)
             {
-                MetroHub.Core.Services.Safe.Log("MainWindow.CanvasGroups.LaunchAll", ex);
+                Safe.Log(ex, "MainWindow.CanvasGroups.LaunchAll");
             }
-        });
+        }).FireAndForget("MainWindow.CanvasGroups.LaunchAll");
 
         if (Settings.CloseOnLaunch)
         {
-            _ = Dispatcher.InvokeAsync(() => HideScreen(restorePreviousFocus: false));
+            Dispatcher.InvokeAsync(() => HideScreen(restorePreviousFocus: false)).FireAndForget("MainWindow.CanvasGroups.HideScreen");
         }
     }
 }

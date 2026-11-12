@@ -9,6 +9,7 @@ using System.Windows.Interop;
 using System.Windows.Media;
 using System.Windows.Media.Animation;
 using Microsoft.Win32;
+using MetroHub.Core.Services;
 
 namespace MetroHub.Presentation.Controllers;
 
@@ -112,13 +113,16 @@ public sealed class CinematicFadeService
 
                     // Safety Net 1: Watchdog timer (closes overlay if action or shutdown halts)
                     var watchdogCts = new CancellationTokenSource();
-                    _ = Task.Delay(3500, watchdogCts.Token).ContinueWith(t =>
+                    Task.Delay(3500, watchdogCts.Token).ContinueWith(t =>
                     {
-                        _ = Application.Current?.Dispatcher.InvokeAsync(() =>
+                        if (Application.Current?.Dispatcher is { } dispatcher)
                         {
-                            DismissOverlay(overlay);
-                        });
-                    }, TaskScheduler.Default);
+                            dispatcher.InvokeAsync(() =>
+                            {
+                                DismissOverlay(overlay);
+                            }).FireAndForget("CinematicFade.Watchdog");
+                        }
+                    }, TaskScheduler.Default).FireAndForget("CinematicFade.WatchdogTask");
 
                     // Safety Net 2: SystemEvents.SessionSwitch (close overlay when Windows locks)
                     SessionSwitchEventHandler? sessionHandler = null;
@@ -126,10 +130,13 @@ public sealed class CinematicFadeService
                     {
                         if (e.Reason == SessionSwitchReason.SessionLock)
                         {
-                            _ = Application.Current?.Dispatcher.InvokeAsync(() =>
+                            if (Application.Current?.Dispatcher is { } dispatcher)
                             {
-                                DismissOverlay(overlay);
-                            });
+                                dispatcher.InvokeAsync(() =>
+                                {
+                                    DismissOverlay(overlay);
+                                }).FireAndForget("CinematicFade.SessionSwitch");
+                            }
                         }
                     };
                     SystemEvents.SessionSwitch += sessionHandler;
@@ -138,10 +145,13 @@ public sealed class CinematicFadeService
                     PowerModeChangedEventHandler? powerHandler = null;
                     powerHandler = (s, e) =>
                     {
-                        _ = Application.Current?.Dispatcher.InvokeAsync(() =>
+                        if (Application.Current?.Dispatcher is { } dispatcher)
                         {
-                            DismissOverlay(overlay);
-                        });
+                            dispatcher.InvokeAsync(() =>
+                            {
+                                DismissOverlay(overlay);
+                            }).FireAndForget("CinematicFade.PowerMode");
+                        }
                     };
                     SystemEvents.PowerModeChanged += powerHandler;
 
@@ -166,7 +176,10 @@ public sealed class CinematicFadeService
                             if (sessionHandler != null) SystemEvents.SessionSwitch -= sessionHandler;
                             if (powerHandler != null) SystemEvents.PowerModeChanged -= powerHandler;
                         }
-                        catch { }
+                        catch (Exception ex)
+                        {
+                            Safe.Ignore(ex, "CinematicFadeService.ClosedCleanup");
+                        }
                         _activeOverlay = null;
                     };
 
@@ -213,7 +226,7 @@ public sealed class CinematicFadeService
         }
         catch (Exception ex)
         {
-            Debug.WriteLine($"[CinematicFadeService] Error: {ex.Message}");
+            Safe.Log(ex, "CinematicFadeService.FadeAndExecuteAsync");
         }
         finally
         {
@@ -269,6 +282,9 @@ public sealed class CinematicFadeService
             overlay.BeginAnimation(UIElement.OpacityProperty, null);
             overlay.Close();
         }
-        catch { }
+        catch (Exception ex)
+        {
+            Safe.Ignore(ex, "CinematicFadeService.DismissOverlay");
+        }
     }
 }

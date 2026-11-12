@@ -218,7 +218,7 @@ public sealed class EverythingSearchSource : ISearchSource, IDisposable
             }
             catch (Exception ex)
             {
-                Safe.Log(ex, "EverythingSearchSource.WorkerLoop.ExecuteSearch");
+                Safe.LogThrottled(ex, "EverythingSearchSource.Query");
                 RecordFailure(ex.Message);
                 item.TrySetResult(Array.Empty<Candidate>());
             }
@@ -244,7 +244,7 @@ public sealed class EverythingSearchSource : ISearchSource, IDisposable
         }
         catch (Exception ex)
         {
-            Safe.Log(ex, "EverythingSearchSource.ExecuteSearchInternal.Availability");
+            Safe.LogThrottled(ex, "EverythingSearchSource.Query");
             RecordUnavailable($"Everything availability probe failed: {ex.Message}");
             return Array.Empty<Candidate>();
         }
@@ -280,7 +280,7 @@ public sealed class EverythingSearchSource : ISearchSource, IDisposable
         }
         catch (Exception ex)
         {
-            Safe.Log(ex, "EverythingSearchSource.ExecuteSearchInternal.Search");
+            Safe.LogThrottled(ex, "EverythingSearchSource.Query");
             RecordFailure(ex.Message);
             return Array.Empty<Candidate>();
         }

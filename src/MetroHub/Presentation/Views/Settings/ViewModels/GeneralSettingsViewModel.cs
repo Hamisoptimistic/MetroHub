@@ -92,35 +92,42 @@ public sealed partial class GeneralSettingsViewModel : ObservableObject
 
     async partial void OnIsHibernateEnabledChanged(bool value)
     {
-        if (_isInitializing) return;
-
-        HibernateToggleLabel = value ? "On" : "Off";
-        HibernateStatusDescription = value
-            ? "Hibernation is active and ready to use"
-            : "Currently disabled in Windows (Requires admin approval to enable)";
-
-        if (value)
+        try
         {
-            bool success = await PowerService.RequestEnableHibernateAsync();
-            if (!success)
-            {
-                _isInitializing = true;
-                IsHibernateEnabled = false;
-                _isInitializing = false;
-            }
-        }
-        else
-        {
-            bool success = await PowerService.RequestDisableHibernateAsync();
-            if (!success)
-            {
-                _isInitializing = true;
-                IsHibernateEnabled = true;
-                _isInitializing = false;
-            }
-        }
+            if (_isInitializing) return;
 
-        UpdateHibernateState();
+            HibernateToggleLabel = value ? "On" : "Off";
+            HibernateStatusDescription = value
+                ? "Hibernation is active and ready to use"
+                : "Currently disabled in Windows (Requires admin approval to enable)";
+
+            if (value)
+            {
+                bool success = await PowerService.RequestEnableHibernateAsync();
+                if (!success)
+                {
+                    _isInitializing = true;
+                    IsHibernateEnabled = false;
+                    _isInitializing = false;
+                }
+            }
+            else
+            {
+                bool success = await PowerService.RequestDisableHibernateAsync();
+                if (!success)
+                {
+                    _isInitializing = true;
+                    IsHibernateEnabled = true;
+                    _isInitializing = false;
+                }
+            }
+
+            UpdateHibernateState();
+        }
+        catch (Exception ex)
+        {
+            Safe.Log(ex, "GeneralSettingsViewModel.OnIsHibernateEnabledChanged");
+        }
     }
 
     partial void OnLaunchAtStartupChanged(bool value)

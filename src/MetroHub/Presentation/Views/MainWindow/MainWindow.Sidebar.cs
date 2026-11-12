@@ -73,7 +73,7 @@ public sealed partial class MainWindow
         {
             if (prop is nameof(AppSettings.SidebarPinned) or nameof(AppSettings.SidebarAutoHide))
             {
-                _ = Dispatcher.InvokeAsync(() =>
+                Dispatcher.InvokeAsync(() =>
                 {
                     if (Settings.SidebarPinned)
                     {
@@ -88,7 +88,7 @@ public sealed partial class MainWindow
                             HideSidebarRail(immediate: false, force: true);
                         }
                     }
-                });
+                }).FireAndForget("MainWindow.Sidebar.OnSettingChanged");
             }
         };
     }
@@ -443,7 +443,7 @@ public sealed partial class MainWindow
         }
         catch (Exception ex)
         {
-            Safe.Log("MainWindow.OnDrawerAppLaunchRequested", ex);
+            Safe.Log(ex, "MainWindow.OnDrawerAppLaunchRequested");
         }
     }
 

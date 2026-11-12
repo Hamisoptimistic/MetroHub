@@ -50,10 +50,10 @@ public sealed partial class SidebarRailControl : UserControl, ISidebarShortcutSt
         MetroHub.Presentation.Controllers.WorkspaceManager.Instance.WorkspaceChanged += OnWorkspaceChanged;
         InstalledAppsService.AppsCatalogChanged += freshApps =>
         {
-            _ = Dispatcher.InvokeAsync(() =>
+            Dispatcher.InvokeAsync(() =>
             {
                 _cachedShortcutApps = freshApps?.OrderBy(i => i.Name, StringComparer.OrdinalIgnoreCase).ToList();
-            });
+            }).FireAndForget("SidebarRailControl.AppsCatalogChanged");
         };
         SettingsService.Instance.SettingChanged += prop =>
         {
@@ -63,7 +63,7 @@ public sealed partial class SidebarRailControl : UserControl, ISidebarShortcutSt
                         nameof(AppSettings.SidebarPinned) or
                         nameof(AppSettings.SidebarAutoHide))
             {
-                _ = Dispatcher.InvokeAsync(ApplyButtonSettings);
+                Dispatcher.InvokeAsync(ApplyButtonSettings).FireAndForget("SidebarRailControl.ApplyButtonSettings");
             }
         };
     }
@@ -220,7 +220,7 @@ public sealed partial class SidebarRailControl : UserControl, ISidebarShortcutSt
 
     private void ScrollToActiveWorkspace()
     {
-        _ = Dispatcher.BeginInvoke(System.Windows.Threading.DispatcherPriority.Loaded, () =>
+        Dispatcher.BeginInvoke(System.Windows.Threading.DispatcherPriority.Loaded, () =>
         {
             var activeWs = MetroHub.Presentation.Controllers.WorkspaceManager.Instance.ActiveWorkspace;
             if (activeWs == null) return;
@@ -238,7 +238,7 @@ public sealed partial class SidebarRailControl : UserControl, ISidebarShortcutSt
                     WorkspacesScrollViewer.ScrollToVerticalOffset(index * 38.0);
                 }
             }
-        });
+        }).FireAndForget("SidebarRailControl.ScrollToActiveWorkspace");
     }
 
     private void OnItemPreviewMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
@@ -281,7 +281,7 @@ public sealed partial class SidebarRailControl : UserControl, ISidebarShortcutSt
             }
             catch (Exception ex)
             {
-                Debug.WriteLine($"[SidebarRail] DragDrop exception: {ex.Message}");
+                Safe.Log(ex, "SidebarRailControl.DoDragDrop");
             }
             finally
             {
@@ -371,7 +371,7 @@ public sealed partial class SidebarRailControl : UserControl, ISidebarShortcutSt
         }
         catch (Exception ex)
         {
-            Debug.WriteLine($"[SidebarRail] Failed to launch '{item.Title}': {ex.Message}");
+            Safe.Log(ex, "SidebarRailControl.LaunchShortcut");
         }
     }
 
@@ -415,7 +415,7 @@ public sealed partial class SidebarRailControl : UserControl, ISidebarShortcutSt
         }
         catch (Exception ex)
         {
-            Debug.WriteLine($"[SidebarRail] Failed to launch in new window '{item.Title}': {ex.Message}");
+            Safe.Log(ex, "SidebarRailControl.LaunchShortcutInNewWindow");
         }
     }
 
@@ -486,43 +486,46 @@ public sealed partial class SidebarRailControl : UserControl, ISidebarShortcutSt
 
     private async void OnAddShortcutAppsSubmenuOpened(object sender, RoutedEventArgs e)
     {
-        if (sender is not MenuItem appsMenu) return;
-
-        if (_cachedShortcutApps != null && _cachedShortcutApps.Count > 0)
-        {
-            if (appsMenu.ItemsSource == null)
-            {
-                appsMenu.ItemsSource = _cachedShortcutApps;
-            }
-            return;
-        }
-
-        if (_isLoadingShortcutApps) return;
-        _isLoadingShortcutApps = true;
-
         try
         {
-            var provider = CatalogService.GetProvider("installed_apps");
-            if (provider != null)
+            if (sender is not MenuItem appsMenu) return;
+
+            if (_cachedShortcutApps != null && _cachedShortcutApps.Count > 0)
             {
-                var items = await provider.GetItemsAsync();
-                var ordered = items.OrderBy(i => i.Name, StringComparer.OrdinalIgnoreCase).ToList();
-                _cachedShortcutApps = ordered;
+                if (appsMenu.ItemsSource == null)
+                {
+                    appsMenu.ItemsSource = _cachedShortcutApps;
+                }
+                return;
+            }
 
-                appsMenu.ItemsSource = null;
-                appsMenu.Items.Clear();
-                appsMenu.ItemsSource = ordered;
+            if (_isLoadingShortcutApps) return;
+            _isLoadingShortcutApps = true;
 
-                CatalogItemModel.PrewarmMemoryCache(ordered);
+            try
+            {
+                var provider = CatalogService.GetProvider("installed_apps");
+                if (provider != null)
+                {
+                    var items = await provider.GetItemsAsync();
+                    var ordered = items.OrderBy(i => i.Name, StringComparer.OrdinalIgnoreCase).ToList();
+                    _cachedShortcutApps = ordered;
+
+                    appsMenu.ItemsSource = null;
+                    appsMenu.Items.Clear();
+                    appsMenu.ItemsSource = ordered;
+
+                    CatalogItemModel.PrewarmMemoryCache(ordered);
+                }
+            }
+            finally
+            {
+                _isLoadingShortcutApps = false;
             }
         }
         catch (Exception ex)
         {
-            Safe.Log("SidebarRailControl.OnAddShortcutAppsSubmenuOpened", ex);
-        }
-        finally
-        {
-            _isLoadingShortcutApps = false;
+            Safe.Log(ex, "SidebarRailControl.OnAddShortcutAppsSubmenuOpened");
         }
     }
 
@@ -556,7 +559,7 @@ public sealed partial class SidebarRailControl : UserControl, ISidebarShortcutSt
         }
         catch (Exception ex)
         {
-            Debug.WriteLine($"[SidebarRail] Failed to browse folder: {ex.Message}");
+            Safe.Log(ex, "SidebarRailControl.BrowseLocalFolder");
         }
     }
 
@@ -578,7 +581,7 @@ public sealed partial class SidebarRailControl : UserControl, ISidebarShortcutSt
         }
         catch (Exception ex)
         {
-            Debug.WriteLine($"[SidebarRail] Failed to browse app: {ex.Message}");
+            Safe.Log(ex, "SidebarRailControl.BrowseApp");
         }
     }
 
@@ -775,14 +778,16 @@ public sealed partial class SidebarRailControl : UserControl, ISidebarShortcutSt
                 {
                     Process.Start(new ProcessStartInfo("wt.exe") { WorkingDirectory = folder, UseShellExecute = true });
                 }
-                catch
+                catch (Exception ex)
                 {
+                    Safe.Ignore(ex, "SidebarRailControl.OpenTerminalInFolder.wt");
                     try
                     {
                         Process.Start(new ProcessStartInfo("powershell.exe", "-NoExit") { WorkingDirectory = folder, UseShellExecute = true });
                     }
-                    catch
+                    catch (Exception pEx)
                     {
+                        Safe.Ignore(pEx, "SidebarRailControl.OpenTerminalInFolder.powershell");
                         Process.Start(new ProcessStartInfo("cmd.exe", "/K") { WorkingDirectory = folder, UseShellExecute = true });
                     }
                 }
@@ -824,7 +829,7 @@ public sealed partial class SidebarRailControl : UserControl, ISidebarShortcutSt
             }
             catch (Exception ex)
             {
-                Debug.WriteLine($"[SidebarRail] Failed to open file location: {ex.Message}");
+                Safe.Log(ex, "SidebarRailControl.OpenFileLocation");
             }
         }
     }
@@ -863,7 +868,7 @@ public sealed partial class SidebarRailControl : UserControl, ISidebarShortcutSt
             }
             catch (Exception ex)
             {
-                Debug.WriteLine($"[SidebarRail] Failed to copy path: {ex.Message}");
+                Safe.Log(ex, "SidebarRailControl.CopyPath");
             }
         }
     }
@@ -939,7 +944,7 @@ public sealed partial class SidebarRailControl : UserControl, ISidebarShortcutSt
             }
             catch (Exception ex)
             {
-                Debug.WriteLine($"[SidebarRail] Icon extraction failed for '{path}': {ex.Message}");
+                Safe.Log(ex, "SidebarRailControl.AddAppAsShortcut.Icon");
             }
 
             string defaultSymbol = ext switch
@@ -993,7 +998,10 @@ public sealed partial class SidebarRailControl : UserControl, ISidebarShortcutSt
                 return IconExtractorService.ExtractAndCacheIcon(iconIco);
             }
         }
-        catch { }
+        catch (Exception ex)
+        {
+            Safe.Ignore(ex, "SidebarRailControl.GetCustomFolderIcon");
+        }
         return null;
     }
 
@@ -1010,7 +1018,10 @@ public sealed partial class SidebarRailControl : UserControl, ISidebarShortcutSt
                 }
             }
         }
-        catch { }
+        catch (Exception ex)
+        {
+            Safe.Ignore(ex, "SidebarRailControl.ParseUrlShortcut");
+        }
         return urlFilePath;
     }
 
@@ -1214,7 +1225,7 @@ public sealed partial class SidebarRailControl : UserControl, ISidebarShortcutSt
 
         if (string.IsNullOrWhiteSpace(iconPath))
         {
-            _ = Task.Run(async () =>
+            Task.Run(async () =>
             {
                 string? fetched = await WebFaviconService.GetFaviconPathAsync(normalized);
                 if (!string.IsNullOrWhiteSpace(fetched))
@@ -1225,7 +1236,7 @@ public sealed partial class SidebarRailControl : UserControl, ISidebarShortcutSt
                         PersistShortcuts();
                     });
                 }
-            });
+            }).FireAndForget("SidebarRailControl.ResolveWebShortcutFavicon");
         }
     }
 
@@ -1245,15 +1256,15 @@ public sealed partial class SidebarRailControl : UserControl, ISidebarShortcutSt
         }
     }
 
-    private void OnHibernateClick(object sender, RoutedEventArgs e) => _ = PowerService.ExecuteHibernateAsync();
+    private void OnHibernateClick(object sender, RoutedEventArgs e) => PowerService.ExecuteHibernateAsync().FireAndForget("SidebarRailControl.ExecuteHibernate");
 
-    private void OnSleepClick(object sender, RoutedEventArgs e) => _ = PowerService.ExecuteSleepAsync();
+    private void OnSleepClick(object sender, RoutedEventArgs e) => PowerService.ExecuteSleepAsync().FireAndForget("SidebarRailControl.ExecuteSleep");
 
-    private void OnShutdownClick(object sender, RoutedEventArgs e) => _ = PowerService.ExecuteShutdownAsync();
+    private void OnShutdownClick(object sender, RoutedEventArgs e) => PowerService.ExecuteShutdownAsync().FireAndForget("SidebarRailControl.ExecuteShutdown");
 
-    private void OnRestartClick(object sender, RoutedEventArgs e) => _ = PowerService.ExecuteRestartAsync();
+    private void OnRestartClick(object sender, RoutedEventArgs e) => PowerService.ExecuteRestartAsync().FireAndForget("SidebarRailControl.ExecuteRestart");
 
-    private void OnLockClick(object sender, RoutedEventArgs e) => _ = PowerService.ExecuteLockAsync();
+    private void OnLockClick(object sender, RoutedEventArgs e) => PowerService.ExecuteLockAsync().FireAndForget("SidebarRailControl.ExecuteLock");
 
     private void OnSettingsClick(object sender, RoutedEventArgs e)
     {

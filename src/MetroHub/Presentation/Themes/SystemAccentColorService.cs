@@ -57,25 +57,31 @@ public static class SystemAccentColorService
                 _uiSettings = new Windows.UI.ViewManagement.UISettings();
                 _uiSettings.ColorValuesChanged += (sender, args) =>
                 {
-                    _ = Application.Current?.Dispatcher.InvokeAsync(UpdateSystemAccentColors);
+                    if (Application.Current?.Dispatcher is { } dispatcher)
+                    {
+                        dispatcher.InvokeAsync(UpdateSystemAccentColors).FireAndForget("SystemAccentColorService.ColorValuesChanged");
+                    }
                 };
             }
             catch (Exception ex)
             {
-                Safe.Log("SystemAccentColorService.Initialize.UISettings", ex);
+                Safe.Log(ex, "SystemAccentColorService.Initialize.UISettings");
                 try
                 {
                     Microsoft.Win32.SystemEvents.UserPreferenceChanged += (sender, e) =>
                     {
                         if (e.Category is Microsoft.Win32.UserPreferenceCategory.General or Microsoft.Win32.UserPreferenceCategory.Color)
                         {
-                            _ = Application.Current?.Dispatcher.InvokeAsync(UpdateSystemAccentColors);
+                            if (Application.Current?.Dispatcher is { } dispatcher)
+                            {
+                                dispatcher.InvokeAsync(UpdateSystemAccentColors).FireAndForget("SystemAccentColorService.UserPreferenceChanged");
+                            }
                         }
                     };
                 }
                 catch (Exception pEx)
                 {
-                    Safe.Log("SystemAccentColorService.Initialize.SystemEvents", pEx);
+                    Safe.Log(pEx, "SystemAccentColorService.Initialize.SystemEvents");
                 }
             }
 
@@ -115,7 +121,7 @@ public static class SystemAccentColorService
             }
             catch (Exception ex)
             {
-                Safe.Log("SystemAccentColorService.UpdateSystemAccentColors", ex);
+                Safe.Log(ex, "SystemAccentColorService.UpdateSystemAccentColors");
             }
         }
 
@@ -136,7 +142,10 @@ public static class SystemAccentColorService
                 return Lighten(Color.FromRgb(glass.R, glass.G, glass.B), 0.25f);
             }
         }
-        catch { }
+        catch (Exception ex)
+        {
+            Safe.Ignore(ex, "SystemAccentColorService.GetFallbackSystemAccentColor");
+        }
 
         return Color.FromRgb(0x4C, 0xC2, 0xFF);
     }
@@ -216,7 +225,7 @@ public static class SystemAccentColorService
         }
         catch (Exception ex)
         {
-            Safe.Log("SystemAccentColorService.ApplyToResources.WpfUi", ex);
+            Safe.Log(ex, "SystemAccentColorService.ApplyToResources.WpfUi");
         }
 
         var res = app.Resources;

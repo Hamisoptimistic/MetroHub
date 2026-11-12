@@ -159,7 +159,7 @@ public class MetroDialog : BorderlessFluentWindow
 
     private void OnMetroDialogLoaded(object sender, RoutedEventArgs e)
     {
-        _ = Dispatcher.InvokeAsync(() =>
+        Dispatcher.InvokeAsync(() =>
         {
             if (IsDismissing) return;
             var target = InitialFocusedElement ?? FindFirstFocusableInput(this);
@@ -172,7 +172,7 @@ public class MetroDialog : BorderlessFluentWindow
                     tb.SelectAll();
                 }
             }
-        }, System.Windows.Threading.DispatcherPriority.Input);
+        }, System.Windows.Threading.DispatcherPriority.Input).FireAndForget("MetroDialog.FocusInitialElement");
     }
 
     private static UIElement? FindFirstFocusableInput(DependencyObject parent)
@@ -229,12 +229,13 @@ public class MetroDialog : BorderlessFluentWindow
         {
             if (DialogResult == null)
             {
-                try { DialogResult = false; } catch (InvalidOperationException) { }
+                try { DialogResult = false; } catch (InvalidOperationException ex) { Safe.Ignore(ex, "MetroDialog.Dismiss.DialogResult"); }
             }
             Close();
         }
-        catch (InvalidOperationException)
+        catch (InvalidOperationException ex)
         {
+            Safe.Ignore(ex, "MetroDialog.Dismiss.Close");
         }
     }
 
@@ -257,7 +258,7 @@ public class MetroDialog : BorderlessFluentWindow
         base.OnDeactivated(e);
         if (EnableLightDismiss && Environment.TickCount64 - _shownTimestamp >= 200 && !IsDismissing && !_isClosing && IsLoaded)
         {
-            _ = Dispatcher.InvokeAsync(() =>
+            Dispatcher.InvokeAsync(() =>
             {
                 if (!IsDismissing && !_isClosing && IsLoaded)
                 {
@@ -273,7 +274,7 @@ public class MetroDialog : BorderlessFluentWindow
 
                     DismissDialog();
                 }
-            });
+            }).FireAndForget("MetroDialog.DeactivatedDismiss");
         }
     }
 
@@ -381,7 +382,7 @@ public class MetroDialog : BorderlessFluentWindow
                         bool isInside = x >= rect.Left && x <= rect.Right && y >= rect.Top && y <= rect.Bottom;
                         if (!isInside)
                         {
-                            _ = Dispatcher.InvokeAsync(DismissDialog);
+                            Dispatcher.InvokeAsync(DismissDialog).FireAndForget("MetroDialog.MouseHookDismiss");
                         }
                     }
                 }

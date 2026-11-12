@@ -287,7 +287,7 @@ public sealed partial class MainWindow
         }
         catch (Exception ex)
         {
-            System.Diagnostics.Debug.WriteLine($"[MainWindow] Failed to open add tile file dialog: {ex.Message}");
+            Safe.Log(ex, "MainWindow.OpenAddTileFileDialog");
         }
         finally
         {
@@ -417,8 +417,9 @@ public sealed partial class MainWindow
             {
                 canPaste = Clipboard.ContainsText() || Clipboard.ContainsImage() || Clipboard.ContainsFileDropList();
             }
-            catch
+            catch (Exception ex)
             {
+                Safe.Ignore(ex, "MainWindow.CheckClipboardCanPaste");
                 // Clipboard may be temporarily locked by another process
             }
             PasteCanvasMenuItem.IsEnabled = canPaste;
@@ -507,26 +508,33 @@ public sealed partial class MainWindow
 
         if (!_isAppsLoaded && !_isLoadingApps)
         {
-            _ = LoadAppsSubmenuAsync();
+            LoadAppsSubmenuAsync().FireAndForget("MainWindow.LoadAppsSubmenu");
         }
     }
 
     private void OnCanvasPasteClick(object sender, RoutedEventArgs e)
     {
-        _ = ExecuteCanvasPasteAsync();
+        ExecuteCanvasPasteAsync().FireAndForget("MainWindow.ExecuteCanvasPaste");
     }
 
     private async void OnAppsSubmenuOpened(object sender, RoutedEventArgs e)
     {
-        if (!_isAppsLoaded)
+        try
         {
-            await LoadAppsSubmenuAsync();
+            if (!_isAppsLoaded)
+            {
+                await LoadAppsSubmenuAsync();
+            }
+        }
+        catch (Exception ex)
+        {
+            Safe.Log(ex, "MainWindow.OnAppsSubmenuOpened");
         }
     }
 
     private void StartBackgroundMaintenance()
     {
-        _ = Task.Run(async () =>
+        Task.Run(async () =>
         {
             try
             {
@@ -551,7 +559,7 @@ public sealed partial class MainWindow
             {
                 Safe.Logger(ex, "MainWindow.StartBackgroundMaintenance");
             }
-        });
+        }).FireAndForget("MainWindow.StartBackgroundMaintenance");
     }
 
     private async Task LoadAppsSubmenuAsync()
@@ -578,7 +586,7 @@ public sealed partial class MainWindow
         }
         catch (Exception ex)
         {
-            Debug.WriteLine($"[AppsMenu] Error loading apps: {ex.Message}");
+            Safe.Log(ex, "MainWindow.LoadAppsSubmenu");
         }
         finally
         {
@@ -588,7 +596,7 @@ public sealed partial class MainWindow
 
     private void OnAppsCatalogChanged(List<CatalogItemModel> freshApps)
     {
-        _ = Dispatcher.InvokeAsync(() =>
+        Dispatcher.InvokeAsync(() =>
         {
             if (_isAppsLoaded && AppsMenuItem != null)
             {
@@ -598,7 +606,7 @@ public sealed partial class MainWindow
                 AppsMenuItem.ItemsSource = ordered;
             }
             AllAppsDrawer?.LoadApps(freshApps);
-        }, DispatcherPriority.Background);
+        }, DispatcherPriority.Background).FireAndForget("MainWindow.OnAppsCatalogChanged");
     }
 
     private void TriggerBackgroundAppsCatalogRefresh()
@@ -610,7 +618,7 @@ public sealed partial class MainWindow
 
         _lastAppsRefreshTime = DateTime.UtcNow;
 
-        _ = Task.Run(async () =>
+        Task.Run(async () =>
         {
             try
             {
@@ -635,9 +643,9 @@ public sealed partial class MainWindow
             }
             catch (Exception ex)
             {
-                MetroHub.Core.Services.Safe.Log("MainWindow.Tiles.TriggerBackgroundAppsCatalogRefresh", ex);
+                Safe.Log(ex, "MainWindow.Tiles.TriggerBackgroundAppsCatalogRefresh");
             }
-        });
+        }).FireAndForget("MainWindow.TriggerBackgroundAppsCatalogRefresh");
     }
 
     private void OnAppMenuItemClick(object sender, RoutedEventArgs e)
@@ -756,7 +764,7 @@ public sealed partial class MainWindow
         }
         catch (Exception ex)
         {
-            Safe.Log("MainWindow.ExportLayout", ex);
+            Safe.Log(ex, "MainWindow.ExportLayout");
             ShowToast($"Failed to export layout: {ex.Message}", isError: true);
         }
         finally

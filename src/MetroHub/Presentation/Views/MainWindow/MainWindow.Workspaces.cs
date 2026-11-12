@@ -245,8 +245,9 @@ public sealed partial class MainWindow
             _transitionDpiScale = VisualTreeHelper.GetDpi(this).DpiScaleX;
             if (_transitionDpiScale <= 0) _transitionDpiScale = 1.0;
         }
-        catch
+        catch (Exception ex)
         {
+            Safe.Ignore(ex, "MainWindow.Workspaces.GetDpiScale");
             _transitionDpiScale = 1.0;
         }
 
@@ -429,7 +430,7 @@ public sealed partial class MainWindow
 
         // Phase 2: Defer visual tree cleanup and layout updates to ContextIdle
         // so the final resting frame presents in <0.5 ms without UI thread freezes.
-        _ = Dispatcher.InvokeAsync(async () =>
+        Dispatcher.InvokeAsync(async () =>
         {
             if (token.IsCancellationRequested) return;
 
@@ -470,8 +471,9 @@ public sealed partial class MainWindow
                 // Phase 3: Grace window before dropping BitmapCache and waking widgets
                 await Task.Delay(100, token);
             }
-            catch (TaskCanceledException)
+            catch (TaskCanceledException ex)
             {
+                Safe.Ignore(ex, "MainWindow.Workspaces.TeardownDelay");
                 return;
             }
 
@@ -490,7 +492,7 @@ public sealed partial class MainWindow
                 }
                 TileControl.SetRevealSuppressed(false);
             }, DispatcherPriority.ApplicationIdle);
-        }, DispatcherPriority.ContextIdle);
+        }, DispatcherPriority.ContextIdle).FireAndForget("MainWindow.Workspaces.TeardownTransition");
     }
 
     internal void CancelWorkspaceTransition()
@@ -593,7 +595,7 @@ public sealed partial class MainWindow
             }
             catch (Exception ex)
             {
-                Safe.Log("MainWindow.InvokeOnDormant", ex);
+                Safe.Log(ex, "MainWindow.InvokeOnDormant");
             }
         }
     }
@@ -613,7 +615,7 @@ public sealed partial class MainWindow
             }
             catch (Exception ex)
             {
-                Safe.Log("MainWindow.InvokeOnAwakened", ex);
+                Safe.Log(ex, "MainWindow.InvokeOnAwakened");
             }
         }
     }

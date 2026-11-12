@@ -2,6 +2,7 @@ using System;
 using System.Globalization;
 using System.Windows.Data;
 using System.Windows.Media;
+using MetroHub.Core.Services;
 
 namespace MetroHub.Presentation.Converters;
 
@@ -26,7 +27,10 @@ public sealed class StringToBrushConverter : IValueConverter
                     return brush;
                 }
             }
-            catch { }
+            catch (Exception ex)
+            {
+                Safe.Ignore(ex, "StringToBrushConverter.Convert");
+            }
         }
 
         return Brushes.Transparent;

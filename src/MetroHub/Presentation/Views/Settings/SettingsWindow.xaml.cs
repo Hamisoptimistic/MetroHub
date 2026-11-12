@@ -159,18 +159,20 @@ public sealed partial class SettingsWindow : BorderlessFluentWindow
                 DialogResult = false;
             }
         }
-        catch
+        catch (Exception ex)
         {
             // Ignore if not modal or cannot set DialogResult
+            Safe.Ignore(ex, "SettingsWindow.Dismiss.DialogResult");
         }
 
         try
         {
             Close();
         }
-        catch
+        catch (Exception ex)
         {
             // Ignore if already closing
+            Safe.Ignore(ex, "SettingsWindow.Dismiss.Close");
         }
     }
 

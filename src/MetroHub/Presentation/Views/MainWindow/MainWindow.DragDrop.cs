@@ -1159,11 +1159,11 @@ public sealed partial class MainWindow
                     {
                         if (!isWidget && !isNote)
                         {
-                            _ = Dispatcher.InvokeAsync(async () =>
+                            Dispatcher.InvokeAsync(async () =>
                             {
                                 await Task.Delay(500);
                                 _isLaunchingTile = false;
-                            });
+                            }).FireAndForget("MainWindow.DragDrop.ResetLaunchingTile");
                         }
                     }
                 });
@@ -1334,8 +1334,9 @@ public sealed partial class MainWindow
                 RootGrid.ReleaseMouseCapture();
             }
         }
-        catch
+        catch (Exception ex)
         {
+            Safe.Ignore(ex, "MainWindow.DragDrop.ReleaseMouseCapture");
         }
     }
 
@@ -1700,8 +1701,9 @@ public sealed partial class MainWindow
                         groupColor = (Color)ColorConverter.ConvertFromString(targetGroup.HeaderColor);
                     }
                 }
-                catch
+                catch (Exception ex)
                 {
+                    Safe.Ignore(ex, "MainWindow.DragDrop.ConvertGroupColor");
                 }
             }
 
@@ -2155,7 +2157,10 @@ public sealed partial class MainWindow
                 }
             }
         }
-        catch { }
+        catch (Exception ex)
+        {
+            Safe.Ignore(ex, "MainWindow.DragDrop.ParseUrlShortcut");
+        }
         return urlFilePath;
     }
 

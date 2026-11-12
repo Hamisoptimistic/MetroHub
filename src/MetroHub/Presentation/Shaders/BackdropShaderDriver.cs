@@ -332,8 +332,9 @@ public sealed class BackdropShaderDriver : IDisposable
                     }
                 }
             }
-            catch
+            catch (Exception ex)
             {
+                Safe.LogThrottled(ex, "BackdropShaderDriver.CursorPos");
                 // Fallback for headless tests or unpresented window states
                 if (_window.IsMouseOver && mousePos.X > 0 && mousePos.X < width && mousePos.Y > 0 && mousePos.Y < height)
                 {
@@ -382,8 +383,9 @@ public sealed class BackdropShaderDriver : IDisposable
 
             _activeEffect.MouseState = new Point4D(_smoothedMouseX, _smoothedMouseY, leftDown, _planetDragYaw);
         }
-        catch
+        catch (Exception ex)
         {
+            Safe.LogThrottled(ex, "BackdropShaderDriver.Tick");
             // Non-critical fallback if mouse position cannot be queried
         }
 
@@ -493,8 +495,9 @@ public sealed class BackdropShaderDriver : IDisposable
         {
             return System.Windows.Input.Mouse.DirectlyOver is DependencyObject hovered && IsInteractiveOrTile(hovered);
         }
-        catch
+        catch (Exception ex)
         {
+            Safe.LogThrottled(ex, "BackdropShaderDriver.PointerOver");
             return false;
         }
     }
