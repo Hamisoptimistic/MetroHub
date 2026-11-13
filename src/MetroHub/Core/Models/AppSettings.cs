@@ -13,7 +13,6 @@ public sealed class AppSettings
     public double WallpaperDimOpacity { get; set; } = 0.70; // 0.50 (Light), 0.70 (Balanced), 0.85 (Heavy)
     public bool WallpaperParallax { get; set; } = true;
     public string WallpaperEffect { get; set; } = "None"; // None, Starfield, CyberTunnel, FluidWaves, etc.
-    public string ImageEffect { get; set; } = "None"; // None, Blur, WaterRipple
     
     public bool LaunchAtStartup { get; set; }
     public bool StartMinimized { get; set; }

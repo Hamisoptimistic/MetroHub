@@ -103,18 +103,6 @@ public sealed partial class MainWindow
 
     private void SetWallpaperDim(double opacity) => BackdropManager.SetWallpaperDim(opacity);
 
-    private void OnImageEffectNoneClick(object sender, RoutedEventArgs e) => SetImageEffect("None");
-    private void OnImageEffectBlurClick(object sender, RoutedEventArgs e) => SetImageEffect("Blur");
-    private void OnImageEffectWaterRippleClick(object sender, RoutedEventArgs e) => SetImageEffect("WaterRipple");
-
-    private void SetImageEffect(string effect)
-    {
-        Settings.ImageEffect = effect;
-        StorageService.SaveSettings(Settings);
-        UpdateBackdropMenuChecks();
-        ApplyConfiguredBackdrop();
-    }
-
     private void SetLiveWallpaper(string shaderName)
     {
         Settings.BackdropType = "LiveShader";
@@ -285,20 +273,6 @@ public sealed partial class MainWindow
             BackdropSpotlightDailyItem.IsChecked = string.Equals(Settings.BackdropType, "SpotlightDaily", StringComparison.OrdinalIgnoreCase);
         if (BackdropCustomImageItem != null)
             BackdropCustomImageItem.IsChecked = isStatic && !isVideo && string.Equals(Settings.BackdropType, "Wallpaper", StringComparison.OrdinalIgnoreCase);
-
-        // Image Effects submenu: selectable ONLY when a static wallpaper is active
-        if (ImageEffectsMenu != null)
-        {
-            ImageEffectsMenu.IsEnabled = isStatic && !isVideo;
-        }
-
-        string currentImageEffect = Settings.ImageEffect ?? "None";
-        if (ImageEffectNoneItem != null)
-            ImageEffectNoneItem.IsChecked = isStatic && string.Equals(currentImageEffect, "None", StringComparison.OrdinalIgnoreCase);
-        if (ImageEffectBlurItem != null)
-            ImageEffectBlurItem.IsChecked = isStatic && string.Equals(currentImageEffect, "Blur", StringComparison.OrdinalIgnoreCase);
-        if (ImageEffectWaterRippleItem != null)
-            ImageEffectWaterRippleItem.IsChecked = isStatic && string.Equals(currentImageEffect, "WaterRipple", StringComparison.OrdinalIgnoreCase);
 
         // Live Wallpapers
         string currentLiveShader = Settings.WallpaperEffect ?? "Starfield";

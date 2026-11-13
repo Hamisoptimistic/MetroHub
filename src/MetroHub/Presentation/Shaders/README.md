@@ -51,7 +51,6 @@ What you can build with this pipeline:
 - **24-Hour Diurnal Lighting**: Sunlight and sky colors synced to local wall-clock time (`Meadow`, `Planet`, `NeonClock`) via `c0.z` (seconds since midnight).
 - **Multi-Texture 3D Shaders**: Spherical projections with diffuse, night city lights, clouds, and specular maps (`Planet`) using samplers `s0..s3` and mouse drag yaw (`c2.w`).
 - **One-Click Theme Cycling**: Instant palette swaps on background click (`WaterCaustics`, `NeonClock`) via `#include "ShaderPalettes.hlsl"`.
-- **Wallpaper Post-Processing**: Refracting or distorting desktop wallpaper pixels (`WaterRipple`) by sampling `s0`.
 
 ---
 

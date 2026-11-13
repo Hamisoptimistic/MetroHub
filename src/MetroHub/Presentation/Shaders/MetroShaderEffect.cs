@@ -21,7 +21,6 @@ public class MetroShaderEffect : ShaderEffect
 {
     private static readonly ConcurrentDictionary<string, PixelShader> ShaderCache = new(StringComparer.OrdinalIgnoreCase);
 
-    public static readonly Point4D DefaultWaterRippleParams = new(18.0, 0.006, 2.5, 2.2);
     public static readonly Point4D DefaultWaterCausticsParams = new(1.0, 1.0, 1.0, 0.0);
     public static readonly Point4D DefaultNeonClockParams = new(1.0, 1.0, 1.0, 0.0);
     public static readonly Point4D DefaultFluidWavesParams = new(0.6, 1.0, 1.0, 0.0);
@@ -112,7 +111,7 @@ public class MetroShaderEffect : ShaderEffect
     }
 
     /// <summary>
-    /// Name of the compiled shader resource (e.g. "WaterRipple").
+    /// Name of the compiled shader resource (e.g. "Starfield").
     /// </summary>
     public string ShaderName { get; }
 
@@ -227,8 +226,6 @@ public class MetroShaderEffect : ShaderEffect
     public static MetroShaderEffect? TryCreate(string? effectName) =>
         effectName switch
         {
-            _ when string.Equals(effectName, "WaterRipple", StringComparison.OrdinalIgnoreCase) =>
-                new MetroShaderEffect("WaterRipple", DefaultWaterRippleParams),
             _ when string.Equals(effectName, "WaterCaustics", StringComparison.OrdinalIgnoreCase) =>
                 new MetroShaderEffect("WaterCaustics", DefaultWaterCausticsParams),
             _ when string.Equals(effectName, "NeonClock", StringComparison.OrdinalIgnoreCase) =>

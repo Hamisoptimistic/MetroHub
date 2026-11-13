@@ -8,23 +8,23 @@ using Xunit;
 
 namespace MetroHub.Tests;
 
-public sealed class WaterRippleEffectTests
+public sealed class BackdropShaderEffectTests
 {
     [Fact]
     public void BytecodeLoads_FromEmbeddedStream_Successfully()
     {
         WpfTestHost.RunSta(() =>
         {
-            var effect = MetroShaderEffect.TryCreate("WaterRipple");
+            var effect = MetroShaderEffect.TryCreate("Starfield");
             Assert.NotNull(effect);
 
             Assert.NotNull(effect.PixelShader);
             Assert.True(effect.PixelShader.IsFrozen);
-            Assert.Equal(MetroShaderEffect.DefaultWaterRippleParams, effect.EffectParams);
-            Assert.Equal(18.0, effect.EffectParams.X);
-            Assert.Equal(0.006, effect.EffectParams.Y);
-            Assert.Equal(2.5, effect.EffectParams.Z);
-            Assert.Equal(2.2, effect.EffectParams.W);
+            Assert.Equal(MetroShaderEffect.DefaultStarfieldParams, effect.EffectParams);
+            Assert.Equal(0.97, effect.EffectParams.X);
+            Assert.Equal(1080.0, effect.EffectParams.Y);
+            Assert.Equal(1.0, effect.EffectParams.Z);
+            Assert.Equal(1.4, effect.EffectParams.W);
         });
     }
 
@@ -33,8 +33,8 @@ public sealed class WaterRippleEffectTests
     {
         WpfTestHost.RunSta(() =>
         {
-            var ps1 = MetroShaderEffect.GetOrCreatePixelShader("WaterRipple");
-            var ps2 = MetroShaderEffect.GetOrCreatePixelShader("WaterRipple");
+            var ps1 = MetroShaderEffect.GetOrCreatePixelShader("Starfield");
+            var ps2 = MetroShaderEffect.GetOrCreatePixelShader("Starfield");
 
             Assert.NotNull(ps1);
             Assert.Same(ps1, ps2);
@@ -48,10 +48,10 @@ public sealed class WaterRippleEffectTests
         WpfTestHost.RunSta(() =>
         {
             var custom = new Point4D(24.0, 0.012, 3.0, 1.8);
-            var effect = new MetroShaderEffect("WaterRipple", custom);
+            var effect = new MetroShaderEffect("Starfield", custom);
 
             Assert.Equal(custom, effect.EffectParams);
-            Assert.Equal("WaterRipple", effect.ShaderName);
+            Assert.Equal("Starfield", effect.ShaderName);
         });
     }
 
@@ -72,7 +72,7 @@ public sealed class WaterRippleEffectTests
         {
             var window = new Window();
             using var driver = new BackdropShaderDriver(window) { BypassHardwareTierCheck = true };
-            var effect = MetroShaderEffect.TryCreate("WaterRipple")!;
+            var effect = MetroShaderEffect.TryCreate("Starfield")!;
 
             Assert.False(driver.IsRendering);
             Assert.Null(driver.ActiveEffect);
@@ -109,7 +109,7 @@ public sealed class WaterRippleEffectTests
         {
             var window = new Window();
             using var driver = new BackdropShaderDriver(window) { BypassHardwareTierCheck = true };
-            var effect = MetroShaderEffect.TryCreate("WaterRipple")!;
+            var effect = MetroShaderEffect.TryCreate("Starfield")!;
             driver.Attach(effect);
 
             // Initial FrameState
@@ -134,7 +134,7 @@ public sealed class WaterRippleEffectTests
             target.Arrange(new Rect(0, 0, 2560, 1080));
 
             using var driver = new BackdropShaderDriver(window, target) { BypassHardwareTierCheck = true };
-            var effect = MetroShaderEffect.TryCreate("WaterRipple")!;
+            var effect = MetroShaderEffect.TryCreate("Starfield")!;
             driver.Attach(effect);
 
             driver.Tick();
@@ -153,7 +153,7 @@ public sealed class WaterRippleEffectTests
             var target = new Border { Width = 0, Height = 0 };
 
             using var driver = new BackdropShaderDriver(window, target) { BypassHardwareTierCheck = true };
-            var effect = MetroShaderEffect.TryCreate("WaterRipple")!;
+            var effect = MetroShaderEffect.TryCreate("Starfield")!;
             driver.Attach(effect);
 
             driver.Tick();
@@ -176,7 +176,7 @@ public sealed class WaterRippleEffectTests
                 AllowsTransparency = false
             };
             var driver = new BackdropShaderDriver(window) { BypassHardwareTierCheck = true };
-            var effect = MetroShaderEffect.TryCreate("WaterRipple")!;
+            var effect = MetroShaderEffect.TryCreate("Starfield")!;
             driver.Attach(effect);
 
             window.Close();
@@ -202,7 +202,7 @@ public sealed class WaterRippleEffectTests
                 AllowsTransparency = false
             };
             using var driver = new BackdropShaderDriver(window) { BypassHardwareTierCheck = true };
-            var effect = MetroShaderEffect.TryCreate("WaterRipple")!;
+            var effect = MetroShaderEffect.TryCreate("Starfield")!;
             driver.Attach(effect);
 
             // Initially not visible
@@ -244,7 +244,7 @@ public sealed class WaterRippleEffectTests
             };
             // BypassHardwareTierCheck is false by default
             using var driver = new BackdropShaderDriver(window);
-            var effect = MetroShaderEffect.TryCreate("WaterRipple")!;
+            var effect = MetroShaderEffect.TryCreate("Starfield")!;
 
             driver.Attach(effect);
             window.Show();
@@ -263,7 +263,7 @@ public sealed class WaterRippleEffectTests
     {
         WpfTestHost.RunSta(() =>
         {
-            var effect = MetroShaderEffect.TryCreate("WaterRipple")!;
+            var effect = MetroShaderEffect.TryCreate("Starfield")!;
             Assert.NotNull(MetroShaderEffect.InputProperty);
             Assert.NotNull(effect.Input);
             Assert.Equal("ImplicitInputBrush", effect.Input.GetType().Name);
@@ -275,15 +275,15 @@ public sealed class WaterRippleEffectTests
     {
         WpfTestHost.RunSta(() =>
         {
-            Assert.True(MetroShaderEffect.IsSupported("WaterRipple"));
-            Assert.True(MetroShaderEffect.IsSupported("waterripple"));
+            Assert.True(MetroShaderEffect.IsSupported("Starfield"));
+            Assert.True(MetroShaderEffect.IsSupported("starfield"));
             Assert.False(MetroShaderEffect.IsSupported("NonExistentEffect"));
             Assert.False(MetroShaderEffect.IsSupported(null));
 
-            var effect = MetroShaderEffect.TryCreate("WaterRipple");
+            var effect = MetroShaderEffect.TryCreate("Starfield");
             Assert.NotNull(effect);
-            Assert.Equal("WaterRipple", effect.ShaderName);
-            Assert.Equal(MetroShaderEffect.DefaultWaterRippleParams, effect.EffectParams);
+            Assert.Equal("Starfield", effect.ShaderName);
+            Assert.Equal(MetroShaderEffect.DefaultStarfieldParams, effect.EffectParams);
 
             var nonExistent = MetroShaderEffect.TryCreate("NonExistentEffect");
             Assert.Null(nonExistent);

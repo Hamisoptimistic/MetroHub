@@ -40,8 +40,6 @@ public sealed class BackdropManager : IDisposable
 
     private int _wallpaperLoadGeneration;
     private string? _currentLoadedWallpaperPath;
-    private string? _currentLoadedEffect;
-    private bool? _currentLoadedIsLight;
     private CancellationTokenSource? _wallpaperCts;
 
     public string? CurrentLoadedWallpaperPath => _currentLoadedWallpaperPath;
@@ -149,8 +147,6 @@ public sealed class BackdropManager : IDisposable
             }
 
             _currentLoadedWallpaperPath = null;
-            _currentLoadedEffect = null;
-            _currentLoadedIsLight = null;
 
             if (string.Equals(settings.BackdropType, "Acrylic", StringComparison.OrdinalIgnoreCase))
             {
@@ -293,8 +289,6 @@ public sealed class BackdropManager : IDisposable
             _wallpaperImage.Visibility = Visibility.Collapsed;
         }
         _currentLoadedWallpaperPath = null;
-        _currentLoadedEffect = null;
-        _currentLoadedIsLight = null;
 
         TeardownWallpaperVideo();
 
@@ -401,8 +395,6 @@ public sealed class BackdropManager : IDisposable
                     try
                     {
                         _currentLoadedWallpaperPath = imagePath;
-                        _currentLoadedEffect = "None";
-                        _currentLoadedIsLight = null;
                         var uri = new Uri(imagePath, UriKind.Absolute);
                         if (!Equals(_wallpaperVideo.Source, uri))
                         {
@@ -417,8 +409,6 @@ public sealed class BackdropManager : IDisposable
                     {
                         Safe.Log(ex, "BackdropManager.LoadWallpaperVideo");
                         _currentLoadedWallpaperPath = null;
-                        _currentLoadedEffect = null;
-                        _currentLoadedIsLight = null;
                         TeardownWallpaperVideo();
                         _toastAction(GetMissingCodecMessage(imagePath), true);
                     }
@@ -428,57 +418,35 @@ public sealed class BackdropManager : IDisposable
                 // Static image wallpaper path: release any video decoder resources
                 TeardownWallpaperVideo();
 
-                string imageEffect = settings.ImageEffect ?? "None";
-                bool isLight = string.Equals(settings.ThemeMode, "Light", StringComparison.OrdinalIgnoreCase);
-
                 ApplyScrim(settings.WallpaperDimOpacity);
 
-                // If the exact same wallpaper, effect, and theme polarity are already active, reuse without re-rendering
+                // If the exact same wallpaper is already active, reuse without reloading
                 if (string.Equals(_currentLoadedWallpaperPath, imagePath, StringComparison.OrdinalIgnoreCase) &&
-                    string.Equals(_currentLoadedEffect, imageEffect, StringComparison.OrdinalIgnoreCase) &&
-                    _currentLoadedIsLight == isLight &&
                     _wallpaperImage.Source != null)
                 {
                     _wallpaperImage.Visibility = Visibility.Visible;
                     _customWallpaperHost.Visibility = Visibility.Visible;
                     UpdateWallpaperParallax();
-
-                    ApplyImageEffect(imageEffect);
                     return;
                 }
 
-                // Static wallpapers use pre-rendered CPU effects; runtime WPF BlurEffect is eliminated
                 _shaderDriver.Detach();
                 _wallpaperImage.Effect = null;
 
-                BitmapSource? bmp = null;
-                if (string.Equals(imageEffect, "Blur", StringComparison.OrdinalIgnoreCase))
-                {
-                    bmp = await WallpaperEffectRenderer.GetOrRenderEffectAsync(imagePath, "Blur", isLight, ct).ConfigureAwait(true);
-                }
-
-                if (bmp == null)
-                {
-                    // Decode at exact 1:1 screen pixel width (up to 3840 max on 4K, downscale only)
-                    double screenW = _window.ActualWidth > 0 ? _window.ActualWidth : SystemParameters.PrimaryScreenWidth;
-                    var (cleanBmp, error) = await DailyWallpaperService.TryLoadWallpaperAsync(imagePath, screenW, ct).ConfigureAwait(true);
-                    bmp = cleanBmp;
-                    lastError = error;
-                }
+                // Decode at exact 1:1 screen pixel width (up to 3840 max on 4K, downscale only)
+                double screenW = _window.ActualWidth > 0 ? _window.ActualWidth : SystemParameters.PrimaryScreenWidth;
+                var (bmp, error) = await DailyWallpaperService.TryLoadWallpaperAsync(imagePath, screenW, ct).ConfigureAwait(true);
+                lastError = error;
 
                 if (ct.IsCancellationRequested || currentGen != _wallpaperLoadGeneration) return;
 
                 if (bmp != null)
                 {
                     _currentLoadedWallpaperPath = imagePath;
-                    _currentLoadedEffect = imageEffect;
-                    _currentLoadedIsLight = isLight;
                     _wallpaperImage.Source = bmp;
                     _wallpaperImage.Visibility = Visibility.Visible;
                     _customWallpaperHost.Visibility = Visibility.Visible;
                     UpdateWallpaperParallax();
-
-                    ApplyImageEffect(imageEffect);
 
                     // Subtle, silky smooth fade-in
                     var anim = new System.Windows.Media.Animation.DoubleAnimation(0.0, 1.0, TimeSpan.FromMilliseconds(200));
@@ -502,8 +470,6 @@ public sealed class BackdropManager : IDisposable
 
         // Fallback to dark background if no image or video could be loaded
         _currentLoadedWallpaperPath = null;
-        _currentLoadedEffect = null;
-        _currentLoadedIsLight = null;
         _shaderDriver.Detach();
         if (_wallpaperImage != null)
         {
@@ -556,33 +522,6 @@ public sealed class BackdropManager : IDisposable
         var scrimBrush = new SolidColorBrush(Color.FromArgb(alpha, 0, 0, 0));
         scrimBrush.Freeze();
         _wallpaperScrim.Background = scrimBrush;
-    }
-
-    private void ApplyImageEffect(string? imageEffect)
-    {
-        if (_wallpaperImage == null) return;
-
-        if (string.Equals(imageEffect, "WaterRipple", StringComparison.OrdinalIgnoreCase) &&
-            MetroShaderEffect.TryCreate("WaterRipple") is { } shader &&
-            (BackdropShaderDriver.IsHardwareAccelerated || _shaderDriver.BypassHardwareTierCheck))
-        {
-            // Reuse active instance if the same shader is already assigned
-            if (_wallpaperImage.Effect is MetroShaderEffect active &&
-                string.Equals(active.ShaderName, shader.ShaderName, StringComparison.OrdinalIgnoreCase))
-            {
-                active.EffectParams = shader.EffectParams;
-                _shaderDriver.Attach(active);
-                return;
-            }
-
-            _wallpaperImage.Effect = shader;
-            _shaderDriver.Attach(shader);
-        }
-        else
-        {
-            _shaderDriver.Detach();
-            _wallpaperImage.Effect = null;
-        }
     }
 
     public static BitmapImage? LoadOptimizedBitmap(string path, int decodeWidth = 1920)
@@ -674,7 +613,5 @@ public sealed class BackdropManager : IDisposable
         }
 
         _currentLoadedWallpaperPath = null;
-        _currentLoadedEffect = null;
-        _currentLoadedIsLight = null;
     }
 }

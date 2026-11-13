@@ -388,11 +388,6 @@
                             <MenuItem x:Name="BackdropBingDailyItem" Header="Bing Daily" IsCheckable="True" Click="OnBackdropBingDailyClick" />
                             <MenuItem x:Name="BackdropSpotlightDailyItem" Header="Windows Spotlight" IsCheckable="True" Click="OnBackdropSpotlightDailyClick" />
                             <MenuItem x:Name="BackdropCustomImageItem" Header="Custom Picture..." IsCheckable="True" Click="OnBackdropCustomImageClick" />
-                            <MenuItem x:Name="ImageEffectsMenu" Header="Image Effects">
-                                <MenuItem x:Name="ImageEffectNoneItem" Header="None" IsCheckable="True" Click="OnImageEffectNoneClick" />
-                                <MenuItem x:Name="ImageEffectBlurItem" Header="Frosted Blur" IsCheckable="True" Click="OnImageEffectBlurClick" />
-                                <MenuItem x:Name="ImageEffectWaterRippleItem" Header="Water Ripple" IsCheckable="True" Click="OnImageEffectWaterRippleClick" />
-                            </MenuItem>
                             <Separator />
                             <MenuItem x:Name="LiveWallpapersMenu" Header="Live Wallpapers">
                                 <MenuItem x:Name="LiveStarfieldItem" Header="Starfield" IsCheckable="True" Click="OnLiveStarfieldClick" />
