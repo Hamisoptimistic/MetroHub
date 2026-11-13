@@ -94,6 +94,7 @@ public sealed partial class MetroSyncWidgetView : UserControl
         {
             HeaderAvatarImage.Source = null;
             HeaderAvatarImage.Visibility = Visibility.Collapsed;
+            HeaderAvatarBorder.Visibility = Visibility.Collapsed;
             if (HeaderAvatarFallback != null)
             {
                 HeaderAvatarFallback.Visibility = Visibility.Visible;
@@ -109,6 +110,7 @@ public sealed partial class MetroSyncWidgetView : UserControl
             {
                 HeaderAvatarImage.Source = bmp;
                 HeaderAvatarImage.Visibility = Visibility.Visible;
+                HeaderAvatarBorder.Visibility = Visibility.Visible;
                 if (HeaderAvatarFallback != null)
                 {
                     HeaderAvatarFallback.Visibility = Visibility.Collapsed;
@@ -119,6 +121,7 @@ public sealed partial class MetroSyncWidgetView : UserControl
 
         HeaderAvatarImage.Source = null;
         HeaderAvatarImage.Visibility = Visibility.Collapsed;
+        HeaderAvatarBorder.Visibility = Visibility.Collapsed;
         if (HeaderAvatarFallback != null)
         {
             HeaderAvatarFallback.Visibility = Visibility.Visible;

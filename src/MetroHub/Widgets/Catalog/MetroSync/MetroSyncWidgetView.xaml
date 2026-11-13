@@ -85,24 +85,28 @@
                             </Style.Triggers>
                         </Style>
                     </Button.Style>
-                    <Border x:Name="HeaderAvatarBorder"
-                            Width="26" Height="26"
-                            CornerRadius="13"
-                            Background="{DynamicResource SurfaceGlassSubtleBrush}"
-                            BorderBrush="{DynamicResource SurfaceBorderBrush}"
-                            BorderThickness="1"
-                            HorizontalAlignment="Center"
-                            VerticalAlignment="Center">
-                        <Grid>
-                            <!-- Fallback Symbol when unpaired or no photo -->
-                            <ui:SymbolIcon x:Name="HeaderAvatarFallback"
-                                           Symbol="MoreHorizontal24"
-                                           FontSize="14"
-                                           Foreground="{DynamicResource TextSecondaryBrush}"
-                                           HorizontalAlignment="Center"
-                                           VerticalAlignment="Center" />
+                    <Grid>
+                        <!-- Fallback Symbol when unpaired or no photo (Segoe MDL2 / Fluent More glyph) -->
+                        <TextBlock x:Name="HeaderAvatarFallback"
+                                   Text="&#xE712;"
+                                   FontFamily="{DynamicResource AppIconFontFamily}"
+                                   FontSize="14"
+                                   Foreground="{DynamicResource TextSecondaryBrush}"
+                                   HorizontalAlignment="Center"
+                                   VerticalAlignment="Center"
+                                   TextAlignment="Center"
+                                   SnapsToDevicePixels="True" />
 
-                            <!-- 24x24 Circular Bot Avatar Image -->
+                        <!-- 26x26 Circular Bot Avatar Image Badge (Visible only when paired with photo) -->
+                        <Border x:Name="HeaderAvatarBorder"
+                                Width="26" Height="26"
+                                CornerRadius="13"
+                                Background="{DynamicResource SurfaceGlassSubtleBrush}"
+                                BorderBrush="{DynamicResource SurfaceBorderBrush}"
+                                BorderThickness="1"
+                                HorizontalAlignment="Center"
+                                VerticalAlignment="Center"
+                                Visibility="Collapsed">
                             <Image x:Name="HeaderAvatarImage"
                                    Width="24" Height="24"
                                    Stretch="UniformToFill"
@@ -112,8 +116,8 @@
                                     <EllipseGeometry Center="12,12" RadiusX="12" RadiusY="12" />
                                 </Image.Clip>
                             </Image>
-                        </Grid>
-                    </Border>
+                        </Border>
+                    </Grid>
                     <Button.ContextMenu>
                         <ContextMenu>
                             <MenuItem Header="Connect..."
