@@ -1,11 +1,14 @@
 using System;
 using System.Collections.Generic;
 using System.Globalization;
+using System.Threading;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Controls.Primitives;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Animation;
+using System.Windows.Threading;
 
 namespace MetroHub.Widgets.Catalog.Game2048;
 
@@ -31,9 +34,49 @@ public sealed partial class Game2048WidgetView : UserControl
     private static readonly CubicEase SpawnEasing = new() { EasingMode = EasingMode.EaseOut };
     private static readonly KeySpline PopSpline = new(0.25, 0.1, 0.25, 1.0);
 
+    private static readonly DoubleAnimationUsingKeyFrames s_spawnAnimation;
+    private static readonly DoubleAnimationUsingKeyFrames s_popAnimation;
+    private static readonly DoubleAnimationUsingKeyFrames s_dissolveAnimation;
+
+    private readonly struct PendingVisualUpdate
+    {
+        public readonly Border Border;
+        public readonly long PieceId;
+        public readonly int Value;
+
+        public PendingVisualUpdate(Border border, long pieceId, int value)
+        {
+            Border = border;
+            PieceId = pieceId;
+            Value = value;
+        }
+    }
+
+    private sealed class TileVisualHolder
+    {
+        public readonly TextBlock TextBlock;
+        public readonly ScaleTransform Scale;
+        public readonly TranslateTransform Translate;
+
+        public TileVisualHolder(TextBlock textBlock, ScaleTransform scale, TranslateTransform translate)
+        {
+            TextBlock = textBlock;
+            Scale = scale;
+            Translate = translate;
+        }
+    }
+
     private Game2048WidgetViewModel? _viewModel;
     private readonly Dictionary<long, Border> _tileViews = new(16);
     private readonly Dictionary<long, int> _displayedValues = new(16);
+    private readonly Stack<Border> _tilePool = new(24);
+    private readonly List<Border> _dissolvingTiles = new(8);
+    private readonly List<PendingVisualUpdate> _pendingUpdates = new(8);
+    private readonly DispatcherTimer _postSlideTimer;
+
+    private FontFamily? _cachedFontFamily;
+    private CornerRadius _cachedCornerRadius = new(8);
+
     private Point _gestureStartPoint;
     private bool _isTrackingGesture;
 
@@ -42,15 +85,213 @@ public sealed partial class Game2048WidgetView : UserControl
         SlideEasing.Freeze();
         SpawnEasing.Freeze();
         PopSpline.Freeze();
+
+        // Spawn Animation: 0.0 -> 0.0 at 100ms -> 1.0 at 300ms
+        var spawnAnim = new DoubleAnimationUsingKeyFrames();
+        spawnAnim.KeyFrames.Add(new DiscreteDoubleKeyFrame(0.0, KeyTime.FromTimeSpan(TimeSpan.Zero)));
+        spawnAnim.KeyFrames.Add(new DiscreteDoubleKeyFrame(0.0, KeyTime.FromTimeSpan(SpawnDelay)));
+        spawnAnim.KeyFrames.Add(new EasingDoubleKeyFrame(1.0, KeyTime.FromTimeSpan(SpawnDelay + SpawnDuration), SpawnEasing));
+        spawnAnim.Freeze();
+        s_spawnAnimation = spawnAnim;
+
+        // Pop Animation: 1.0 -> 1.08 at 150ms -> 1.0 at 230ms (BeginTime = 100ms)
+        var popAnim = new DoubleAnimationUsingKeyFrames
+        {
+            BeginTime = PopDelay
+        };
+        popAnim.KeyFrames.Add(new DiscreteDoubleKeyFrame(1.0, KeyTime.FromTimeSpan(TimeSpan.Zero)));
+        popAnim.KeyFrames.Add(new SplineDoubleKeyFrame(PopPeakScale, KeyTime.FromTimeSpan(TimeSpan.FromMilliseconds(50)), PopSpline));
+        popAnim.KeyFrames.Add(new SplineDoubleKeyFrame(1.0, KeyTime.FromTimeSpan(PopDuration), PopSpline));
+        popAnim.Freeze();
+        s_popAnimation = popAnim;
+
+        // Dissolve Animation: 1.0 -> 1.0 at 70ms -> 0.0 at 100ms
+        var dissolveAnim = new DoubleAnimationUsingKeyFrames();
+        dissolveAnim.KeyFrames.Add(new DiscreteDoubleKeyFrame(1.0, KeyTime.FromTimeSpan(TimeSpan.Zero)));
+        dissolveAnim.KeyFrames.Add(new DiscreteDoubleKeyFrame(1.0, KeyTime.FromTimeSpan(TimeSpan.FromMilliseconds(70))));
+        dissolveAnim.KeyFrames.Add(new EasingDoubleKeyFrame(0.0, KeyTime.FromTimeSpan(SlideDuration), SlideEasing));
+        dissolveAnim.Freeze();
+        s_dissolveAnimation = dissolveAnim;
     }
 
     public Game2048WidgetView()
     {
         InitializeComponent();
 
+        _postSlideTimer = new DispatcherTimer(DispatcherPriority.Render)
+        {
+            Interval = SlideDuration
+        };
+        _postSlideTimer.Tick += OnPostSlideTimerTick;
+
+        ResolveThemeResources();
+        PrewarmTilePool(24);
+
         DataContextChanged += OnDataContextChanged;
         Loaded += OnLoaded;
         Unloaded += OnUnloaded;
+    }
+
+    private void PrewarmTilePool(int count)
+    {
+        while (TilesCanvas.Children.Count < count)
+        {
+            var border = CreateNewTileBorder();
+            border.Visibility = Visibility.Collapsed;
+            TilesCanvas.Children.Add(border);
+            _tilePool.Push(border);
+        }
+    }
+
+    private Border CreateNewTileBorder()
+    {
+        var textBlock = new TextBlock
+        {
+            FontWeight = FontWeights.Bold,
+            HorizontalAlignment = HorizontalAlignment.Center,
+            VerticalAlignment = VerticalAlignment.Center,
+            TextAlignment = TextAlignment.Center,
+            FontFamily = _cachedFontFamily
+        };
+
+        var textContainer = new Grid
+        {
+            Width = TileSize,
+            Height = TileSize,
+            ClipToBounds = true
+        };
+        textContainer.Children.Add(textBlock);
+
+        var scaleTransform = new ScaleTransform(1.0, 1.0);
+        var translateTransform = new TranslateTransform(0, 0);
+        var transformGroup = new TransformGroup();
+        transformGroup.Children.Add(scaleTransform);     // Index 0
+        transformGroup.Children.Add(translateTransform); // Index 1
+
+        var border = new Border
+        {
+            Width = TileSize,
+            Height = TileSize,
+            BorderThickness = new Thickness(0),
+            CornerRadius = _cachedCornerRadius,
+            Child = textContainer,
+            Tag = new TileVisualHolder(textBlock, scaleTransform, translateTransform),
+            RenderTransformOrigin = new Point(0.5, 0.5),
+            RenderTransform = transformGroup,
+            SnapsToDevicePixels = false,
+            UseLayoutRounding = false
+        };
+
+        return border;
+    }
+
+    private Border AcquireTileElement(double initialX, double initialY)
+    {
+        Border border;
+        if (_tilePool.Count > 0)
+        {
+            border = _tilePool.Pop();
+        }
+        else
+        {
+            border = CreateNewTileBorder();
+            TilesCanvas.Children.Add(border);
+        }
+
+        var (scale, translate) = GetTransforms(border);
+        scale.ScaleX = 1.0;
+        scale.ScaleY = 1.0;
+        translate.X = initialX;
+        translate.Y = initialY;
+
+        border.Opacity = 1.0;
+        border.Visibility = Visibility.Visible;
+        return border;
+    }
+
+    private void RecycleTileElement(Border border)
+    {
+        var (scale, translate) = GetTransforms(border);
+
+        border.BeginAnimation(UIElement.OpacityProperty, null);
+        border.Opacity = 1.0;
+
+        scale.BeginAnimation(ScaleTransform.ScaleXProperty, null);
+        scale.BeginAnimation(ScaleTransform.ScaleYProperty, null);
+        scale.ScaleX = 1.0;
+        scale.ScaleY = 1.0;
+
+        translate.BeginAnimation(TranslateTransform.XProperty, null);
+        translate.BeginAnimation(TranslateTransform.YProperty, null);
+
+        Panel.SetZIndex(border, 0);
+        border.Visibility = Visibility.Collapsed;
+        _tilePool.Push(border);
+    }
+
+    private void ResolveThemeResources()
+    {
+        var ff = TryFindResource("AppFontFamily") as FontFamily
+                 ?? Application.Current?.TryFindResource("AppFontFamily") as FontFamily;
+        if (ff != null)
+        {
+            _cachedFontFamily = ff;
+        }
+
+        if (TryFindResource("TileCornerRadius") is CornerRadius cr)
+        {
+            _cachedCornerRadius = cr;
+        }
+        else if (Application.Current?.TryFindResource("TileCornerRadius") is CornerRadius appCr)
+        {
+            _cachedCornerRadius = appCr;
+        }
+        else
+        {
+            _cachedCornerRadius = new CornerRadius(8);
+        }
+    }
+
+    private void ApplyCachedThemeResourcesToAllTiles()
+    {
+        for (int i = 0; i < TilesCanvas.Children.Count; i++)
+        {
+            if (TilesCanvas.Children[i] is Border b)
+            {
+                b.CornerRadius = _cachedCornerRadius;
+                if (b.Tag is TileVisualHolder holder && _cachedFontFamily != null)
+                {
+                    holder.TextBlock.FontFamily = _cachedFontFamily;
+                }
+            }
+        }
+    }
+
+    private void OnPostSlideTimerTick(object? sender, EventArgs e)
+    {
+        ProcessPostSlideUpdates();
+    }
+
+    private void ProcessPostSlideUpdates()
+    {
+        _postSlideTimer.Stop();
+
+        for (int i = 0; i < _dissolvingTiles.Count; i++)
+        {
+            RecycleTileElement(_dissolvingTiles[i]);
+        }
+        _dissolvingTiles.Clear();
+
+        for (int i = 0; i < _pendingUpdates.Count; i++)
+        {
+            var update = _pendingUpdates[i];
+            if (_tileViews.TryGetValue(update.PieceId, out var current) && ReferenceEquals(current, update.Border))
+            {
+                UpdateTileVisuals(update.Border, update.Value);
+                _displayedValues[update.PieceId] = update.Value;
+            }
+        }
+        _pendingUpdates.Clear();
     }
 
     private void OnDataContextChanged(object sender, DependencyPropertyChangedEventArgs e)
@@ -58,6 +299,7 @@ public sealed partial class Game2048WidgetView : UserControl
         if (_viewModel != null)
         {
             _viewModel.BoardChanged -= OnBoardChanged;
+            _viewModel.OnUnloaded();
         }
 
         _viewModel = DataContext as Game2048WidgetViewModel;
@@ -67,10 +309,19 @@ public sealed partial class Game2048WidgetView : UserControl
             _viewModel.BoardChanged += OnBoardChanged;
             RenderBoard(animate: false);
         }
+        else
+        {
+            _postSlideTimer.Stop();
+            ProcessPostSlideUpdates();
+            RecycleAllActiveTiles();
+        }
     }
 
     private void OnLoaded(object sender, RoutedEventArgs e)
     {
+        ResolveThemeResources();
+        ApplyCachedThemeResourcesToAllTiles();
+
         if (_viewModel != null)
         {
             _viewModel.BoardChanged -= OnBoardChanged;
@@ -81,10 +332,24 @@ public sealed partial class Game2048WidgetView : UserControl
 
     private void OnUnloaded(object sender, RoutedEventArgs e)
     {
+        _postSlideTimer.Stop();
+        ProcessPostSlideUpdates();
+
         if (_viewModel != null)
         {
             _viewModel.BoardChanged -= OnBoardChanged;
+            _viewModel.OnUnloaded();
         }
+    }
+
+    private void RecycleAllActiveTiles()
+    {
+        foreach (var border in _tileViews.Values)
+        {
+            RecycleTileElement(border);
+        }
+        _tileViews.Clear();
+        _displayedValues.Clear();
     }
 
     private void OnBoardChanged()
@@ -96,58 +361,48 @@ public sealed partial class Game2048WidgetView : UserControl
     {
         if (_viewModel == null) return;
 
-        var engineTiles = _viewModel.Engine.Tiles;
-        var currentEngineIds = new HashSet<long>(engineTiles.Count);
-        foreach (var t in engineTiles)
+        if (_postSlideTimer.IsEnabled || _dissolvingTiles.Count > 0 || _pendingUpdates.Count > 0)
         {
-            currentEngineIds.Add(t.Id);
+            ProcessPostSlideUpdates();
         }
 
-        // 1. Pre-clean orphaned visual elements (consumed merged tiles from previous moves or rapid key presses)
-        var orphanedIds = new List<long>();
+        var engineTiles = _viewModel.Engine.Tiles;
+
+        // 1. Pre-clean orphaned visual elements (e.g. from state reload or undo)
+        Span<long> orphanedIds = stackalloc long[_tileViews.Count];
+        int orphanCount = 0;
         foreach (var id in _tileViews.Keys)
         {
-            if (!currentEngineIds.Contains(id))
+            if (!ContainsEngineId(engineTiles, id))
             {
-                orphanedIds.Add(id);
+                orphanedIds[orphanCount++] = id;
             }
         }
 
-        foreach (var id in orphanedIds)
+        for (int i = 0; i < orphanCount; i++)
         {
+            long id = orphanedIds[i];
             if (_tileViews.Remove(id, out var orphanedBorder))
             {
-                TilesCanvas.Children.Remove(orphanedBorder);
+                RecycleTileElement(orphanedBorder);
             }
             _displayedValues.Remove(id);
         }
 
-        // 2. Rapid input safety: ensure visual state is up-to-date for existing non-merging tiles
-        foreach (var piece in engineTiles)
+        // 2. Process each tile in engineTiles
+        for (int i = 0; i < engineTiles.Count; i++)
         {
-            if (!piece.IsMerged && _tileViews.TryGetValue(piece.Id, out var existingBorder))
-            {
-                if (!_displayedValues.TryGetValue(piece.Id, out int dispVal) || dispVal != piece.Value)
-                {
-                    UpdateTileVisuals(existingBorder, piece.Value);
-                    _displayedValues[piece.Id] = piece.Value;
-                }
-            }
-        }
-
-        // 3. Process each tile in engineTiles
-        foreach (var piece in engineTiles)
-        {
+            var piece = engineTiles[i];
             double targetX = BoardPadding + piece.Col * TileStep;
             double targetY = BoardPadding + piece.Row * TileStep;
 
             if (!_tileViews.TryGetValue(piece.Id, out var tileBorder))
             {
                 // Case A: New Tile
-                tileBorder = CreateTileElement(piece, targetX, targetY);
+                tileBorder = AcquireTileElement(targetX, targetY);
                 _tileViews[piece.Id] = tileBorder;
                 _displayedValues[piece.Id] = piece.Value;
-                TilesCanvas.Children.Add(tileBorder);
+                UpdateTileVisuals(tileBorder, piece.Value);
                 Panel.SetZIndex(tileBorder, 1);
 
                 var (scale, _) = GetTransforms(tileBorder);
@@ -155,14 +410,8 @@ public sealed partial class Game2048WidgetView : UserControl
                 {
                     scale.ScaleX = 0.0;
                     scale.ScaleY = 0.0;
-
-                    var spawnAnim = new DoubleAnimationUsingKeyFrames();
-                    spawnAnim.KeyFrames.Add(new DiscreteDoubleKeyFrame(0.0, KeyTime.FromTimeSpan(TimeSpan.Zero)));
-                    spawnAnim.KeyFrames.Add(new DiscreteDoubleKeyFrame(0.0, KeyTime.FromTimeSpan(SpawnDelay)));
-                    spawnAnim.KeyFrames.Add(new EasingDoubleKeyFrame(1.0, KeyTime.FromTimeSpan(SpawnDelay + SpawnDuration), SpawnEasing));
-
-                    scale.BeginAnimation(ScaleTransform.ScaleXProperty, spawnAnim);
-                    scale.BeginAnimation(ScaleTransform.ScaleYProperty, spawnAnim);
+                    scale.BeginAnimation(ScaleTransform.ScaleXProperty, s_spawnAnimation);
+                    scale.BeginAnimation(ScaleTransform.ScaleYProperty, s_spawnAnimation);
                 }
                 else
                 {
@@ -178,8 +427,10 @@ public sealed partial class Game2048WidgetView : UserControl
 
                 if (piece.MergedInto != null)
                 {
-                    // Case B: Consumed Merging Tile (slides under destination with soft dissolve, then removed)
+                    // Case B: Consumed Merging Tile (slides under destination with soft dissolve, then recycled)
                     Panel.SetZIndex(tileBorder, 2);
+                    _tileViews.Remove(piece.Id);
+                    _displayedValues.Remove(piece.Id);
 
                     if (animate)
                     {
@@ -189,42 +440,21 @@ public sealed partial class Game2048WidgetView : UserControl
                         var animX = new DoubleAnimation(startX, targetX, SlideDuration) { EasingFunction = SlideEasing };
                         var animY = new DoubleAnimation(startY, targetY, SlideDuration) { EasingFunction = SlideEasing };
 
-                        // Soft Dissolve: fade out smoothly during the final 30ms of the slide (70ms to 100ms)
-                        var fadeAnim = new DoubleAnimationUsingKeyFrames();
-                        fadeAnim.KeyFrames.Add(new DiscreteDoubleKeyFrame(1.0, KeyTime.FromTimeSpan(TimeSpan.Zero)));
-                        fadeAnim.KeyFrames.Add(new DiscreteDoubleKeyFrame(1.0, KeyTime.FromTimeSpan(TimeSpan.FromMilliseconds(70))));
-                        fadeAnim.KeyFrames.Add(new EasingDoubleKeyFrame(0.0, KeyTime.FromTimeSpan(SlideDuration), SlideEasing));
-
-                        long capturedId = piece.Id;
-                        Border capturedBorder = tileBorder;
-
-                        animX.Completed += (s, e) =>
-                        {
-                            if (_tileViews.TryGetValue(capturedId, out var current) && ReferenceEquals(current, capturedBorder))
-                            {
-                                _tileViews.Remove(capturedId);
-                                _displayedValues.Remove(capturedId);
-                                TilesCanvas.Children.Remove(capturedBorder);
-                            }
-                        };
-
-                        tileBorder.BeginAnimation(UIElement.OpacityProperty, fadeAnim);
+                        tileBorder.BeginAnimation(UIElement.OpacityProperty, s_dissolveAnimation);
                         translate.BeginAnimation(TranslateTransform.XProperty, animX, HandoffBehavior.SnapshotAndReplace);
                         translate.BeginAnimation(TranslateTransform.YProperty, animY, HandoffBehavior.SnapshotAndReplace);
+
+                        _dissolvingTiles.Add(tileBorder);
                     }
                     else
                     {
-                        _tileViews.Remove(piece.Id);
-                        _displayedValues.Remove(piece.Id);
-                        TilesCanvas.Children.Remove(tileBorder);
+                        RecycleTileElement(tileBorder);
                     }
                 }
                 else
                 {
                     // Case C: Surviving / Destination Tile
                     Panel.SetZIndex(tileBorder, piece.IsMerged ? 3 : 2);
-                    tileBorder.BeginAnimation(UIElement.OpacityProperty, null);
-                    tileBorder.Opacity = 1.0;
 
                     if (animate)
                     {
@@ -256,39 +486,19 @@ public sealed partial class Game2048WidgetView : UserControl
 
                     if (piece.IsMerged && animate)
                     {
-                        // Tuned Tactile Pop: 1.0 -> 1.08 -> 1.0 over 130ms (fits inside 12px grid gap without clipping)
-                        long capturedPieceId = piece.Id;
-                        Border capturedDestBorder = tileBorder;
-                        int targetValue = piece.Value;
+                        _pendingUpdates.Add(new PendingVisualUpdate(tileBorder, piece.Id, piece.Value));
 
-                        var popAnim = new DoubleAnimationUsingKeyFrames
-                        {
-                            BeginTime = PopDelay
-                        };
-                        popAnim.KeyFrames.Add(new DiscreteDoubleKeyFrame(1.0, KeyTime.FromTimeSpan(TimeSpan.Zero)));
-                        popAnim.KeyFrames.Add(new SplineDoubleKeyFrame(PopPeakScale, KeyTime.FromTimeSpan(TimeSpan.FromMilliseconds(50)), PopSpline));
-                        popAnim.KeyFrames.Add(new SplineDoubleKeyFrame(1.0, KeyTime.FromTimeSpan(PopDuration), PopSpline));
-
-                        var delayTrigger = new DoubleAnimation(1.0, 1.0, PopDelay);
-                        delayTrigger.Completed += (s, e) =>
-                        {
-                            if (_tileViews.TryGetValue(capturedPieceId, out var cur) && ReferenceEquals(cur, capturedDestBorder))
-                            {
-                                UpdateTileVisuals(capturedDestBorder, targetValue);
-                                _displayedValues[capturedPieceId] = targetValue;
-                                capturedDestBorder.BeginAnimation(UIElement.OpacityProperty, null);
-                                capturedDestBorder.Opacity = 1.0;
-                            }
-                        };
-
-                        capturedDestBorder.BeginAnimation(UIElement.OpacityProperty, delayTrigger);
-                        scale.BeginAnimation(ScaleTransform.ScaleXProperty, popAnim);
-                        scale.BeginAnimation(ScaleTransform.ScaleYProperty, popAnim);
+                        scale.BeginAnimation(ScaleTransform.ScaleXProperty, s_popAnimation);
+                        scale.BeginAnimation(ScaleTransform.ScaleYProperty, s_popAnimation);
                     }
                     else
                     {
-                        UpdateTileVisuals(tileBorder, piece.Value);
-                        _displayedValues[piece.Id] = piece.Value;
+                        if (!_displayedValues.TryGetValue(piece.Id, out int dispVal) || dispVal != piece.Value)
+                        {
+                            UpdateTileVisuals(tileBorder, piece.Value);
+                            _displayedValues[piece.Id] = piece.Value;
+                        }
+
                         scale.BeginAnimation(ScaleTransform.ScaleXProperty, null);
                         scale.BeginAnimation(ScaleTransform.ScaleYProperty, null);
                         scale.ScaleX = 1.0;
@@ -297,58 +507,68 @@ public sealed partial class Game2048WidgetView : UserControl
                 }
             }
         }
+
+        if (_pendingUpdates.Count > 0 || _dissolvingTiles.Count > 0)
+        {
+            _postSlideTimer.Stop();
+            _postSlideTimer.Start();
+        }
+    }
+
+    private static bool ContainsEngineId(IReadOnlyList<TilePiece> engineTiles, long id)
+    {
+        for (int i = 0; i < engineTiles.Count; i++)
+        {
+            if (engineTiles[i].Id == id) return true;
+        }
+        return false;
     }
 
     private static (ScaleTransform scale, TranslateTransform translate) GetTransforms(Border border)
     {
+        if (border.Tag is TileVisualHolder holder)
+        {
+            return (holder.Scale, holder.Translate);
+        }
+
         var group = (TransformGroup)border.RenderTransform;
         return ((ScaleTransform)group.Children[0], (TranslateTransform)group.Children[1]);
     }
 
-    private static Border CreateTileElement(TilePiece piece, double initialX, double initialY)
-    {
-        var textBlock = new TextBlock
-        {
-            FontWeight = FontWeights.Bold,
-            HorizontalAlignment = HorizontalAlignment.Center,
-            VerticalAlignment = VerticalAlignment.Center
-        };
-        textBlock.SetResourceReference(TextBlock.FontFamilyProperty, "AppFontFamily");
-
-        var scaleTransform = new ScaleTransform(1.0, 1.0);
-        var translateTransform = new TranslateTransform(initialX, initialY);
-        var transformGroup = new TransformGroup();
-        transformGroup.Children.Add(scaleTransform);     // Index 0
-        transformGroup.Children.Add(translateTransform); // Index 1
-
-        var border = new Border
-        {
-            Width = TileSize,
-            Height = TileSize,
-            BorderThickness = new Thickness(0),
-            Child = textBlock,
-            RenderTransformOrigin = new Point(0.5, 0.5),
-            RenderTransform = transformGroup,
-            SnapsToDevicePixels = false,
-            UseLayoutRounding = false
-        };
-        border.SetResourceReference(Border.CornerRadiusProperty, "TileCornerRadius");
-
-        UpdateTileVisuals(border, piece.Value);
-        return border;
-    }
-
     private static void UpdateTileVisuals(Border border, int value)
     {
-        if (border.Child is TextBlock tb)
+        if (border.Tag is TileVisualHolder holder)
         {
-            tb.Text = value.ToString(CultureInfo.InvariantCulture);
+            var tb = holder.TextBlock;
+            tb.Text = GetTileString(value);
             var (bgBrush, fgBrush, fontSize) = GetTileStyle(value, border);
             border.Background = bgBrush;
             tb.Foreground = fgBrush;
             tb.FontSize = fontSize;
         }
     }
+
+    private static string GetTileString(int value) => value switch
+    {
+        2 => "2",
+        4 => "4",
+        8 => "8",
+        16 => "16",
+        32 => "32",
+        64 => "64",
+        128 => "128",
+        256 => "256",
+        512 => "512",
+        1024 => "1024",
+        2048 => "2048",
+        4096 => "4096",
+        8192 => "8192",
+        16384 => "16384",
+        32768 => "32768",
+        65536 => "65536",
+        131072 => "131072",
+        _ => value.ToString(CultureInfo.InvariantCulture)
+    };
 
     #region Palette & Tile Styling
 
@@ -515,39 +735,82 @@ public sealed partial class Game2048WidgetView : UserControl
     protected override void OnPreviewMouseDown(MouseButtonEventArgs e)
     {
         base.OnPreviewMouseDown(e);
+
+        if (IsOverButton(e.OriginalSource))
+        {
+            return;
+        }
+
         Focus();
 
         if (e.LeftButton == MouseButtonState.Pressed)
         {
             _gestureStartPoint = e.GetPosition(this);
             _isTrackingGesture = true;
+            CaptureMouse();
         }
+    }
+
+    private static bool IsOverButton(object? source)
+    {
+        if (source is not DependencyObject dep) return false;
+        DependencyObject? current = dep;
+        while (current != null)
+        {
+            if (current is ButtonBase)
+            {
+                return true;
+            }
+
+            current = current is Visual or System.Windows.Media.Media3D.Visual3D
+                ? VisualTreeHelper.GetParent(current)
+                : LogicalTreeHelper.GetParent(current);
+        }
+        return false;
     }
 
     protected override void OnPreviewMouseUp(MouseButtonEventArgs e)
     {
         base.OnPreviewMouseUp(e);
 
-        if (_isTrackingGesture && _viewModel != null)
+        if (_isTrackingGesture && e.ChangedButton == MouseButton.Left)
         {
             _isTrackingGesture = false;
-            var endPoint = e.GetPosition(this);
-            double deltaX = endPoint.X - _gestureStartPoint.X;
-            double deltaY = endPoint.Y - _gestureStartPoint.Y;
-
-            const double minSwipeDistance = 30.0;
-            if (Math.Abs(deltaX) > minSwipeDistance || Math.Abs(deltaY) > minSwipeDistance)
+            if (IsMouseCaptured)
             {
-                if (Math.Abs(deltaX) > Math.Abs(deltaY))
-                {
-                    _viewModel.Move(deltaX > 0 ? MoveDirection.Right : MoveDirection.Left);
-                }
-                else
-                {
-                    _viewModel.Move(deltaY > 0 ? MoveDirection.Down : MoveDirection.Up);
-                }
-                e.Handled = true;
+                ReleaseMouseCapture();
             }
+
+            if (_viewModel != null)
+            {
+                var endPoint = e.GetPosition(this);
+                double deltaX = endPoint.X - _gestureStartPoint.X;
+                double deltaY = endPoint.Y - _gestureStartPoint.Y;
+
+                const double minSwipeDistance = 30.0;
+                if (Math.Abs(deltaX) > minSwipeDistance || Math.Abs(deltaY) > minSwipeDistance)
+                {
+                    if (Math.Abs(deltaX) > Math.Abs(deltaY))
+                    {
+                        _viewModel.Move(deltaX > 0 ? MoveDirection.Right : MoveDirection.Left);
+                    }
+                    else
+                    {
+                        _viewModel.Move(deltaY > 0 ? MoveDirection.Down : MoveDirection.Up);
+                    }
+                    e.Handled = true;
+                }
+            }
+        }
+    }
+
+    protected override void OnLostMouseCapture(MouseEventArgs e)
+    {
+        base.OnLostMouseCapture(e);
+        _isTrackingGesture = false;
+        if (IsMouseCaptured)
+        {
+            ReleaseMouseCapture();
         }
     }
 

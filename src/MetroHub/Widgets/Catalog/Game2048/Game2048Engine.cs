@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Runtime.CompilerServices;
 
 namespace MetroHub.Widgets.Catalog.Game2048;
@@ -338,21 +337,22 @@ public sealed class Game2048Engine
 
     private void SpawnTile()
     {
-        var emptyCells = new List<(int r, int c)>(GridSize * GridSize);
+        Span<(int r, int c)> emptyCells = stackalloc (int, int)[GridSize * GridSize];
+        int emptyCount = 0;
         for (int r = 0; r < GridSize; r++)
         {
             for (int c = 0; c < GridSize; c++)
             {
                 if (_grid[r, c] == null)
                 {
-                    emptyCells.Add((r, c));
+                    emptyCells[emptyCount++] = (r, c);
                 }
             }
         }
 
-        if (emptyCells.Count == 0) return;
+        if (emptyCount == 0) return;
 
-        var (row, col) = emptyCells[Random.Shared.Next(emptyCells.Count)];
+        var (row, col) = emptyCells[Random.Shared.Next(emptyCount)];
         int val = Random.Shared.NextDouble() < 0.9 ? 2 : 4;
         var newPiece = new TilePiece(row, col, val, isNew: true);
 

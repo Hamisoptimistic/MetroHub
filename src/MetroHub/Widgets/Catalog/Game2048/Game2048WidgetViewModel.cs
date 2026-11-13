@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Windows.Controls;
+using System.Windows.Threading;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using MetroHub.Core.Models;
@@ -18,6 +19,8 @@ public sealed partial class Game2048WidgetViewModel : WidgetViewModelBase, IWidg
     public const string WidgetId = "game_2048";
 
     private readonly Game2048Engine _engine;
+    private DispatcherTimer? _saveDebounceTimer;
+    private bool _isSavePending;
 
     [ObservableProperty]
     private int _score;
@@ -61,7 +64,7 @@ public sealed partial class Game2048WidgetViewModel : WidgetViewModelBase, IWidg
         {
             SyncFromEngine();
             BoardChanged?.Invoke();
-            SaveSettings();
+            DebounceSaveSettings();
         }
     }
 
@@ -124,6 +127,9 @@ public sealed partial class Game2048WidgetViewModel : WidgetViewModelBase, IWidg
 
     public override void SaveSettings()
     {
+        _isSavePending = false;
+        _saveDebounceTimer?.Stop();
+
         if (_engine == null) return;
         var settings = new Game2048WidgetSettings
         {
@@ -133,6 +139,47 @@ public sealed partial class Game2048WidgetViewModel : WidgetViewModelBase, IWidg
         };
 
         Model.SettingsJson = WidgetSerializer.Serialize(settings);
+    }
+
+    private void DebounceSaveSettings()
+    {
+        _isSavePending = true;
+
+        if (_saveDebounceTimer == null)
+        {
+            var dispatcher = System.Windows.Application.Current?.Dispatcher
+                             ?? Dispatcher.CurrentDispatcher;
+
+            _saveDebounceTimer = new DispatcherTimer(
+                DispatcherPriority.Background,
+                dispatcher)
+            {
+                Interval = TimeSpan.FromMilliseconds(400)
+            };
+            _saveDebounceTimer.Tick += OnSaveDebounceTimerTick;
+        }
+
+        _saveDebounceTimer.Stop();
+        _saveDebounceTimer.Start();
+    }
+
+    private void OnSaveDebounceTimerTick(object? sender, EventArgs e)
+    {
+        _saveDebounceTimer?.Stop();
+        FlushSaveSettings();
+    }
+
+    public void FlushSaveSettings()
+    {
+        if (_isSavePending)
+        {
+            SaveSettings();
+        }
+    }
+
+    public void OnUnloaded()
+    {
+        FlushSaveSettings();
     }
 
     public IEnumerable<Control> GetContextMenuItems()
@@ -149,6 +196,12 @@ public sealed partial class Game2048WidgetViewModel : WidgetViewModelBase, IWidg
         if (disposing)
         {
             SaveSettings();
+            if (_saveDebounceTimer != null)
+            {
+                _saveDebounceTimer.Stop();
+                _saveDebounceTimer.Tick -= OnSaveDebounceTimerTick;
+                _saveDebounceTimer = null;
+            }
         }
         base.Dispose(disposing);
     }

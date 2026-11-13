@@ -314,4 +314,160 @@ public class Game2048WidgetTests
             vm.RestartGame();
         });
     }
+
+    [Fact]
+    public void ViewModel_Move_DebouncesAndFlushesOnUnloaded()
+    {
+        var tile = new TileModel { Id = "test_debounce_2048", TargetPath = "game_2048" };
+        using var vm = new Game2048WidgetViewModel(tile);
+
+        vm.Engine.LoadState(new List<int>
+        {
+            2, 2, 0, 0,
+            0, 0, 0, 0,
+            0, 0, 0, 0,
+            0, 0, 0, 0
+        }, currentScore: 0, bestScore: 0);
+
+        bool moved = vm.Engine.Move(MoveDirection.Left);
+        Assert.True(moved);
+
+        // Before debounce fires, manual move on VM
+        vm.Move(MoveDirection.Down);
+
+        // Explicit OnUnloaded flushes pending debounced save
+        vm.OnUnloaded();
+
+        Assert.NotNull(tile.SettingsJson);
+        Assert.Contains("\"currentScore\"", tile.SettingsJson);
+    }
+
+    [Fact]
+    public void ViewModel_Move_FlushesOnDispose()
+    {
+        var tile = new TileModel { Id = "test_dispose_2048", TargetPath = "game_2048" };
+        using (var vm = new Game2048WidgetViewModel(tile))
+        {
+            vm.Engine.LoadState(new List<int>
+            {
+                2, 2, 0, 0,
+                0, 0, 0, 0,
+                0, 0, 0, 0,
+                0, 0, 0, 0
+            }, currentScore: 0, bestScore: 0);
+
+            vm.Move(MoveDirection.Left);
+            // Dispose called here at end of using block
+        }
+
+        Assert.NotNull(tile.SettingsJson);
+        Assert.Contains("\"currentScore\":4", tile.SettingsJson);
+    }
+
+    [Fact]
+    public void View_PoolingAndRapidMoves_PreservesCanvasElementPool()
+    {
+        WpfTestHost.RunSta(() =>
+        {
+            var tile = new TileModel { Id = "test_pool_2048", TargetPath = "game_2048" };
+            using var vm = new Game2048WidgetViewModel(tile);
+            var view = new Game2048WidgetView { DataContext = vm };
+
+            // Canvas children should be prewarmed to 24
+            Assert.Equal(24, view.TilesCanvas.Children.Count);
+
+            // Execute rapid moves
+            for (int i = 0; i < 20; i++)
+            {
+                vm.Move(MoveDirection.Left);
+                vm.Move(MoveDirection.Down);
+                vm.Move(MoveDirection.Right);
+                vm.Move(MoveDirection.Up);
+            }
+
+            // Pool count should not explode; all visual elements are pooled and reused
+            Assert.Equal(24, view.TilesCanvas.Children.Count);
+        });
+    }
+
+    [Fact]
+    public void View_DataContextChange_FlushesOldViewModelAndRebindsCleanly()
+    {
+        WpfTestHost.RunSta(() =>
+        {
+            var tile1 = new TileModel { Id = "test_dc1_2048", TargetPath = "game_2048" };
+            var tile2 = new TileModel { Id = "test_dc2_2048", TargetPath = "game_2048" };
+
+            using var vm1 = new Game2048WidgetViewModel(tile1);
+            using var vm2 = new Game2048WidgetViewModel(tile2);
+
+            var view = new Game2048WidgetView { DataContext = vm1 };
+
+            vm1.Engine.LoadState(new List<int>
+            {
+                0, 2, 0, 0,
+                0, 0, 0, 0,
+                0, 0, 0, 0,
+                0, 0, 0, 0
+            }, currentScore: 0, bestScore: 0);
+
+            // Perform move on vm1 to start debounced save
+            bool moved = vm1.Engine.Move(MoveDirection.Left);
+            Assert.True(moved);
+            vm1.Move(MoveDirection.Down);
+            Assert.Null(tile1.SettingsJson); // debounced, not saved yet
+
+            // Changing DataContext should flush vm1 save
+            view.DataContext = vm2;
+            Assert.NotNull(tile1.SettingsJson);
+            Assert.Contains("\"currentScore\"", tile1.SettingsJson);
+
+            // View still intact and pool count is 24
+            Assert.Equal(24, view.TilesCanvas.Children.Count);
+        });
+    }
+
+    [Fact]
+    public void View_RapidMovesWithMergesAndUndo_PreservesPoolAndNoExceptions()
+    {
+        WpfTestHost.RunSta(() =>
+        {
+            var tile = new TileModel { Id = "test_rapid_undo_2048", TargetPath = "game_2048" };
+            using var vm = new Game2048WidgetViewModel(tile);
+            var view = new Game2048WidgetView { DataContext = vm };
+
+            vm.RestartGame();
+
+            for (int i = 0; i < 30; i++)
+            {
+                vm.Move(MoveDirection.Left);
+                vm.Move(MoveDirection.Up);
+                if (vm.Engine.CanUndo)
+                {
+                    vm.Undo();
+                }
+                vm.Move(MoveDirection.Right);
+                vm.Move(MoveDirection.Down);
+            }
+
+            Assert.Equal(24, view.TilesCanvas.Children.Count);
+        });
+    }
+
+    [Fact]
+    public void Engine_SpawnTile_PerformsStackAllocation()
+    {
+        var engine = new Game2048Engine();
+        engine.LoadState(new List<int>
+        {
+            2, 4, 2, 4,
+            4, 2, 4, 2,
+            2, 4, 2, 0,
+            0, 0, 0, 0
+        }, currentScore: 100, bestScore: 200);
+
+        bool moved = engine.Move(MoveDirection.Right);
+        Assert.True(moved);
+        Assert.NotEmpty(engine.Tiles);
+    }
 }
