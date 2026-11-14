@@ -10,6 +10,13 @@ public sealed partial class ImagePayloadItem : MetroSyncMessageItem
     public string? ThumbnailFileId { get; set; }
     public string? FileId { get; set; }
     public string? Caption { get; set; }
+    public bool IsAnimation { get; set; }
+    public bool IsSticker { get; set; }
+    public string? Emoji { get; set; }
+    public string? FileName { get; set; }
+
+    [JsonIgnore]
+    public string StickerFallbackDisplay => !string.IsNullOrWhiteSpace(Emoji) ? $"[Sticker {Emoji}]" : "[Sticker]";
 
     private string? _localPath;
     public string? LocalPath

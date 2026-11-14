@@ -144,13 +144,13 @@
     <DataTemplate DataType="{x:Type models:ImagePayloadItem}">
         <Grid HorizontalAlignment="Stretch" Margin="0,3,0,3" Tag="InteractiveControl">
             <Border BorderThickness="1"
-                    Padding="4"
                     MaxWidth="340"
                     Tag="{Binding DataContext, RelativeSource={RelativeSource AncestorType=UserControl}}">
                 <Border.Style>
                     <Style TargetType="Border">
                         <Setter Property="HorizontalAlignment" Value="Left" />
                         <Setter Property="Margin" Value="0,0,40,0" />
+                        <Setter Property="Padding" Value="4" />
                         <Setter Property="Background" Value="{DynamicResource SurfaceGlassBrush}" />
                         <Setter Property="BorderBrush" Value="{DynamicResource SurfaceBorderSubtleBrush}" />
                         <Setter Property="CornerRadius" Value="{DynamicResource ControlCornerRadius}" />
@@ -158,6 +158,11 @@
                             <DataTrigger Binding="{Binding IsOutgoing}" Value="True">
                                 <Setter Property="HorizontalAlignment" Value="Right" />
                                 <Setter Property="Margin" Value="40,0,0,0" />
+                            </DataTrigger>
+                            <DataTrigger Binding="{Binding IsSticker}" Value="True">
+                                <Setter Property="Background" Value="Transparent" />
+                                <Setter Property="BorderBrush" Value="Transparent" />
+                                <Setter Property="Padding" Value="0" />
                             </DataTrigger>
                         </Style.Triggers>
                     </Style>
@@ -211,8 +216,17 @@
                             <ControlTemplate TargetType="Button">
                                 <Border x:Name="ThumbnailRoot"
                                         CornerRadius="{DynamicResource ControlCornerRadius}"
-                                        ClipToBounds="True"
-                                        Background="{DynamicResource SurfaceGlassSubtleBrush}">
+                                        ClipToBounds="True">
+                                    <Border.Style>
+                                        <Style TargetType="Border">
+                                            <Setter Property="Background" Value="{DynamicResource SurfaceGlassSubtleBrush}" />
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding IsSticker}" Value="True">
+                                                    <Setter Property="Background" Value="Transparent" />
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </Border.Style>
                                     <Grid MinHeight="80" MaxHeight="260">
                                         <!-- Image content with true aspect ratio -->
                                         <Image Source="{Binding ThumbnailImage}"
@@ -237,7 +251,44 @@
                                                            FontSize="32"
                                                            Foreground="{DynamicResource TextSecondaryBrush}"
                                                            HorizontalAlignment="Center"
+                                                           VerticalAlignment="Center">
+                                                <ui:SymbolIcon.Style>
+                                                    <Style TargetType="ui:SymbolIcon">
+                                                        <Setter Property="Visibility" Value="Visible" />
+                                                        <Style.Triggers>
+                                                            <DataTrigger Binding="{Binding IsSticker}" Value="True">
+                                                                <Setter Property="Visibility" Value="Collapsed" />
+                                                            </DataTrigger>
+                                                        </Style.Triggers>
+                                                    </Style>
+                                                </ui:SymbolIcon.Style>
+                                            </ui:SymbolIcon>
+
+                                            <!-- Clean sticker fallback badge -->
+                                            <Border HorizontalAlignment="Center"
+                                                    VerticalAlignment="Center"
+                                                    Background="{DynamicResource SurfaceGlassBrush}"
+                                                    BorderBrush="{DynamicResource SurfaceBorderSubtleBrush}"
+                                                    BorderThickness="1"
+                                                    CornerRadius="{DynamicResource ControlCornerRadius}"
+                                                    Padding="10,6">
+                                                <Border.Style>
+                                                    <Style TargetType="Border">
+                                                        <Setter Property="Visibility" Value="Collapsed" />
+                                                        <Style.Triggers>
+                                                            <DataTrigger Binding="{Binding IsSticker}" Value="True">
+                                                                <Setter Property="Visibility" Value="Visible" />
+                                                            </DataTrigger>
+                                                        </Style.Triggers>
+                                                    </Style>
+                                                </Border.Style>
+                                                <TextBlock Text="{Binding StickerFallbackDisplay}"
+                                                           FontSize="{DynamicResource TypeBodyFontSize}"
+                                                           FontFamily="{DynamicResource AppFontFamily}"
+                                                           Foreground="{DynamicResource TextPrimaryBrush}"
+                                                           HorizontalAlignment="Center"
                                                            VerticalAlignment="Center" />
+                                            </Border>
                                         </Grid>
 
                                         <!-- Centered Downloading Progress Overlay -->
@@ -253,6 +304,30 @@
                                                              IsIndeterminate="{Binding IsDownloading}"
                                                              HorizontalAlignment="Center"
                                                              VerticalAlignment="Center" />
+                                        </Border>
+
+                                        <!-- Sleek GIF Badge Pill Overlay (Top-Left) -->
+                                        <Border HorizontalAlignment="Left"
+                                                VerticalAlignment="Top"
+                                                Margin="6,6,0,0"
+                                                Background="#B0000000"
+                                                CornerRadius="4"
+                                                Padding="6,2"
+                                                IsHitTestVisible="False">
+                                            <Border.Style>
+                                                <Style TargetType="Border">
+                                                    <Setter Property="Visibility" Value="Collapsed" />
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding IsAnimation}" Value="True">
+                                                            <Setter Property="Visibility" Value="Visible" />
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </Border.Style>
+                                            <TextBlock Text="GIF"
+                                                       FontSize="10"
+                                                       FontWeight="Bold"
+                                                       Foreground="#FFFFFF" />
                                         </Border>
 
                                         <!-- Telegram-Style Floating Translucent Timestamp Badge (Visible when no caption) -->

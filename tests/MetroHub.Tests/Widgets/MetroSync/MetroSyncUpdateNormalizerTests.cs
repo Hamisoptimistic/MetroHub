@@ -138,7 +138,7 @@ public sealed class MetroSyncUpdateNormalizerTests
     }
 
     [Fact]
-    public void Normalize_Animation_ReturnsFilePayloadItem()
+    public void Normalize_Animation_ReturnsImagePayloadItem()
     {
         var raw = UpdateBuilder.ToRaw(19, id => new
         {
@@ -154,15 +154,123 @@ public sealed class MetroSyncUpdateNormalizerTests
                     file_id = "anim_1",
                     file_name = "cool.gif",
                     file_size = 800_000,
-                    mime_type = "video/mp4"
+                    mime_type = "video/mp4",
+                    thumbnail = new
+                    {
+                        file_id = "thumb_anim_1",
+                        width = 320,
+                        height = 240
+                    }
                 }
             }
         });
 
         var item = _normalizer.Normalize(raw, _now);
-        var fileItem = Assert.IsType<FilePayloadItem>(item);
-        Assert.Equal("cool.gif", fileItem.FileName);
-        Assert.Equal(800_000, fileItem.FileSize);
+        var imageItem = Assert.IsType<ImagePayloadItem>(item);
+        Assert.True(imageItem.IsAnimation);
+        Assert.Equal("anim_1", imageItem.FileId);
+        Assert.Equal("thumb_anim_1", imageItem.ThumbnailFileId);
+        Assert.Equal("cool.gif", imageItem.FileName);
+    }
+
+    [Fact]
+    public void Normalize_Sticker_ReturnsImagePayloadItem_WithEmojiAndThumbnail()
+    {
+        var raw = UpdateBuilder.ToRaw(25, id => new
+        {
+            update_id = id,
+            message = new
+            {
+                message_id = id,
+                date = DateTimeOffset.UtcNow.ToUnixTimeSeconds(),
+                from = new { id = 42, is_bot = false, first_name = "T" },
+                chat = new { id = 42, type = "private" },
+                sticker = new
+                {
+                    file_id = "sticker_123",
+                    emoji = "🐱",
+                    set_name = "CuteCats",
+                    thumbnail = new
+                    {
+                        file_id = "sticker_thumb_123",
+                        width = 100,
+                        height = 100
+                    }
+                }
+            }
+        });
+
+        var item = _normalizer.Normalize(raw, _now);
+        var imageItem = Assert.IsType<ImagePayloadItem>(item);
+        Assert.True(imageItem.IsSticker);
+        Assert.Equal("sticker_123", imageItem.FileId);
+        Assert.Equal("sticker_thumb_123", imageItem.ThumbnailFileId);
+        Assert.Equal("🐱", imageItem.Emoji);
+        Assert.Equal("[Sticker 🐱]", imageItem.StickerFallbackDisplay);
+    }
+
+    [Fact]
+    public void Normalize_StaticSticker_WithoutThumbnail_UsesFileIdAsThumbnail()
+    {
+        var raw = UpdateBuilder.ToRaw(26, id => new
+        {
+            update_id = id,
+            message = new
+            {
+                message_id = id,
+                date = DateTimeOffset.UtcNow.ToUnixTimeSeconds(),
+                from = new { id = 42, is_bot = false, first_name = "T" },
+                chat = new { id = 42, type = "private" },
+                sticker = new
+                {
+                    file_id = "static_sticker_456",
+                    emoji = "🚀",
+                    is_animated = false,
+                    is_video = false
+                }
+            }
+        });
+
+        var item = _normalizer.Normalize(raw, _now);
+        var imageItem = Assert.IsType<ImagePayloadItem>(item);
+        Assert.True(imageItem.IsSticker);
+        Assert.Equal("static_sticker_456", imageItem.FileId);
+        Assert.Equal("static_sticker_456", imageItem.ThumbnailFileId);
+        Assert.Equal("🚀", imageItem.Emoji);
+    }
+
+    [Fact]
+    public void Normalize_GifDocument_ReturnsImagePayloadItem()
+    {
+        var raw = UpdateBuilder.ToRaw(27, id => new
+        {
+            update_id = id,
+            message = new
+            {
+                message_id = id,
+                date = DateTimeOffset.UtcNow.ToUnixTimeSeconds(),
+                from = new { id = 42, is_bot = false, first_name = "T" },
+                chat = new { id = 42, type = "private" },
+                document = new
+                {
+                    file_id = "doc_gif_1",
+                    file_name = "reaction.gif",
+                    mime_type = "image/gif",
+                    file_size = 500_000,
+                    thumb = new
+                    {
+                        file_id = "thumb_gif_1"
+                    }
+                }
+            }
+        });
+
+        var item = _normalizer.Normalize(raw, _now);
+        var imageItem = Assert.IsType<ImagePayloadItem>(item);
+        Assert.True(imageItem.IsAnimation);
+        Assert.Equal("doc_gif_1", imageItem.FileId);
+        Assert.Equal("thumb_gif_1", imageItem.ThumbnailFileId);
+        Assert.Equal("reaction.gif", imageItem.FileName);
     }
 
     [Theory]

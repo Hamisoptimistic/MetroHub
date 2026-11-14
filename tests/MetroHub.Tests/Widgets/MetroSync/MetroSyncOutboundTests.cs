@@ -335,14 +335,24 @@ public sealed class MetroSyncOutboundTests
         var fileItem = Assert.IsType<FilePayloadItem>(item3);
         Assert.Equal("report.pdf", fileItem.FileName);
 
-        // 4. Unsupported
+        // 4. Sticker
         var stickerJson = "{\"message_id\":40,\"date\":1730000000,\"sticker\":{\"file_id\":\"s1\"}}";
         using var doc4 = JsonDocument.Parse(stickerJson);
         var item4 = normalizer.NormalizeOutbound(doc4.RootElement, DateTimeOffset.UtcNow);
         Assert.NotNull(item4);
         Assert.True(item4.IsOutgoing);
-        var stickerItem = Assert.IsType<TextPayloadItem>(item4);
-        Assert.Equal("[Sticker]", stickerItem.Text);
+        var stickerItem = Assert.IsType<ImagePayloadItem>(item4);
+        Assert.True(stickerItem.IsSticker);
+        Assert.Equal("s1", stickerItem.FileId);
+
+        // 5. Unsupported
+        var locationJson = "{\"message_id\":50,\"date\":1730000000,\"location\":{\"latitude\":10.0,\"longitude\":20.0}}";
+        using var doc5 = JsonDocument.Parse(locationJson);
+        var item5 = normalizer.NormalizeOutbound(doc5.RootElement, DateTimeOffset.UtcNow);
+        Assert.NotNull(item5);
+        Assert.True(item5.IsOutgoing);
+        var unsupportedItem = Assert.IsType<TextPayloadItem>(item5);
+        Assert.Equal("[Location]", unsupportedItem.Text);
     }
 
     [Fact]

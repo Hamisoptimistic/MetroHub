@@ -173,7 +173,29 @@ public sealed class MetroSyncUpdateNormalizer : IUpdateNormalizer
             }
         }
 
-        // 3. Document
+        // 3. Animation
+        if (message.TryGetProperty("animation", out var animElem) && animElem.ValueKind == JsonValueKind.Object)
+        {
+            var fileId = TryGetString(animElem, "file_id");
+            var fileName = TryGetString(animElem, "file_name");
+            var caption = TryGetString(message, "caption") ?? TryGetString(animElem, "caption");
+            var thumbFileId = ExtractThumbFileId(animElem);
+
+            return new ImagePayloadItem
+            {
+                UpdateId = updateId,
+                MessageId = messageId,
+                Timestamp = timestamp,
+                IsOutgoing = isOutgoing,
+                ThumbnailFileId = thumbFileId ?? fileId,
+                FileId = fileId,
+                FileName = string.IsNullOrWhiteSpace(fileName) ? "animation.mp4" : fileName,
+                Caption = caption,
+                IsAnimation = true
+            };
+        }
+
+        // 4. Document
         if (message.TryGetProperty("document", out var docElem) && docElem.ValueKind == JsonValueKind.Object)
         {
             var fileId = TryGetString(docElem, "file_id");
@@ -181,6 +203,24 @@ public sealed class MetroSyncUpdateNormalizer : IUpdateNormalizer
             var fileSize = docElem.TryGetProperty("file_size", out var fs) && fs.TryGetInt64(out var s) ? s : (long?)null;
             var mimeType = TryGetString(docElem, "mime_type");
             var caption = TryGetString(message, "caption");
+
+            if (string.Equals(mimeType, "image/gif", StringComparison.OrdinalIgnoreCase) ||
+                (!string.IsNullOrEmpty(fileName) && fileName.EndsWith(".gif", StringComparison.OrdinalIgnoreCase)))
+            {
+                var thumbFileId = ExtractThumbFileId(docElem);
+                return new ImagePayloadItem
+                {
+                    UpdateId = updateId,
+                    MessageId = messageId,
+                    Timestamp = timestamp,
+                    IsOutgoing = isOutgoing,
+                    ThumbnailFileId = thumbFileId ?? fileId,
+                    FileId = fileId,
+                    FileName = string.IsNullOrWhiteSpace(fileName) ? "animation.gif" : fileName,
+                    Caption = caption,
+                    IsAnimation = true
+                };
+            }
 
             return new FilePayloadItem
             {
@@ -196,7 +236,7 @@ public sealed class MetroSyncUpdateNormalizer : IUpdateNormalizer
             };
         }
 
-        // 4. Video
+        // 5. Video
         if (message.TryGetProperty("video", out var vidElem) && vidElem.ValueKind == JsonValueKind.Object)
         {
             var fileId = TryGetString(vidElem, "file_id");
@@ -219,7 +259,7 @@ public sealed class MetroSyncUpdateNormalizer : IUpdateNormalizer
             };
         }
 
-        // 5. Video note (round video message)
+        // 6. Video note (round video message)
         if (message.TryGetProperty("video_note", out var vnElem) && vnElem.ValueKind == JsonValueKind.Object)
         {
             var fileId = TryGetString(vnElem, "file_id");
@@ -239,7 +279,7 @@ public sealed class MetroSyncUpdateNormalizer : IUpdateNormalizer
             };
         }
 
-        // 6. Audio
+        // 7. Audio
         if (message.TryGetProperty("audio", out var audElem) && audElem.ValueKind == JsonValueKind.Object)
         {
             var fileId = TryGetString(audElem, "file_id");
@@ -270,7 +310,7 @@ public sealed class MetroSyncUpdateNormalizer : IUpdateNormalizer
             };
         }
 
-        // 7. Voice
+        // 8. Voice
         if (message.TryGetProperty("voice", out var voiceElem) && voiceElem.ValueKind == JsonValueKind.Object)
         {
             var fileId = TryGetString(voiceElem, "file_id");
@@ -292,32 +332,46 @@ public sealed class MetroSyncUpdateNormalizer : IUpdateNormalizer
             };
         }
 
-        // 8. Animation
-        if (message.TryGetProperty("animation", out var animElem) && animElem.ValueKind == JsonValueKind.Object)
+        // 9. Sticker
+        if (message.TryGetProperty("sticker", out var stickerElem) && stickerElem.ValueKind == JsonValueKind.Object)
         {
-            var fileId = TryGetString(animElem, "file_id");
-            var fileName = TryGetString(animElem, "file_name");
-            var fileSize = animElem.TryGetProperty("file_size", out var fs) && fs.TryGetInt64(out var s) ? s : (long?)null;
-            var mimeType = TryGetString(animElem, "mime_type") ?? "video/mp4";
-            var caption = TryGetString(message, "caption");
-
-            return new FilePayloadItem
+            var fileId = TryGetString(stickerElem, "file_id");
+            if (!string.IsNullOrEmpty(fileId))
             {
-                UpdateId = updateId,
-                MessageId = messageId,
-                Timestamp = timestamp,
-                IsOutgoing = isOutgoing,
-                FileId = fileId,
-                FileName = string.IsNullOrWhiteSpace(fileName) ? "animation.mp4" : fileName,
-                FileSize = fileSize,
-                MimeType = mimeType,
-                Caption = caption
-            };
+                var emoji = TryGetString(stickerElem, "emoji");
+                var setName = TryGetString(stickerElem, "set_name");
+                var thumbFileId = ExtractThumbFileId(stickerElem);
+
+                bool isAnimated = stickerElem.TryGetProperty("is_animated", out var ia) && ia.ValueKind == JsonValueKind.True;
+                bool isVideo = stickerElem.TryGetProperty("is_video", out var iv) && iv.ValueKind == JsonValueKind.True;
+
+                if (thumbFileId == null && !isAnimated && !isVideo)
+                {
+                    thumbFileId = fileId;
+                }
+
+                return new ImagePayloadItem
+                {
+                    UpdateId = updateId,
+                    MessageId = messageId,
+                    Timestamp = timestamp,
+                    IsOutgoing = isOutgoing,
+                    FileId = fileId,
+                    ThumbnailFileId = thumbFileId,
+                    IsSticker = true,
+                    Emoji = emoji,
+                    Caption = null
+                };
+            }
         }
 
-        // 9. Unsupported types fallback
+        // 10. Unsupported types fallback
         var notice = "[Unsupported message]";
-        if (message.TryGetProperty("sticker", out _)) notice = "[Sticker]";
+        if (message.TryGetProperty("sticker", out var stkElem))
+        {
+            var emoji = stkElem.ValueKind == JsonValueKind.Object ? TryGetString(stkElem, "emoji") : null;
+            notice = !string.IsNullOrWhiteSpace(emoji) ? $"[Sticker {emoji}]" : "[Sticker]";
+        }
         else if (message.TryGetProperty("location", out _)) notice = "[Location]";
         else if (message.TryGetProperty("contact", out _)) notice = "[Contact]";
         else if (message.TryGetProperty("poll", out _)) notice = "[Poll]";
@@ -333,6 +387,31 @@ public sealed class MetroSyncUpdateNormalizer : IUpdateNormalizer
             IsOutgoing = isOutgoing,
             Text = notice
         };
+    }
+
+    private static string? ExtractThumbFileId(JsonElement parent)
+    {
+        if (parent.TryGetProperty("thumbnail", out var thumbElem) || parent.TryGetProperty("thumb", out thumbElem))
+        {
+            if (thumbElem.ValueKind == JsonValueKind.Object)
+            {
+                return TryGetString(thumbElem, "file_id");
+            }
+
+            if (thumbElem.ValueKind == JsonValueKind.Array)
+            {
+                foreach (var s in thumbElem.EnumerateArray())
+                {
+                    if (s.ValueKind == JsonValueKind.Object)
+                    {
+                        var id = TryGetString(s, "file_id");
+                        if (!string.IsNullOrEmpty(id)) return id;
+                    }
+                }
+            }
+        }
+
+        return null;
     }
 
     private static string? TryGetString(JsonElement obj, string propertyName)

@@ -907,7 +907,25 @@ public sealed partial class MetroSyncWidgetViewModel : WidgetViewModelBase, IWid
 
         try
         {
-            string fileName = $"photo_{item.MessageId}.jpg";
+            string rawFileName;
+            if (!string.IsNullOrWhiteSpace(item.FileName))
+            {
+                rawFileName = item.FileName;
+            }
+            else if (item.IsAnimation)
+            {
+                rawFileName = $"animation_{item.MessageId}.mp4";
+            }
+            else if (item.IsSticker)
+            {
+                rawFileName = $"sticker_{item.MessageId}.webp";
+            }
+            else
+            {
+                rawFileName = $"photo_{item.MessageId}.jpg";
+            }
+
+            string fileName = MetroSyncDownloader.SanitizeFileName(rawFileName);
             var path = await downloader.DownloadFileAsync(item.FileId, fileName, declaredFileSize: null, progress: progress, ct: _lifecycleCts.Token).ConfigureAwait(false);
 
             RunOnUIThread(() =>
@@ -1143,8 +1161,32 @@ public sealed partial class MetroSyncWidgetViewModel : WidgetViewModelBase, IWid
         }
         else if (parameter is ImagePayloadItem imageItem)
         {
-            string defaultName = $"image_{imageItem.MessageId}.jpg";
-            var destination = _pickSaveFileAction(defaultName, "JPEG Image (*.jpg;*.jpeg)|*.jpg;*.jpeg|All files (*.*)|*.*");
+            string rawName;
+            if (!string.IsNullOrWhiteSpace(imageItem.FileName))
+            {
+                rawName = imageItem.FileName;
+            }
+            else if (imageItem.IsAnimation)
+            {
+                rawName = $"animation_{imageItem.MessageId}.mp4";
+            }
+            else if (imageItem.IsSticker)
+            {
+                rawName = $"sticker_{imageItem.MessageId}.webp";
+            }
+            else
+            {
+                rawName = $"image_{imageItem.MessageId}.jpg";
+            }
+
+            string defaultName = MetroSyncDownloader.SanitizeFileName(rawName);
+            string filter = imageItem.IsAnimation
+                ? "Animation / Video (*.mp4;*.gif)|*.mp4;*.gif|All files (*.*)|*.*"
+                : imageItem.IsSticker
+                    ? "Sticker Image (*.webp;*.png)|*.webp;*.png|All files (*.*)|*.*"
+                    : "JPEG Image (*.jpg;*.jpeg)|*.jpg;*.jpeg|All files (*.*)|*.*";
+
+            var destination = _pickSaveFileAction(defaultName, filter);
             if (string.IsNullOrWhiteSpace(destination)) return;
 
             // 1. If full resolution image is already downloaded:
