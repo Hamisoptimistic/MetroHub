@@ -263,10 +263,22 @@ public static class SmoothPhysicsScrollBehavior
 
         private bool _isRenderingHooked;
         private bool _isInternalScrollUpdate;
+        private bool _isSurfaceCacheHeld;
         private TimeSpan _lastRenderArgsTime = TimeSpan.Zero;
         private long _lastWheelTimestamp;
         private bool _isTouchpadGestureActive;
         private System.Windows.Threading.DispatcherTimer? _cacheSettleTimer;
+
+        // TEMPORARY scroll frame-pacing probe. Remove once scroll jank is diagnosed.
+        private const int PacingCapacity = 4096;
+        private readonly double[] _pacingFrameMs = new double[PacingCapacity];
+        private int _pacingCount;
+        private double _pacingWorstFrameMs;
+        private double _lastTickWallMs;
+        private double _pacingWorstDispatchMs;
+        private int _pacingUiStalls;
+        private double _pacingHandlerSumMs;
+        private double _pacingHandlerWorstMs;
 
         public PhysicsScrollController(ScrollViewer scrollViewer)
         {
@@ -286,6 +298,16 @@ public static class SmoothPhysicsScrollBehavior
             _scrollViewer.PreviewMouseDown += OnPreviewMouseDown;
             _scrollViewer.ScrollChanged += OnExternalScrollChanged;
             _scrollViewer.Unloaded += OnUnloaded;
+
+            // Scrollbar thumb dragging bypasses the spring entirely (native WPF pixel scrolling).
+            // Keep the surface cache hot for the duration of the drag so it re-composites one
+            // texture instead of re-rasterizing every tile on each pointer move.
+            _scrollViewer.AddHandler(Thumb.DragStartedEvent, new DragStartedEventHandler(OnThumbDragStarted), true);
+            _scrollViewer.AddHandler(Thumb.DragCompletedEvent, new DragCompletedEventHandler(OnThumbDragCompleted), true);
+            _scrollViewer.AddHandler(Mouse.LostMouseCaptureEvent, new MouseEventHandler(OnLostMouseCapture), true);
+
+            // TEMPORARY: proves the diagnostic sink is live even before the first scroll burst.
+            ScrollTrace.Write(FormattableString.Invariant($"[ScrollProbe] attached extent={_scrollViewer.ExtentHeight:F0} viewport={_scrollViewer.ViewportHeight:F0} scrollable={_scrollViewer.ScrollableHeight:F0} trace={ScrollTrace.FilePath}"));
         }
 
         public void CancelMomentumAndFreeze()
@@ -340,6 +362,63 @@ public static class SmoothPhysicsScrollBehavior
             {
                 CancelMomentumAndFreeze();
             }
+        }
+
+        private void OnThumbDragStarted(object sender, DragStartedEventArgs e)
+        {
+            if (_isRenderingHooked) return;
+            if (!IsOwnScrollBarThumb(e.OriginalSource)) return;
+
+            AttachSurfaceCache();
+        }
+
+        private void OnThumbDragCompleted(object sender, DragCompletedEventArgs e)
+        {
+            if (_isRenderingHooked) return;
+            if (!IsOwnScrollBarThumb(e.OriginalSource)) return;
+
+            ReleaseSurfaceCache();
+        }
+
+        private void OnLostMouseCapture(object sender, MouseEventArgs e)
+        {
+            if (_isRenderingHooked || !_isSurfaceCacheHeld) return;
+
+            ReleaseSurfaceCache();
+        }
+
+        /// <summary>
+        /// True when the routed <see cref="Thumb"/> belongs to this ScrollViewer's own ScrollBar
+        /// template, not to a Slider or nested ScrollBar living inside the canvas content.
+        /// </summary>
+        private bool IsOwnScrollBarThumb(object? source)
+        {
+            if (source is not DependencyObject current) return false;
+
+            DependencyObject? content = _scrollViewer.Content as DependencyObject;
+            bool sawThumb = false;
+
+            while (current != null && !ReferenceEquals(current, _scrollViewer))
+            {
+                if (ReferenceEquals(current, content)) return false;
+
+                if (current is Thumb)
+                {
+                    sawThumb = true;
+                }
+                else if (current is ScrollBar)
+                {
+                    return sawThumb;
+                }
+
+                current = current is Visual or System.Windows.Media.Media3D.Visual3D
+                    ? VisualTreeHelper.GetParent(current)
+                    : (current is FrameworkElement fe
+                        ? (fe.Parent ?? LogicalTreeHelper.GetParent(current))
+                        : LogicalTreeHelper.GetParent(current));
+            }
+
+            return false;
         }
 
         private void OnExternalScrollChanged(object sender, ScrollChangedEventArgs e)
@@ -503,12 +582,27 @@ public static class SmoothPhysicsScrollBehavior
 
         private void OnRendering(object? sender, EventArgs e)
         {
+            // TEMPORARY scroll frame-pacing probe. Remove once scroll jank is diagnosed.
+            long handlerStart = Stopwatch.GetTimestamp();
+            try
+            {
+                RenderTick(e);
+            }
+            finally
+            {
+                RecordHandlerCost(handlerStart);
+            }
+        }
+
+        private void RenderTick(EventArgs e)
+        {
             if (e is not RenderingEventArgs renderingArgs) return;
 
             if (renderingArgs.RenderingTime == _lastRenderArgsTime) return;
 
             double dt;
-            if (_lastRenderArgsTime == TimeSpan.Zero)
+            bool hasPreviousFrame = _lastRenderArgsTime != TimeSpan.Zero;
+            if (!hasPreviousFrame)
             {
                 dt = 1.0 / 120.0;
             }
@@ -517,6 +611,9 @@ public static class SmoothPhysicsScrollBehavior
                 dt = (renderingArgs.RenderingTime - _lastRenderArgsTime).TotalSeconds;
             }
             _lastRenderArgsTime = renderingArgs.RenderingTime;
+
+            // TEMPORARY scroll frame-pacing probe. Remove once scroll jank is diagnosed.
+            RecordPacingSample(hasPreviousFrame, dt);
 
             dt = Math.Clamp(dt, 0.001, 0.05);
 
@@ -607,16 +704,7 @@ public static class SmoothPhysicsScrollBehavior
 
         private void AttachRenderLoop()
         {
-            _cacheSettleTimer?.Stop();
-
-            if (_scrollViewer.Content is UIElement content)
-            {
-                content.IsHitTestVisible = false;
-                if (content.CacheMode == null)
-                {
-                    content.CacheMode = new BitmapCache { RenderAtScale = 1.0, SnapsToDevicePixels = false, EnableClearType = false };
-                }
-            }
+            AttachSurfaceCache();
 
             if (_isRenderingHooked) return;
 
@@ -628,14 +716,30 @@ public static class SmoothPhysicsScrollBehavior
             _isRenderingHooked = true;
         }
 
-        private void DetachRenderLoop()
+        /// <summary>
+        /// Holds a single-quad surface cache over the scroll content. Independent of the physics
+        /// render loop so scrollbar thumb drags can reuse it without the spring fighting the thumb.
+        /// </summary>
+        private void AttachSurfaceCache()
         {
-            if (!_isRenderingHooked) return;
+            _cacheSettleTimer?.Stop();
 
-            CompositionTarget.Rendering -= OnRendering;
-            _isRenderingHooked = false;
-            _lastRenderArgsTime = TimeSpan.Zero;
-            IsScrolling = false;
+            if (_isSurfaceCacheHeld) return;
+
+            if (_scrollViewer.Content is UIElement content)
+            {
+                content.IsHitTestVisible = false;
+                if (content.CacheMode == null)
+                {
+                    content.CacheMode = new BitmapCache { RenderAtScale = 1.0, SnapsToDevicePixels = false, EnableClearType = false };
+                }
+                _isSurfaceCacheHeld = true;
+            }
+        }
+
+        private void ReleaseSurfaceCache()
+        {
+            if (!_isSurfaceCacheHeld) return;
 
             if (_scrollViewer.Content is UIElement content)
             {
@@ -645,19 +749,120 @@ public static class SmoothPhysicsScrollBehavior
                     _overscrollTransform.Y = 0.0;
                     content.RenderTransform = null;
                 }
-
-                // Debounce BitmapCache teardown by 500ms (industry standard) to keep cache hot across trailing wheel detents
-                if (_cacheSettleTimer == null)
-                {
-                    _cacheSettleTimer = new System.Windows.Threading.DispatcherTimer
-                    {
-                        Interval = TimeSpan.FromMilliseconds(500)
-                    };
-                    _cacheSettleTimer.Tick += OnCacheSettleTimerTick;
-                }
-                _cacheSettleTimer.Stop();
-                _cacheSettleTimer.Start();
             }
+            else
+            {
+                _isSurfaceCacheHeld = false;
+                return;
+            }
+
+            // Debounce BitmapCache teardown by 500ms (industry standard) to keep cache hot across trailing wheel detents
+            if (_cacheSettleTimer == null)
+            {
+                _cacheSettleTimer = new System.Windows.Threading.DispatcherTimer
+                {
+                    Interval = TimeSpan.FromMilliseconds(500)
+                };
+                _cacheSettleTimer.Tick += OnCacheSettleTimerTick;
+            }
+            _cacheSettleTimer.Stop();
+            _cacheSettleTimer.Start();
+        }
+
+        private void DetachRenderLoop()
+        {
+            if (!_isRenderingHooked) return;
+
+            CompositionTarget.Rendering -= OnRendering;
+            _isRenderingHooked = false;
+            _lastRenderArgsTime = TimeSpan.Zero;
+            IsScrolling = false;
+
+            FlushPacingProbe();
+            ReleaseSurfaceCache();
+        }
+
+        // ---------------------------------------------------------------------------------
+        // TEMPORARY scroll frame-pacing probe. Remove once scroll jank is diagnosed.
+        // Logs one line per scroll burst:
+        //   frame  = CompositionTarget.Rendering RenderingTime delta (render thread pace)
+        //   dispatch = wall-clock delta between our callbacks (UI thread pace)
+        // If frame p95 is high but dispatch is clean -> render thread (too much to draw).
+        // If dispatch is much higher than frame   -> UI thread is blocked between frames.
+        // ---------------------------------------------------------------------------------
+        private void RecordPacingSample(bool hasPreviousFrame, double dtSeconds)
+        {
+            if (!hasPreviousFrame) return;
+
+            if (_pacingCount < _pacingFrameMs.Length)
+            {
+                double ms = dtSeconds * 1000.0;
+                _pacingFrameMs[_pacingCount++] = ms;
+                if (ms > _pacingWorstFrameMs) _pacingWorstFrameMs = ms;
+            }
+
+            double wallMs = Stopwatch.GetTimestamp() * 1000.0 / Stopwatch.Frequency;
+            if (_lastTickWallMs > 0.0)
+            {
+                double dispatchMs = wallMs - _lastTickWallMs;
+                if (dispatchMs > _pacingWorstDispatchMs) _pacingWorstDispatchMs = dispatchMs;
+                if (dispatchMs > (dtSeconds * 1000.0) + 8.0) _pacingUiStalls++;
+            }
+            _lastTickWallMs = wallMs;
+        }
+
+        private void FlushPacingProbe()
+        {
+            int count = _pacingCount;
+            _pacingCount = 0;
+            _lastTickWallMs = 0.0;
+            double worstFrame = _pacingWorstFrameMs;
+            _pacingWorstFrameMs = 0.0;
+            double worstDispatch = _pacingWorstDispatchMs;
+            _pacingWorstDispatchMs = 0.0;
+            int uiStalls = _pacingUiStalls;
+            _pacingUiStalls = 0;
+            double handlerSum = _pacingHandlerSumMs;
+            _pacingHandlerSumMs = 0.0;
+            double handlerWorst = _pacingHandlerWorstMs;
+            _pacingHandlerWorstMs = 0.0;
+
+            if (count < 8) return;
+
+            var samples = _pacingFrameMs.AsSpan(0, count);
+            samples.Sort();
+            double p50 = samples[count / 2];
+            double p95 = samples[Math.Min(count - 1, (int)(count * 0.95))];
+            double p99 = samples[Math.Min(count - 1, (int)(count * 0.99))];
+
+            int over17 = 0, over25 = 0, over50 = 0;
+            for (int i = 0; i < count; i++)
+            {
+                double s = samples[i];
+                if (s > 16.7) over17++;
+                if (s > 25.0) over25++;
+                if (s > 50.0) over50++;
+            }
+
+            int tier = RenderCapability.Tier >> 16;
+            double dpi = 1.0;
+            try { dpi = VisualTreeHelper.GetDpi(_scrollViewer).DpiScaleX; }
+            catch (Exception ex) { Safe.Ignore(ex, "SmoothPhysicsScrollBehavior.PacingDpi"); }
+
+            bool cached = _scrollViewer.Content is UIElement content && content.CacheMode != null;
+
+            string message = FormattableString.Invariant($"[ScrollPacing] frames={count} p50={p50:F1}ms p95={p95:F1}ms p99={p99:F1}ms worst={worstFrame:F1}ms over17={over17} over25={over25} over50={over50} worstDispatch={worstDispatch:F1}ms uiStalls={uiStalls} handlerAvg={(count > 0 ? handlerSum / count : 0.0):F2}ms handlerMax={handlerWorst:F2}ms tier={tier} dpi={dpi:F2} viewport={_scrollViewer.ViewportHeight:F0} extent={_scrollViewer.ExtentHeight:F0} scrollable={_scrollViewer.ScrollableHeight:F0} cached={cached} wpCached={MetroHub.Presentation.Controllers.BackdropManager.WallpaperLayerCached}");
+
+            ScrollTrace.Write(message);
+            Serilog.Log.Information("{PacingLine}", message);
+        }
+
+        // TEMPORARY scroll frame-pacing probe. Remove once scroll jank is diagnosed.
+        private void RecordHandlerCost(long startTimestamp)
+        {
+            double ms = (Stopwatch.GetTimestamp() - startTimestamp) * 1000.0 / Stopwatch.Frequency;
+            _pacingHandlerSumMs += ms;
+            if (ms > _pacingHandlerWorstMs) _pacingHandlerWorstMs = ms;
         }
 
         private void OnCacheSettleTimerTick(object? sender, EventArgs e)
@@ -666,6 +871,10 @@ public static class SmoothPhysicsScrollBehavior
             if (!_isRenderingHooked && _scrollViewer.Content is UIElement content)
             {
                 content.CacheMode = null;
+            }
+            if (!_isRenderingHooked)
+            {
+                _isSurfaceCacheHeld = false;
             }
         }
 
@@ -685,6 +894,11 @@ public static class SmoothPhysicsScrollBehavior
             _scrollViewer.PreviewMouseDown -= OnPreviewMouseDown;
             _scrollViewer.ScrollChanged -= OnExternalScrollChanged;
             _scrollViewer.Unloaded -= OnUnloaded;
+            _scrollViewer.RemoveHandler(Thumb.DragStartedEvent, new DragStartedEventHandler(OnThumbDragStarted));
+            _scrollViewer.RemoveHandler(Thumb.DragCompletedEvent, new DragCompletedEventHandler(OnThumbDragCompleted));
+            _scrollViewer.RemoveHandler(Mouse.LostMouseCaptureEvent, new MouseEventHandler(OnLostMouseCapture));
+
+            _isSurfaceCacheHeld = false;
 
             IsScrolling = false;
             if (_scrollViewer.Content is UIElement content)

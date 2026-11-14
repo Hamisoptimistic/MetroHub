@@ -121,6 +121,8 @@ public sealed class EverythingSearchSource : ISearchSource, IDisposable
     private double _probeBackoffSeconds = 1.0;
     private const double MaxProbeBackoffSeconds = 30.0;
     private const double LoadingCooldownSeconds = 0.25; // 250ms flat cooldown for warm-up state
+    // Cold Everything queries measured 195-1250ms; 400ms tripped the timeout on the first search of a session.
+    private const int QueryTimeoutMs = 1500;
     private bool _isDisposed;
 
     public EverythingSearchSource(int maxResults = 100)
@@ -230,13 +232,13 @@ public sealed class EverythingSearchSource : ISearchSource, IDisposable
 
         try
         {
-            // Blueprint Section 5: Hard 400ms timeout for Everything queries
-            return await workItem.Task.WaitAsync(TimeSpan.FromMilliseconds(400), cancellationToken).ConfigureAwait(false);
+            // Blueprint Section 5: hard query timeout so a hung Everything can never stall the pipeline
+            return await workItem.Task.WaitAsync(TimeSpan.FromMilliseconds(QueryTimeoutMs), cancellationToken).ConfigureAwait(false);
         }
         catch (TimeoutException ex)
         {
             Safe.Log(ex, "EverythingSearchSource.SearchAsync.Timeout");
-            RecordFailure("Everything query timed out (400ms).");
+            RecordFailure($"Everything query timed out ({QueryTimeoutMs}ms).");
             return Array.Empty<Candidate>();
         }
         catch (OperationCanceledException ex)
@@ -351,7 +353,11 @@ public sealed class EverythingSearchSource : ISearchSource, IDisposable
                            EverythingRequestFlags.Size |
                            EverythingRequestFlags.DateModified |
                            EverythingRequestFlags.Attributes,
-            Sort = EverythingSort.DateModifiedDescending,
+            // Everything 1.4's fast-sort IPC path (path / date modified) can answer Success with zero rows
+            // on a healthy index. Verified 2026-11-14 on 1.4.1.1032: date-modified sort -> 0 results,
+            // name sort -> 60 results for the same query. Never request a server-side sort here;
+            // SearchRanker owns result ordering.
+            Sort = EverythingSort.NameAscending,
             MatchCase = false,
             MatchPath = false,
             MatchWholeWord = false,
@@ -380,6 +386,13 @@ public sealed class EverythingSearchSource : ISearchSource, IDisposable
 
         if (response.Results == null || response.Results.Count == 0)
         {
+            // Success with zero rows is almost never a genuine "no matches" for a file query;
+            // it usually means Everything or the client state drifted. Never fail invisibly.
+            Safe.LogThrottled(
+                new InvalidOperationException($"Everything returned 0 rows (success) for query '{searchText}'."),
+                "EverythingSearchSource.EmptyResult",
+                TimeSpan.FromMinutes(5),
+                "EverythingSearchSource.ExecuteSearchInternal");
             return Array.Empty<Candidate>();
         }
 

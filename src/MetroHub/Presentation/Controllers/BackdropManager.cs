@@ -42,6 +42,17 @@ public sealed class BackdropManager : IDisposable
     private string? _currentLoadedWallpaperPath;
     private CancellationTokenSource? _wallpaperCts;
 
+    // TEMPORARY scroll-overdraw diagnostic state. Remove once wallpaper scroll jank is fixed.
+    private int _diagVariant;
+    private Brush? _savedWindowBackground;
+    private Visibility _savedHostVisibility = Visibility.Visible;
+
+    /// <summary>
+    /// TEMPORARY: whether the static wallpaper layer is baked into a GPU texture right now.
+    /// Read by the [ScrollPacing] probe so each burst states which structure it measured.
+    /// </summary>
+    public static bool WallpaperLayerCached { get; private set; }
+
     public string? CurrentLoadedWallpaperPath => _currentLoadedWallpaperPath;
     public BackdropShaderDriver ShaderDriver => _shaderDriver;
 
@@ -74,6 +85,9 @@ public sealed class BackdropManager : IDisposable
         _updateMenuChecksAction = updateMenuChecksAction;
         _shaderHost = shaderHost;
         _shaderDriver = new BackdropShaderDriver(_window, _customWallpaperHost);
+
+        // TEMPORARY scroll-overdraw diagnostic hotkey. Remove together with ApplyDiagVariant.
+        _window.PreviewKeyDown += OnDiagVariantKeyDown;
     }
 
     private bool _isBackdropConfigured;
@@ -142,6 +156,7 @@ public sealed class BackdropManager : IDisposable
             {
                 _wallpaperImage.BeginAnimation(UIElement.OpacityProperty, null);
                 _wallpaperImage.Effect = null;
+                ClearWallpaperLayerCache();
                 _wallpaperImage.Source = null;
                 _wallpaperImage.Visibility = Visibility.Collapsed;
             }
@@ -176,10 +191,37 @@ public sealed class BackdropManager : IDisposable
 
         _updateMenuChecksAction?.Invoke();
         _isBackdropConfigured = true;
+
+        // TEMPORARY scroll-diagnostic marker. Remove together with the [ScrollPacing] probe.
+        try
+        {
+            string imageInfo = _wallpaperImage?.Source is BitmapSource bmp
+                ? $"{bmp.PixelWidth}x{bmp.PixelHeight}"
+                : "none";
+            int cacheScale = _wallpaperImage?.CacheMode is BitmapCache bc
+                ? (int)Math.Round(bc.RenderAtScale * 100)
+                : 0;
+            string scaling = _wallpaperImage is null
+                ? "n/a"
+                : RenderOptions.GetBitmapScalingMode(_wallpaperImage).ToString();
+
+            string message = FormattableString.Invariant($"[BackdropMode] type={settings.BackdropType} parallax={settings.WallpaperParallax} image={imageInfo} cacheScalePct={cacheScale} scaling={scaling} window={_window.ActualWidth:F0}x{_window.ActualHeight:F0}");
+
+            ScrollTrace.Write(message);
+            Serilog.Log.Information("{BackdropLine}", message);
+        }
+        catch (Exception ex)
+        {
+            Safe.Ignore(ex, "BackdropManager.DiagnosticMarker");
+        }
     }
 
     public void UpdateWallpaperParallax()
     {
+        // TEMPORARY: variant 2 bakes the whole wallpaper layer into one texture; moving a child
+        // transform would invalidate that texture every frame, so parallax is frozen while active.
+        if (_diagVariant == 2) return;
+
         if (_wallpaperTranslateTransform == null && _wallpaperVideoTranslateTransform == null) return;
 
         var settings = _settingsProvider();
@@ -285,6 +327,7 @@ public sealed class BackdropManager : IDisposable
         {
             _wallpaperImage.BeginAnimation(UIElement.OpacityProperty, null);
             _wallpaperImage.Effect = null;
+            ClearWallpaperLayerCache();
             _wallpaperImage.Source = null;
             _wallpaperImage.Visibility = Visibility.Collapsed;
         }
@@ -388,6 +431,7 @@ public sealed class BackdropManager : IDisposable
                     if (_wallpaperImage != null)
                     {
                         _wallpaperImage.Effect = null;
+                        ClearWallpaperLayerCache();
                         _wallpaperImage.Source = null;
                         _wallpaperImage.Visibility = Visibility.Collapsed;
                     }
@@ -426,6 +470,7 @@ public sealed class BackdropManager : IDisposable
                 {
                     _wallpaperImage.Visibility = Visibility.Visible;
                     _customWallpaperHost.Visibility = Visibility.Visible;
+                    AttachWallpaperLayerCache();
                     UpdateWallpaperParallax();
                     return;
                 }
@@ -446,6 +491,7 @@ public sealed class BackdropManager : IDisposable
                     _wallpaperImage.Source = bmp;
                     _wallpaperImage.Visibility = Visibility.Visible;
                     _customWallpaperHost.Visibility = Visibility.Visible;
+                    AttachWallpaperLayerCache();
                     UpdateWallpaperParallax();
 
                     // Subtle, silky smooth fade-in
@@ -475,6 +521,7 @@ public sealed class BackdropManager : IDisposable
         {
             _wallpaperImage.BeginAnimation(UIElement.OpacityProperty, null);
             _wallpaperImage.Effect = null;
+            ClearWallpaperLayerCache();
             _wallpaperImage.Source = null;
             _wallpaperImage.Visibility = Visibility.Collapsed;
         }
@@ -522,6 +569,60 @@ public sealed class BackdropManager : IDisposable
         var scrimBrush = new SolidColorBrush(Color.FromArgb(alpha, 0, 0, 0));
         scrimBrush.Freeze();
         _wallpaperScrim.Background = scrimBrush;
+    }
+
+    /// <summary>
+    /// Bakes the static wallpaper layer into a single GPU texture. Without it WPF re-samples the
+    /// full-window bitmap with Linear scaling and re-blends the scrim on every scroll frame, which
+    /// is why image backdrops scrolled far worse than Mica/Acrylic (DWM composites those off-process).
+    /// Parallax stays correct: a RenderTransform on a cached element moves the cached quad instead
+    /// of re-rendering the layer.
+    /// </summary>
+    private void AttachWallpaperLayerCache()
+    {
+        if (_wallpaperImage?.Source is not BitmapSource source)
+        {
+            WallpaperLayerCached = false;
+            return;
+        }
+
+        double scale = 1.0;
+        try
+        {
+            double dpi = VisualTreeHelper.GetDpi(_wallpaperImage).DpiScaleX;
+            double displayWidth = _window.ActualWidth > 0 ? _window.ActualWidth : SystemParameters.PrimaryScreenWidth;
+            if (dpi > 1.0 && displayWidth > 1.0)
+            {
+                // Never cache above the source's own pixel density; avoid 4x textures for no gain.
+                double sourceDensity = source.PixelWidth / displayWidth;
+                if (sourceDensity > 1.0)
+                {
+                    scale = Math.Min(dpi, Math.Min(2.0, sourceDensity));
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            Safe.Ignore(ex, "BackdropManager.WallpaperLayerCacheDpi");
+            scale = 1.0;
+        }
+
+        if (scale < 1.0) scale = 1.0;
+
+        if (_wallpaperImage.CacheMode is BitmapCache existing &&
+            Math.Abs(existing.RenderAtScale - scale) <= 0.001)
+        {
+            WallpaperLayerCached = true;
+            return;
+        }
+
+        _wallpaperImage.CacheMode = new BitmapCache
+        {
+            RenderAtScale = scale,
+            SnapsToDevicePixels = false,
+            EnableClearType = false
+        };
+        WallpaperLayerCached = true;
     }
 
     public static BitmapImage? LoadOptimizedBitmap(string path, int decodeWidth = 1920)
@@ -592,8 +693,129 @@ public sealed class BackdropManager : IDisposable
         };
     }
 
+    // ---------------------------------------------------------------------------------
+    // TEMPORARY scroll-overdraw diagnostic. Remove once wallpaper scroll jank is fixed.
+    // Ctrl+Shift+F10 cycles the wallpaper draw structure inside a single session so every
+    // variant is measured on the same window, panel and cached content:
+    //   0 baseline  : cached Image quad + full-window alpha scrim + cached content quad
+    //   1 noScrim   : scrim forced fully transparent (isolates the full-window alpha blend)
+    //   2 hostCache : image + scrim baked into ONE texture (isolates layer count)
+    //   3 solidFill : no wallpaper layer at all (upper bound: cost of any WPF-drawn fill)
+    // ---------------------------------------------------------------------------------
+    private void OnDiagVariantKeyDown(object sender, System.Windows.Input.KeyEventArgs e)
+    {
+        const System.Windows.Input.ModifierKeys required =
+            System.Windows.Input.ModifierKeys.Control | System.Windows.Input.ModifierKeys.Shift;
+
+        if (e.Key != System.Windows.Input.Key.F10) return;
+        if ((System.Windows.Input.Keyboard.Modifiers & required) != required) return;
+
+        _diagVariant = (_diagVariant + 1) % 4;
+        ApplyDiagVariant();
+        e.Handled = true;
+    }
+
+    private void ApplyDiagVariant()
+    {
+        var settings = _settingsProvider();
+
+        if (!IsStaticWallpaper(settings.BackdropType))
+        {
+            ScrollTrace.Write($"[WallpaperVariant] ignored type={settings.BackdropType} (not a wallpaper backdrop)");
+            return;
+        }
+
+        if (_savedWindowBackground == null)
+        {
+            _savedWindowBackground = _window.Background;
+            _savedHostVisibility = _customWallpaperHost?.Visibility ?? Visibility.Collapsed;
+        }
+
+        string name;
+        switch (_diagVariant)
+        {
+            case 1:
+                SetHostTextureCache(false);
+                if (_wallpaperScrim != null) _wallpaperScrim.Background = Brushes.Transparent;
+                if (_customWallpaperHost != null) _customWallpaperHost.Visibility = _savedHostVisibility;
+                RestoreWindowBackground();
+                name = "noScrim";
+                break;
+
+            case 2:
+                SetHostTextureCache(true);
+                if (settings.WallpaperDimOpacity > 0.01) ApplyScrim(settings.WallpaperDimOpacity);
+                if (_customWallpaperHost != null) _customWallpaperHost.Visibility = _savedHostVisibility;
+                RestoreWindowBackground();
+                name = "hostCache";
+                break;
+
+            case 3:
+                SetHostTextureCache(false);
+                if (_customWallpaperHost != null) _customWallpaperHost.Visibility = Visibility.Collapsed;
+                _window.Background = FallbackDarkBrush;
+                name = "solidFill";
+                break;
+
+            default:
+                SetHostTextureCache(false);
+                if (_customWallpaperHost != null) _customWallpaperHost.Visibility = _savedHostVisibility;
+                RestoreWindowBackground();
+                ApplyScrim(settings.WallpaperDimOpacity);
+                name = "baseline";
+                break;
+        }
+
+        string marker = FormattableString.Invariant(
+            $"[WallpaperVariant] variant={_diagVariant} name={name} wpCached={WallpaperLayerCached} hostCache={_customWallpaperHost?.CacheMode is not null} dim={settings.WallpaperDimOpacity:F2}");
+        ScrollTrace.Write(marker);
+        Serilog.Log.Information("{VariantLine}", marker);
+    }
+
+    private void RestoreWindowBackground()
+    {
+        if (_savedWindowBackground != null) _window.Background = _savedWindowBackground;
+    }
+
+    /// <summary>
+    /// TEMPORARY: bakes the whole wallpaper layer (image + scrim) into a single GPU texture so the
+    /// frame blits one quad instead of fill-blending two full-window layers.
+    /// </summary>
+    private void SetHostTextureCache(bool enabled)
+    {
+        if (_customWallpaperHost == null) return;
+
+        if (enabled)
+        {
+            if (_wallpaperImage != null) ClearWallpaperLayerCache();
+            if (_wallpaperTranslateTransform != null) _wallpaperTranslateTransform.Y = 0.0;
+            if (_customWallpaperHost.CacheMode == null)
+            {
+                _customWallpaperHost.CacheMode = new BitmapCache
+                {
+                    RenderAtScale = 1.0,
+                    SnapsToDevicePixels = false,
+                    EnableClearType = false
+                };
+            }
+            return;
+        }
+
+        _customWallpaperHost.CacheMode = null;
+        AttachWallpaperLayerCache();
+    }
+
+    private void ClearWallpaperLayerCache()
+    {
+        if (_wallpaperImage != null) _wallpaperImage.CacheMode = null;
+        WallpaperLayerCached = false;
+    }
+
     public void Dispose()
     {
+        // TEMPORARY scroll-overdraw diagnostic hotkey.
+        _window.PreviewKeyDown -= OnDiagVariantKeyDown;
+
         CancelPendingWallpaperLoad();
         TeardownWallpaperVideo();
         _shaderDriver.Dispose();
@@ -602,6 +824,7 @@ public sealed class BackdropManager : IDisposable
         {
             _wallpaperImage.BeginAnimation(UIElement.OpacityProperty, null);
             _wallpaperImage.Effect = null;
+            ClearWallpaperLayerCache();
             _wallpaperImage.Source = null;
             _wallpaperImage.Visibility = Visibility.Collapsed;
         }

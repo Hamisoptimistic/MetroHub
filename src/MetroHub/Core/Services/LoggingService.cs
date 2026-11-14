@@ -56,6 +56,7 @@ public static class LoggingService
                         fileSizeLimitBytes: 15 * 1024 * 1024,
                         rollOnFileSizeLimit: true,
                         buffered: true,
+                        flushToDiskInterval: TimeSpan.FromSeconds(1),
                         outputTemplate: "{Timestamp:yyyy-MM-dd HH:mm:ss.fff} [{Level:u3}] [{SourceContext}] {Message:lj}{NewLine}{Exception}",
                         formatProvider: CultureInfo.InvariantCulture);
 

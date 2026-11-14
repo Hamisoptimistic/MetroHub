@@ -387,7 +387,7 @@ public sealed class EverythingSearchSourceTests
     }
 
     [Fact]
-    public async Task SearchAsync_ConfiguresSortAsDateModifiedDescending()
+    public async Task SearchAsync_ConfiguresSortAsNameAscending()
     {
         EverythingQuery? capturedQuery = null;
         var fakeClient = new FakeEverythingClient
@@ -404,7 +404,9 @@ public sealed class EverythingSearchSourceTests
         await source.SearchAsync(query, CancellationToken.None);
 
         Assert.NotNull(capturedQuery);
-        Assert.Equal(EverythingSort.DateModifiedDescending, capturedQuery.Sort);
+        // Everything 1.4 fast-sort IPC (path / date modified) can return success with zero rows,
+        // so the source must never ask Everything to sort.
+        Assert.Equal(EverythingSort.NameAscending, capturedQuery.Sort);
     }
 
     [Fact]
@@ -429,13 +431,13 @@ public sealed class EverythingSearchSourceTests
     }
 
     [Fact]
-    public async Task SearchAsync_Timeout_UnblocksIn400msAndTransitionsToDegraded()
+    public async Task SearchAsync_Timeout_UnblocksIn1500msAndTransitionsToDegraded()
     {
         var fakeClient = new FakeEverythingClient
         {
             SearchHandler = q =>
             {
-                Thread.Sleep(1000); // Simulate Everything hanging
+                Thread.Sleep(5000); // Simulate Everything hanging
                 return CreateSuccessResponse(q.SearchText);
             }
         };
@@ -448,8 +450,8 @@ public sealed class EverythingSearchSourceTests
         sw.Stop();
 
         Assert.Empty(results);
-        // Hard timeout must fire within 400-900ms
-        Assert.InRange(sw.ElapsedMilliseconds, 350, 950);
+        // Hard timeout must fire within 1500-2500ms
+        Assert.InRange(sw.ElapsedMilliseconds, 1300, 2500);
         Assert.Equal(SourceStateKind.Degraded, source.State.State);
     }
 
