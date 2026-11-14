@@ -10,9 +10,73 @@ using Everything.Net.Enums;
 using Everything.Net.Models;
 using Everything.Net.Services;
 using Microsoft.Extensions.Options;
+using MetroHub.Core.Search.Native;
 using MetroHub.Core.Services;
 
 namespace MetroHub.Core.Search;
+
+/// <summary>
+/// Granular readiness status for Everything search integration.
+/// Distinguishes between process/IPC absence and transient database warm-up.
+/// </summary>
+public enum EverythingReadinessStatus
+{
+    Ready,
+    DatabaseLoading,
+    ProcessNotRunning
+}
+
+/// <summary>
+/// Extended Everything client interface allowing granular inspection of process availability and DB load readiness.
+/// </summary>
+public interface IExtendedEverythingClient : IEverythingClient
+{
+    EverythingReadinessStatus ReadinessStatus { get; }
+    bool IsProcessRunning();
+    bool IsDbLoaded();
+}
+
+internal sealed class ExtendedEverythingClient : IExtendedEverythingClient
+{
+    private readonly IEverythingClient _innerClient;
+    private readonly Func<bool>? _processRunningProbe;
+    private const string EverythingIpcWindowClass = "EVERYTHING_TASKBAR_NOTIFICATION";
+
+    public ExtendedEverythingClient(IEverythingClient innerClient, Func<bool>? processRunningProbe = null)
+    {
+        _innerClient = innerClient ?? throw new ArgumentNullException(nameof(innerClient));
+        _processRunningProbe = processRunningProbe;
+    }
+
+    public bool IsAvailable() => _innerClient.IsAvailable();
+
+    public EverythingQueryResponse Search(EverythingQuery query) => _innerClient.Search(query);
+
+    public Task<EverythingQueryResponse> SearchAsync(EverythingQuery query, CancellationToken cancellationToken = default) =>
+        _innerClient.SearchAsync(query, cancellationToken);
+
+    public bool IsProcessRunning() =>
+        _processRunningProbe != null
+            ? _processRunningProbe()
+            : NativeMethodsSearch.FindWindow(EverythingIpcWindowClass, null) != IntPtr.Zero;
+
+    public bool IsDbLoaded() => _innerClient.IsAvailable();
+
+    public EverythingReadinessStatus ReadinessStatus
+    {
+        get
+        {
+            if (_innerClient.IsAvailable())
+            {
+                return EverythingReadinessStatus.Ready;
+            }
+
+            return IsProcessRunning()
+                ? EverythingReadinessStatus.DatabaseLoading
+                : EverythingReadinessStatus.ProcessNotRunning;
+        }
+    }
+}
 
 /// <summary>
 /// Source adapter integrating the voidtools Everything search engine.
@@ -42,6 +106,7 @@ public sealed class EverythingSearchSource : ISearchSource, IDisposable
     }
 
     private readonly IEverythingClient? _client;
+    private readonly Func<bool>? _isProcessRunningProbe;
     private readonly int _maxResults;
     private readonly Lock _stateLock = new();
     private readonly Lock _queueLock = new();
@@ -52,19 +117,22 @@ public sealed class EverythingSearchSource : ISearchSource, IDisposable
     private SearchWorkItem? _pendingItem;
     private int _consecutiveFailures;
     private DateTimeOffset _lastProbeTime = DateTimeOffset.MinValue;
+    private DateTimeOffset _lastLoadingProbeTime = DateTimeOffset.MinValue;
     private double _probeBackoffSeconds = 1.0;
     private const double MaxProbeBackoffSeconds = 30.0;
+    private const double LoadingCooldownSeconds = 0.25; // 250ms flat cooldown for warm-up state
     private bool _isDisposed;
 
     public EverythingSearchSource(int maxResults = 100)
-        : this(CreateDefaultClient(), maxResults)
+        : this(CreateDefaultClient(), maxResults, null)
     {
     }
 
-    internal EverythingSearchSource(IEverythingClient? client, int maxResults = 100)
+    internal EverythingSearchSource(IEverythingClient? client, int maxResults = 100, Func<bool>? isProcessRunningProbe = null)
     {
         _maxResults = maxResults;
         _client = client;
+        _isProcessRunningProbe = isProcessRunningProbe;
 
         if (_client == null)
         {
@@ -83,7 +151,7 @@ public sealed class EverythingSearchSource : ISearchSource, IDisposable
         _workerThread.Start();
     }
 
-    private static EverythingClient? CreateDefaultClient()
+    private static ExtendedEverythingClient? CreateDefaultClient()
     {
         try
         {
@@ -93,7 +161,8 @@ public sealed class EverythingSearchSource : ISearchSource, IDisposable
                 DefaultMaxResults = 100,
                 RequestPathAndFileNameByDefault = true
             });
-            return new EverythingClient(options);
+            var client = new EverythingClient(options);
+            return new ExtendedEverythingClient(client);
         }
         catch (Exception ex)
         {
@@ -126,12 +195,20 @@ public sealed class EverythingSearchSource : ISearchSource, IDisposable
             return Array.Empty<Candidate>();
         }
 
-        // Health backoff check if Unavailable
+        // Health backoff check if Unavailable or Loading
         var currentState = State;
         if (currentState.State == SourceStateKind.Unavailable)
         {
             var now = DateTimeOffset.UtcNow;
             if ((now - _lastProbeTime).TotalSeconds < _probeBackoffSeconds)
+            {
+                return Array.Empty<Candidate>();
+            }
+        }
+        else if (currentState.State == SourceStateKind.Loading)
+        {
+            var now = DateTimeOffset.UtcNow;
+            if ((now - _lastLoadingProbeTime).TotalSeconds < LoadingCooldownSeconds)
             {
                 return Array.Empty<Candidate>();
             }
@@ -232,13 +309,21 @@ public sealed class EverythingSearchSource : ISearchSource, IDisposable
             return Array.Empty<Candidate>();
         }
 
-        // Check availability
+        // Check availability & readiness
         try
         {
             _lastProbeTime = DateTimeOffset.UtcNow;
-            if (!_client.IsAvailable())
+            var readiness = GetReadiness();
+
+            if (readiness == EverythingReadinessStatus.ProcessNotRunning)
             {
                 RecordUnavailable("Everything service is not running or IPC is unavailable.");
+                return Array.Empty<Candidate>();
+            }
+
+            if (readiness == EverythingReadinessStatus.DatabaseLoading)
+            {
+                RecordDatabaseLoading("Everything database is loading into memory.");
                 return Array.Empty<Candidate>();
             }
         }
@@ -572,6 +657,42 @@ public sealed class EverythingSearchSource : ISearchSource, IDisposable
         };
     }
 
+    private EverythingReadinessStatus GetReadiness()
+    {
+        if (_client == null)
+        {
+            return EverythingReadinessStatus.ProcessNotRunning;
+        }
+
+        if (_client is IExtendedEverythingClient ext)
+        {
+            return ext.ReadinessStatus;
+        }
+
+        if (_client.IsAvailable())
+        {
+            return EverythingReadinessStatus.Ready;
+        }
+
+        bool isRunning = _isProcessRunningProbe != null
+            ? _isProcessRunningProbe()
+            : NativeMethodsSearch.FindWindow("EVERYTHING_TASKBAR_NOTIFICATION", null) != IntPtr.Zero;
+
+        return isRunning
+            ? EverythingReadinessStatus.DatabaseLoading
+            : EverythingReadinessStatus.ProcessNotRunning;
+    }
+
+    private void RecordDatabaseLoading(string reason)
+    {
+        lock (_stateLock)
+        {
+            // Transient warm-up state: do not increment consecutive failures or escalate backoff
+            _state = new SourceState(SourceStateKind.Loading, reason);
+            _lastLoadingProbeTime = DateTimeOffset.UtcNow;
+        }
+    }
+
     private void RecordUnavailable(string reason)
     {
         lock (_stateLock)
@@ -605,6 +726,7 @@ public sealed class EverythingSearchSource : ISearchSource, IDisposable
         {
             _consecutiveFailures = 0;
             _probeBackoffSeconds = 1.0;
+            _lastLoadingProbeTime = DateTimeOffset.MinValue;
             _state = SourceState.Ready;
         }
     }

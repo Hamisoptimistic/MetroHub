@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using MetroHub.Core.Models;
@@ -180,6 +181,167 @@ public class SearchOrchestratorTests
 
         Assert.Equal(SearchCategory.Documents, groups[2].Category);
         Assert.Equal("Documents", groups[2].Title);
+    }
+
+    [Fact]
+    public async Task SearchOrchestrator_RapidQueriesWhileTier2Slow_ExecutesTier2ForLatestAndPublishesFinalSnapshot()
+    {
+        var appSource = new AppSearchSource(CreateSampleApps);
+
+        var firstQueryGate = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+        var tier2ExecutedQueries = new List<string>();
+
+        var slowTier2Source = new BlockingTier2SearchSource(
+            onSearch: q =>
+            {
+                lock (tier2ExecutedQueries)
+                {
+                    tier2ExecutedQueries.Add(q.NormalizedText);
+                }
+                if (q.NormalizedText == "a")
+                {
+                    // Block "a" until explicitly released
+                    firstQueryGate.Task.Wait(3000);
+                }
+            });
+
+        var publishedSnapshots = new List<SearchSnapshot>();
+        var abcFinalTcs = new TaskCompletionSource<SearchSnapshot>(TaskCreationOptions.RunContinuationsAsynchronously);
+
+        using var orchestrator = new SearchOrchestrator(
+            tier1Sources: new[] { appSource },
+            tier2Sources: new[] { slowTier2Source },
+            debounceMs: 10);
+
+        orchestrator.SnapshotUpdated += snap =>
+        {
+            lock (publishedSnapshots)
+            {
+                publishedSnapshots.Add(snap);
+            }
+            if (snap.IsFinal && snap.Groups.Any(g => g.Items.Any(i => i.Candidate.DisplayName == "file_abc.txt")))
+            {
+                abcFinalTcs.TrySetResult(snap);
+            }
+        };
+
+        // 1. First query: "a" enters Tier 2 and blocks
+        orchestrator.SetQuery("a");
+        await Task.Delay(40);
+
+        // 2. Rapid keystrokes while Tier 2 is blocked on "a"
+        orchestrator.SetQuery("ab");
+        await Task.Delay(20);
+        orchestrator.SetQuery("abc");
+
+        // Allow "abc" Tier 1 to complete and register in pending slot
+        await Task.Delay(40);
+
+        // 3. Unblock "a"
+        firstQueryGate.TrySetResult(true);
+
+        // 4. "abc" Tier 2 must execute and publish a final snapshot containing the file candidate
+        var completed = await Task.WhenAny(abcFinalTcs.Task, Task.Delay(3000));
+        Assert.Equal(abcFinalTcs.Task, completed);
+
+        var finalSnap = await abcFinalTcs.Task;
+        Assert.True(finalSnap.IsFinal);
+        Assert.Contains(finalSnap.Groups, g => g.Category == SearchCategory.Documents);
+        Assert.Contains(finalSnap.Groups, g => g.Items.Any(i => i.Candidate.DisplayName == "file_abc.txt"));
+
+        // 5. Verify intermediate snapshot for "abc" had IsFinal = false and final snapshot had IsFinal = true
+        lock (publishedSnapshots)
+        {
+            var abcSnapshots = publishedSnapshots.Where(s => s.SessionId == orchestrator.CurrentSessionId).ToList();
+            Assert.True(abcSnapshots.Count >= 2, $"Expected at least 2 snapshots for abc session, got {abcSnapshots.Count}");
+            Assert.False(abcSnapshots[0].IsFinal, "Intermediate snapshot for abc must have IsFinal = false");
+            Assert.True(abcSnapshots[^1].IsFinal, "Final snapshot for abc must have IsFinal = true");
+        }
+    }
+
+    [Fact]
+    public async Task SearchOrchestrator_SingleFlightConcurrencyGuard_StrictlyEnforcesSingleWorker()
+    {
+        var appSource = new AppSearchSource(CreateSampleApps);
+
+        int concurrentCount = 0;
+        int maxConcurrentSeen = 0;
+        var lockObj = new object();
+        var finalPublishedTcs = new TaskCompletionSource<SearchSnapshot>(TaskCreationOptions.RunContinuationsAsynchronously);
+
+        var trackedTier2Source = new BlockingTier2SearchSource(
+            onSearch: q =>
+            {
+                int current = Interlocked.Increment(ref concurrentCount);
+                lock (lockObj)
+                {
+                    if (current > maxConcurrentSeen)
+                    {
+                        maxConcurrentSeen = current;
+                    }
+                }
+
+                // Simulate realistic I/O latency
+                Thread.Sleep(25);
+
+                Interlocked.Decrement(ref concurrentCount);
+            });
+
+        using var orchestrator = new SearchOrchestrator(
+            tier1Sources: new[] { appSource },
+            tier2Sources: new[] { trackedTier2Source },
+            debounceMs: 5);
+
+        orchestrator.SnapshotUpdated += snap =>
+        {
+            if (snap.IsFinal && snap.Groups.Any(g => g.Items.Any(i => i.Candidate.DisplayName == "file_query_final.txt")))
+            {
+                finalPublishedTcs.TrySetResult(snap);
+            }
+        };
+
+        // Fire multiple rapid queries in burst, stressing the single-flight gate and double-check loop
+        for (int i = 0; i < 15; i++)
+        {
+            orchestrator.UpdateQuery($"query_{i}");
+            await Task.Delay(5);
+        }
+
+        // Final query to observe
+        orchestrator.UpdateQuery("query_final");
+
+        var completed = await Task.WhenAny(finalPublishedTcs.Task, Task.Delay(4000));
+        Assert.Equal(finalPublishedTcs.Task, completed);
+
+        var snap = await finalPublishedTcs.Task;
+        Assert.True(snap.IsFinal);
+
+        // Crucial invariant: At no point could two threads execute Tier 2 concurrently
+        Assert.Equal(1, maxConcurrentSeen);
+    }
+
+    private sealed class BlockingTier2SearchSource : ISearchSource
+    {
+        public string SourceId => "blocking_tier2";
+        public SourceState State => SourceState.Ready;
+
+        private readonly Action<SearchQuery> _onSearch;
+
+        public BlockingTier2SearchSource(Action<SearchQuery> onSearch) => _onSearch = onSearch;
+
+        public Task<IReadOnlyList<Candidate>> SearchAsync(SearchQuery query, CancellationToken cancellationToken)
+        {
+            _onSearch(query);
+
+            var candidate = new Candidate(
+                Id: $"id_{query.NormalizedText}",
+                DisplayName: $"file_{query.NormalizedText}.txt",
+                FullPathOrKey: $@"C:\Files\file_{query.NormalizedText}.txt",
+                Category: SearchCategory.Documents,
+                SourceId: SourceId);
+
+            return Task.FromResult<IReadOnlyList<Candidate>>(new[] { candidate });
+        }
     }
 }
 

@@ -13,13 +13,27 @@ namespace MetroHub.Tests;
 
 public sealed class EverythingSearchSourceTests
 {
-    private sealed class FakeEverythingClient : IEverythingClient
+    private sealed class FakeEverythingClient : IExtendedEverythingClient
     {
         public bool Available { get; set; } = true;
+        public bool ProcessRunning { get; set; } = true;
+        public bool DbLoaded { get; set; } = true;
         public Func<EverythingQuery, EverythingQueryResponse>? SearchHandler { get; set; }
         public int SearchCallCount { get; private set; }
 
-        public bool IsAvailable() => Available;
+        public bool IsAvailable() => Available && ProcessRunning && DbLoaded;
+        public bool IsProcessRunning() => ProcessRunning;
+        public bool IsDbLoaded() => DbLoaded;
+
+        public EverythingReadinessStatus ReadinessStatus
+        {
+            get
+            {
+                if (!Available || !ProcessRunning) return EverythingReadinessStatus.ProcessNotRunning;
+                if (!DbLoaded) return EverythingReadinessStatus.DatabaseLoading;
+                return EverythingReadinessStatus.Ready;
+            }
+        }
 
         public EverythingQueryResponse Search(EverythingQuery query)
         {
@@ -32,7 +46,7 @@ public sealed class EverythingSearchSourceTests
             return CreateSuccessResponse(query.SearchText);
         }
 
-        public Task<EverythingQueryResponse> SearchAsync(EverythingQuery query, CancellationToken cancellationToken)
+        public Task<EverythingQueryResponse> SearchAsync(EverythingQuery query, CancellationToken cancellationToken = default)
         {
             return Task.FromResult(Search(query));
         }
@@ -220,6 +234,121 @@ public sealed class EverythingSearchSourceTests
         // Immediate second call should be suppressed by backoff
         await source.SearchAsync(query, CancellationToken.None);
         Assert.Equal(SourceStateKind.Unavailable, source.State.State);
+    }
+
+    [Fact]
+    public async Task SearchAsync_ProcessNotRunning_EngagesExponentialBackoff()
+    {
+        var fakeClient = new FakeEverythingClient { ProcessRunning = false };
+        using var source = new EverythingSearchSource(fakeClient);
+
+        var query = SearchRanker.ParseQuery("project", 1);
+        var results = await source.SearchAsync(query, CancellationToken.None);
+
+        Assert.Empty(results);
+        Assert.Equal(SourceStateKind.Unavailable, source.State.State);
+
+        // Immediate second call should be suppressed by exponential backoff
+        await source.SearchAsync(query, CancellationToken.None);
+        Assert.Equal(SourceStateKind.Unavailable, source.State.State);
+    }
+
+    [Fact]
+    public async Task SearchAsync_DatabaseLoading_DoesNotTriggerExponentialBackoffAndRecoversImmediately()
+    {
+        var fakeClient = new FakeEverythingClient
+        {
+            ProcessRunning = true,
+            DbLoaded = false
+        };
+
+        using var source = new EverythingSearchSource(fakeClient);
+        var query = SearchRanker.ParseQuery("project", 1);
+
+        // 1. Initial search during DB warm-up returns empty and transitions to Loading
+        var results1 = await source.SearchAsync(query, CancellationToken.None);
+        Assert.Empty(results1);
+        Assert.Equal(SourceStateKind.Loading, source.State.State);
+        Assert.Equal(0, fakeClient.SearchCallCount);
+
+        // Immediate query within flat cooldown (< 250ms) must be suppressed without incrementing failures
+        var fastQueryResults = await source.SearchAsync(query, CancellationToken.None);
+        Assert.Empty(fastQueryResults);
+        Assert.Equal(SourceStateKind.Loading, source.State.State);
+        Assert.Equal(0, fakeClient.SearchCallCount);
+
+        // 2. Database finishes loading
+        fakeClient.DbLoaded = true;
+
+        // 3. Wait out flat warm-up cooldown (250ms)
+        await Task.Delay(260);
+
+        // 4. Subsequent query succeeds immediately without waiting out a 2s-30s exponential lockout
+        var results2 = await source.SearchAsync(query, CancellationToken.None);
+        Assert.Equal(SourceStateKind.Ready, source.State.State);
+        Assert.True(fakeClient.SearchCallCount > 0);
+    }
+
+    [Fact]
+    public async Task SearchAsync_PlainClientMock_WithProcessProbe_CorrectlyDifferentiatesReadiness()
+    {
+        // Tests that a plain IEverythingClient (not IExtendedEverythingClient) uses the process probe
+        var plainClient = new PlainTestClient { Available = false };
+
+        // Case 1: Process running probe = true -> Loading state
+        using (var loadingSource = new EverythingSearchSource(plainClient, isProcessRunningProbe: () => true))
+        {
+            var res = await loadingSource.SearchAsync(SearchRanker.ParseQuery("test", 1), CancellationToken.None);
+            Assert.Empty(res);
+            Assert.Equal(SourceStateKind.Loading, loadingSource.State.State);
+        }
+
+        // Case 2: Process running probe = false -> Unavailable state with exponential backoff
+        using (var unavailSource = new EverythingSearchSource(plainClient, isProcessRunningProbe: () => false))
+        {
+            var res = await unavailSource.SearchAsync(SearchRanker.ParseQuery("test", 1), CancellationToken.None);
+            Assert.Empty(res);
+            Assert.Equal(SourceStateKind.Unavailable, unavailSource.State.State);
+        }
+    }
+
+    [Fact]
+    public void ExtendedEverythingClient_ReadinessStatus_EvaluatesGranularStates()
+    {
+        var innerClient = new PlainTestClient { Available = true };
+        bool isProcessRunning = true;
+        var extendedClient = new ExtendedEverythingClient(innerClient, () => isProcessRunning);
+
+        // 1. Ready when inner client is available
+        Assert.True(extendedClient.IsAvailable());
+        Assert.True(extendedClient.IsDbLoaded());
+        Assert.True(extendedClient.IsProcessRunning());
+        Assert.Equal(EverythingReadinessStatus.Ready, extendedClient.ReadinessStatus);
+
+        // 2. DatabaseLoading when inner client not available but process running
+        innerClient.Available = false;
+        isProcessRunning = true;
+        Assert.False(extendedClient.IsAvailable());
+        Assert.False(extendedClient.IsDbLoaded());
+        Assert.True(extendedClient.IsProcessRunning());
+        Assert.Equal(EverythingReadinessStatus.DatabaseLoading, extendedClient.ReadinessStatus);
+
+        // 3. ProcessNotRunning when inner client not available and process not running
+        innerClient.Available = false;
+        isProcessRunning = false;
+        Assert.False(extendedClient.IsAvailable());
+        Assert.False(extendedClient.IsDbLoaded());
+        Assert.False(extendedClient.IsProcessRunning());
+        Assert.Equal(EverythingReadinessStatus.ProcessNotRunning, extendedClient.ReadinessStatus);
+    }
+
+    private sealed class PlainTestClient : Everything.Net.Abstractions.IEverythingClient
+    {
+        public bool Available { get; set; } = true;
+        public bool IsAvailable() => Available;
+        public EverythingQueryResponse Search(EverythingQuery query) => CreateSuccessResponse(query.SearchText);
+        public Task<EverythingQueryResponse> SearchAsync(EverythingQuery query, CancellationToken cancellationToken = default) =>
+            Task.FromResult(Search(query));
     }
 
     [Fact]

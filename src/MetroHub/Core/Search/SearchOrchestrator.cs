@@ -91,6 +91,7 @@ public sealed class SearchOrchestrator : IDisposable
     private CancellationTokenSource? _activeCts;
     private long _currentSessionId;
     private int _tier2InFlight;
+    private Tier2RequestContext? _pendingTier2Request;
     private bool _isDisposed;
 
     public event Action<SearchSnapshot>? SnapshotUpdated;
@@ -298,7 +299,7 @@ public sealed class SearchOrchestrator : IDisposable
 
             if (ct.IsCancellationRequested || sessionId != Interlocked.Read(ref _currentSessionId)) return;
 
-            // Blueprint Section 5: Progressive display - Publish Tier 1 snapshot (IsFinal = false) if Tier 2 sources present
+            // Blueprint Section 5: Progressive display & Tier 2 single-flight coalescing
             if (_tier2Sources.Count > 0)
             {
                 var t1Scored = ScoreAndSort(candidates, query, ct);
@@ -311,65 +312,35 @@ public sealed class SearchOrchestrator : IDisposable
                     SourceStates: new Dictionary<string, SourceState>(sourceStates, StringComparer.Ordinal));
 
                 PublishIfCurrent(intermediateSnapshot, sessionId, ct);
-            }
 
-            // 2. Tier 2: Everything File Search (Single-flight guarded, queried concurrently)
-            if (_tier2Sources.Count > 0)
+                var request = new Tier2RequestContext(
+                    query,
+                    sessionId,
+                    new List<Candidate>(candidates),
+                    new Dictionary<string, SourceState>(sourceStates, StringComparer.OrdinalIgnoreCase),
+                    sw,
+                    ct);
+
+                Interlocked.Exchange(ref _pendingTier2Request, request);
+                await ProcessPendingTier2RequestsAsync().ConfigureAwait(false);
+            }
+            else
             {
-                if (Interlocked.CompareExchange(ref _tier2InFlight, 1, 0) == 0)
-                {
-                    try
-                    {
-                        var t2Tasks = new Task<(ISearchSource Source, IReadOnlyList<Candidate>? Batch, Exception? Error)>[_tier2Sources.Count];
-                        for (int i = 0; i < _tier2Sources.Count; i++)
-                        {
-                            var source = _tier2Sources[i];
-                            sourceStates[source.SourceId] = source.State;
-                            t2Tasks[i] = QuerySourceSafelyAsync(source, query, ct);
-                        }
+                // No Tier 2 sources present: publish final Tier 1 results immediately
+                var finalScored = ScoreAndSort(candidates, query, ct);
+                var finalGroups = BuildSearchGroups(finalScored, query.MaxPerCategory);
 
-                        var t2Results = await Task.WhenAll(t2Tasks).ConfigureAwait(false);
-                        if (ct.IsCancellationRequested || sessionId != Interlocked.Read(ref _currentSessionId)) return;
+                sw.Stop();
 
-                        foreach (var (source, batch, ex) in t2Results)
-                        {
-                            if (ex != null)
-                            {
-                                sourceStates[source.SourceId] = new SourceState(SourceStateKind.Degraded, ex.Message);
-                            }
-                            else
-                            {
-                                sourceStates[source.SourceId] = source.State;
-                                if (batch != null && batch.Count > 0)
-                                {
-                                    candidates.AddRange(batch);
-                                }
-                            }
-                        }
-                    }
-                    finally
-                    {
-                        Interlocked.Exchange(ref _tier2InFlight, 0);
-                    }
-                }
+                var finalSnapshot = new SearchSnapshot(
+                    SessionId: sessionId,
+                    Groups: finalGroups,
+                    IsFinal: true,
+                    ElapsedMs: sw.ElapsedMilliseconds,
+                    SourceStates: sourceStates);
+
+                PublishIfCurrent(finalSnapshot, sessionId, ct);
             }
-
-            if (ct.IsCancellationRequested || sessionId != Interlocked.Read(ref _currentSessionId)) return;
-
-            // 3. Deduplicate, Score & Rank Merged Candidates
-            var finalScored = ScoreAndSort(candidates, query, ct);
-            var finalGroups = BuildSearchGroups(finalScored, query.MaxPerCategory);
-
-            sw.Stop();
-
-            var finalSnapshot = new SearchSnapshot(
-                SessionId: sessionId,
-                Groups: finalGroups,
-                IsFinal: true,
-                ElapsedMs: sw.ElapsedMilliseconds,
-                SourceStates: sourceStates);
-
-            PublishIfCurrent(finalSnapshot, sessionId, ct);
         }
         catch (OperationCanceledException ex)
         {
@@ -379,6 +350,121 @@ public sealed class SearchOrchestrator : IDisposable
         {
             Safe.Log(ex, "SearchOrchestrator.ExecutePipelineAsync");
         }
+    }
+
+    private async Task ProcessPendingTier2RequestsAsync()
+    {
+        if (Interlocked.CompareExchange(ref _tier2InFlight, 1, 0) != 0)
+        {
+            return;
+        }
+
+        bool lockAcquired = true;
+        try
+        {
+            while (!_isDisposed)
+            {
+                while (Interlocked.Exchange(ref _pendingTier2Request, null) is { } req)
+                {
+                    if (_isDisposed) return;
+                    try
+                    {
+                        await ExecuteTier2AndPublishAsync(req).ConfigureAwait(false);
+                    }
+                    catch (OperationCanceledException ex)
+                    {
+                        Safe.Ignore(ex, "SearchOrchestrator.ExecuteTier2AndPublishAsync.Canceled");
+                    }
+                    catch (Exception ex)
+                    {
+                        Safe.Log(ex, "SearchOrchestrator.ExecuteTier2AndPublishAsync");
+                    }
+                }
+
+                lockAcquired = false;
+                Interlocked.Exchange(ref _tier2InFlight, 0);
+
+                // Race-free double check: drain any newer request that arrived right before or during lock release
+                if (Volatile.Read(ref _pendingTier2Request) != null &&
+                    Interlocked.CompareExchange(ref _tier2InFlight, 1, 0) == 0)
+                {
+                    lockAcquired = true;
+                    continue;
+                }
+
+                break;
+            }
+        }
+        finally
+        {
+            if (lockAcquired)
+            {
+                Interlocked.Exchange(ref _tier2InFlight, 0);
+                if (Volatile.Read(ref _pendingTier2Request) != null && !_isDisposed)
+                {
+                    Task.Run(() => ProcessPendingTier2RequestsAsync()).FireAndForget("SearchOrchestrator.ProcessPendingTier2RequestsAsync.Recovery");
+                }
+            }
+        }
+    }
+
+    private async Task ExecuteTier2AndPublishAsync(Tier2RequestContext req)
+    {
+        // Stale result guard: do not execute or publish if superseded or cancelled
+        if (req.SessionId != Interlocked.Read(ref _currentSessionId) || req.CancellationToken.IsCancellationRequested)
+        {
+            return;
+        }
+
+        var t2Tasks = new Task<(ISearchSource Source, IReadOnlyList<Candidate>? Batch, Exception? Error)>[_tier2Sources.Count];
+        for (int i = 0; i < _tier2Sources.Count; i++)
+        {
+            var source = _tier2Sources[i];
+            req.SourceStates[source.SourceId] = source.State;
+            t2Tasks[i] = QuerySourceSafelyAsync(source, req.Query, req.CancellationToken);
+        }
+
+        var t2Results = await Task.WhenAll(t2Tasks).ConfigureAwait(false);
+        if (req.SessionId != Interlocked.Read(ref _currentSessionId) || req.CancellationToken.IsCancellationRequested)
+        {
+            return;
+        }
+
+        foreach (var (source, batch, ex) in t2Results)
+        {
+            if (ex != null)
+            {
+                req.SourceStates[source.SourceId] = new SourceState(SourceStateKind.Degraded, ex.Message);
+            }
+            else
+            {
+                req.SourceStates[source.SourceId] = source.State;
+                if (batch != null && batch.Count > 0)
+                {
+                    req.Tier1Candidates.AddRange(batch);
+                }
+            }
+        }
+
+        if (req.SessionId != Interlocked.Read(ref _currentSessionId) || req.CancellationToken.IsCancellationRequested)
+        {
+            return;
+        }
+
+        // Deduplicate, Score & Rank Merged Candidates
+        var finalScored = ScoreAndSort(req.Tier1Candidates, req.Query, req.CancellationToken);
+        var finalGroups = BuildSearchGroups(finalScored, req.Query.MaxPerCategory);
+
+        req.Stopwatch.Stop();
+
+        var finalSnapshot = new SearchSnapshot(
+            SessionId: req.SessionId,
+            Groups: finalGroups,
+            IsFinal: true,
+            ElapsedMs: req.Stopwatch.ElapsedMilliseconds,
+            SourceStates: req.SourceStates);
+
+        PublishIfCurrent(finalSnapshot, req.SessionId, req.CancellationToken);
     }
 
     private static async Task<(ISearchSource Source, IReadOnlyList<Candidate>? Batch, Exception? Error)> QuerySourceSafelyAsync(
@@ -723,6 +809,7 @@ public sealed class SearchOrchestrator : IDisposable
     {
         try
         {
+            Interlocked.Exchange(ref _pendingTier2Request, null);
             _activeCts?.Cancel();
             _activeCts?.Dispose();
             _activeCts = null;
@@ -738,6 +825,8 @@ public sealed class SearchOrchestrator : IDisposable
         if (_isDisposed) return;
         _isDisposed = true;
 
+        Interlocked.Exchange(ref _pendingTier2Request, null);
+
         lock (_sessionLock)
         {
             _debounceTimer?.Dispose();
@@ -751,6 +840,32 @@ public sealed class SearchOrchestrator : IDisposable
             {
                 try { disposable.Dispose(); } catch (Exception ex) { Safe.Ignore(ex, "SearchOrchestrator.DisposeSource"); }
             }
+        }
+    }
+
+    private sealed class Tier2RequestContext
+    {
+        public SearchQuery Query { get; }
+        public long SessionId { get; }
+        public CancellationToken CancellationToken { get; }
+        public List<Candidate> Tier1Candidates { get; }
+        public Dictionary<string, SourceState> SourceStates { get; }
+        public Stopwatch Stopwatch { get; }
+
+        public Tier2RequestContext(
+            SearchQuery query,
+            long sessionId,
+            List<Candidate> tier1Candidates,
+            Dictionary<string, SourceState> sourceStates,
+            Stopwatch stopwatch,
+            CancellationToken cancellationToken)
+        {
+            Query = query;
+            SessionId = sessionId;
+            Tier1Candidates = tier1Candidates;
+            SourceStates = sourceStates;
+            Stopwatch = stopwatch;
+            CancellationToken = cancellationToken;
         }
     }
 }
