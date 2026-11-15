@@ -1698,39 +1698,29 @@
                       Background="Transparent"
                       >
                     <Grid.RowDefinitions>
-                        <!-- Row 0: Centered Master Timeframe Segmented Control -->
+                        <!-- Row 0: Centered Master Timeframe Tab Strip -->
                         <RowDefinition Height="Auto" />
-                        <!-- Row 1: Top Hairline Divider -->
-                        <RowDefinition Height="Auto" />
-                        <!-- Row 2: Dual Interfaces (Wired & Wi-Fi) -->
+                        <!-- Row 1: Dual Interfaces (Wired & Wi-Fi) -->
                         <RowDefinition Height="*" />
-                        <!-- Row 3: Bottom Hairline Divider -->
+                        <!-- Row 2: Bottom Hairline Divider -->
                         <RowDefinition Height="Auto" />
-                        <!-- Row 4: Total Consumed Bottom Summary -->
+                        <!-- Row 3: Total Consumed Bottom Summary -->
                         <RowDefinition Height="Auto" />
                     </Grid.RowDefinitions>
 
                     <!-- ROW 0: CENTERED MASTER TIMEFRAME SELECTOR -->
-                    <ListBox Grid.Row="0"
-                             Style="{StaticResource MetroSegmentedTabStyle}"
-                             HorizontalAlignment="Center"
-                             VerticalAlignment="Center"
-                             Margin="0,0,0,8">
+                    <controls:MetroTabStrip Grid.Row="0"
+                                            HorizontalAlignment="Center"
+                                            VerticalAlignment="Center"
+                                            Margin="0,0,0,16">
                         <ListBoxItem Content="Session" IsSelected="{Binding IsSessionTimeframe, Mode=TwoWay}" />
                         <ListBoxItem Content="24h" IsSelected="{Binding Is24HoursTimeframe, Mode=TwoWay}" />
                         <ListBoxItem Content="7d" IsSelected="{Binding Is7DaysTimeframe, Mode=TwoWay}" />
                         <ListBoxItem Content="30d" IsSelected="{Binding Is30DaysTimeframe, Mode=TwoWay}" />
-                    </ListBox>
+                    </controls:MetroTabStrip>
 
-                    <!-- ROW 1: TOP HAIRLINE DIVIDER -->
-                    <Border Grid.Row="1"
-                            Height="1"
-                            Background="{DynamicResource WidgetDividerBrush}"
-                            Margin="0,4,0,16"
-                            />
-
-                    <!-- ROW 2: DUAL INTERFACES (Clean, Borderless, Monochromatic) -->
-                    <Grid Grid.Row="2" VerticalAlignment="Center">
+                    <!-- ROW 1: DUAL INTERFACES (Clean, Borderless, Monochromatic) -->
+                    <Grid Grid.Row="1" VerticalAlignment="Center">
                         <Grid.ColumnDefinitions>
                             <!-- Column 0: Wired / USB Tethering -->
                             <ColumnDefinition Width="*" />
@@ -1884,15 +1874,15 @@
                         </StackPanel>
                     </Grid>
 
-                    <!-- ROW 3: BOTTOM HAIRLINE DIVIDER -->
-                    <Border Grid.Row="3"
+                    <!-- ROW 2: BOTTOM HAIRLINE DIVIDER -->
+                    <Border Grid.Row="2"
                             Height="1"
                             Background="{DynamicResource WidgetDividerBrush}"
                             Margin="0,16,0,12"
                             />
 
-                    <!-- ROW 4: TOTAL CONSUMED (BELOW ETHERNET & WI-FI) -->
-                    <Grid Grid.Row="4" Margin="4,0,4,2">
+                    <!-- ROW 3: TOTAL CONSUMED (BELOW ETHERNET & WI-FI) -->
+                    <Grid Grid.Row="3" Margin="4,0,4,2">
                         <Grid.ColumnDefinitions>
                             <!-- Left: TOTAL CONSUMED + Big Value -->
                             <ColumnDefinition Width="Auto" />

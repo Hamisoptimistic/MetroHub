@@ -5,8 +5,8 @@
                      xmlns:controls="clr-namespace:MetroHub.Presentation.Controls"
                      xmlns:dialogs="clr-namespace:MetroHub.Presentation.Dialogs"
                      Title="Add Radio Station"
-                     Width="620"
-                     Height="420">
+                     Width="680"
+                     Height="480">
 
     <dialogs:MetroDialog.SidebarContent>
         <Grid HorizontalAlignment="Center" VerticalAlignment="Center">
@@ -37,16 +37,15 @@
                                 Background="Transparent"
                                 CornerRadius="{DynamicResource ControlCornerRadius}"
                                 Margin="2,1,2,1"
-                                Padding="{TemplateBinding Padding}"
-                                >
+                                Padding="{TemplateBinding Padding}">
                             <ContentPresenter />
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="ItemBorder" Property="Background" Value="#1CFFFFFF" />
+                                <Setter TargetName="ItemBorder" Property="Background" Value="{DynamicResource FluentHoverBrush}" />
                             </Trigger>
                             <Trigger Property="IsSelected" Value="True">
-                                <Setter TargetName="ItemBorder" Property="Background" Value="#2AFFFFFF" />
+                                <Setter TargetName="ItemBorder" Property="Background" Value="{DynamicResource FluentPressedBrush}" />
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
@@ -74,7 +73,7 @@
                                TextTrimming="CharacterEllipsis" />
                 </StackPanel>
                 <Border Grid.Column="1"
-                        Background="#15FFFFFF"
+                        Background="{DynamicResource SurfaceBorderSubtleBrush}"
                         CornerRadius="{DynamicResource ControlCornerRadius}"
                         Padding="6,2"
                         VerticalAlignment="Center"
@@ -102,97 +101,251 @@
                             <RowDefinition Height="*" />
                         </Grid.RowDefinitions>
 
-                        <!-- Two-Tab Segmented Selector -->
-                        <ListBox x:Name="RadioModeTabSelector"
-                                 Grid.Row="0"
-                                 Style="{StaticResource MetroSegmentedTabStyle}"
-                                 SelectedIndex="0"
-                                 SelectionChanged="OnRadioTabSelectionChanged"
-                                 Margin="0,0,0,12"
-                                 HorizontalAlignment="Left">
+                        <!-- Two-Tab MetroTabStrip Selector -->
+                        <controls:MetroTabStrip x:Name="RadioModeTabSelector"
+                                                Grid.Row="0"
+                                                SelectedIndex="0"
+                                                SelectionChanged="OnRadioTabSelectionChanged"
+                                                Margin="0,0,0,16"
+                                                HorizontalAlignment="Left">
                             <ListBoxItem Content="Search" />
                             <ListBoxItem Content="Custom URL" />
-                        </ListBox>
+                        </controls:MetroTabStrip>
 
                         <!-- TAB 1: Search Stations Panel -->
                         <Grid Grid.Row="1" x:Name="RadioSearchPanel" Visibility="Visible">
-                            <Grid.RowDefinitions>
-                                <RowDefinition Height="Auto" />
-                                <RowDefinition Height="*" />
-                                <RowDefinition Height="Auto" />
-                            </Grid.RowDefinitions>
+                            <!-- VIEW 1: Search Input & Results List -->
+                            <Grid x:Name="RadioSearchBrowseView" Visibility="Visible">
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="*" />
+                                    <RowDefinition Height="Auto" />
+                                </Grid.RowDefinitions>
 
-                            <!-- Search Input Box with Overlay Watermark & Spinner -->
-                            <Grid Grid.Row="0">
-                                <TextBox x:Name="RadioSearchInput"
-                                         controls:InputHelper.Icon="Search24"
-                                         Padding="0,0,28,0"
-                                         TextChanged="OnRadioSearchInputTextChanged"
-                                         PreviewKeyDown="OnRadioSearchInputKeyDown" />
-                                <TextBlock x:Name="RadioSearchWatermark"
-                                           Text="Search station name, genre (e.g. lofi, jazz, ambient)..."
-                                           FontSize="{DynamicResource TypeBodyFontSize}"
-                                           FontWeight="{DynamicResource TypeBodyFontWeight}"
-                                           Foreground="{DynamicResource TextSubtleBrush}"
-                                           IsHitTestVisible="False"
-                                           VerticalAlignment="Center"
-                                           Margin="34,0,28,0" />
-                                <ui:ProgressRing x:Name="RadioSearchSpinner"
-                                                 Width="14" Height="14"
-                                                 IsIndeterminate="True"
-                                                 HorizontalAlignment="Right"
-                                                 VerticalAlignment="Center"
-                                                 Margin="0,0,10,0"
-                                                 Visibility="Collapsed" />
+                                <!-- Search Input Box with Overlay Watermark & Spinner -->
+                                <Grid Grid.Row="0">
+                                    <TextBox x:Name="RadioSearchInput"
+                                             controls:InputHelper.Icon="Search24"
+                                             Padding="0,0,28,0"
+                                             TextChanged="OnRadioSearchInputTextChanged"
+                                             PreviewKeyDown="OnRadioSearchInputKeyDown" />
+                                    <TextBlock x:Name="RadioSearchWatermark"
+                                               Text="Search station name, genre (e.g. lofi, jazz, ambient)..."
+                                               FontSize="{DynamicResource TypeBodyFontSize}"
+                                               FontWeight="{DynamicResource TypeBodyFontWeight}"
+                                               Foreground="{DynamicResource TextSubtleBrush}"
+                                               IsHitTestVisible="False"
+                                               VerticalAlignment="Center"
+                                               Margin="34,0,28,0" />
+                                    <ui:ProgressRing x:Name="RadioSearchSpinner"
+                                                     Width="14" Height="14"
+                                                     IsIndeterminate="True"
+                                                     HorizontalAlignment="Right"
+                                                     VerticalAlignment="Center"
+                                                     Margin="0,0,10,0"
+                                                     Visibility="Collapsed" />
+                                </Grid>
+
+                                <!-- Search Results List -->
+                                <Border Grid.Row="1"
+                                        Background="{DynamicResource WidgetDividerBrush}"
+                                        BorderBrush="{DynamicResource SurfaceBorderBrush}"
+                                        BorderThickness="1"
+                                        CornerRadius="{DynamicResource ControlCornerRadius}"
+                                        Margin="0,8,0,0">
+                                    <Grid>
+                                        <ListBox x:Name="RadioSearchResultsList"
+                                                 Background="Transparent"
+                                                 BorderThickness="0"
+                                                 Padding="2"
+                                                 ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                                                 ScrollViewer.VerticalScrollBarVisibility="Auto"
+                                                 controls:AutoHideScrollBehavior.IsEnabled="True"
+                                                 ItemContainerStyle="{StaticResource SuggestionListBoxItemStyle}"
+                                                 ItemTemplate="{StaticResource RadioSearchResultItemTemplate}"
+                                                 SelectionChanged="OnRadioSearchResultsSelectionChanged" />
+
+                                        <!-- Search Initial Hint / Empty Text -->
+                                        <TextBlock x:Name="RadioSearchPlaceholderText"
+                                                   Text="Type 2 or more characters to search 40,000+ online stations"
+                                                   FontSize="{DynamicResource TypeCaptionFontSize}"
+                                                   FontWeight="{DynamicResource TypeCaptionFontWeight}"
+                                                   Foreground="{DynamicResource TextSubtleBrush}"
+                                                   TextWrapping="Wrap"
+                                                   TextTrimming="CharacterEllipsis"
+                                                   MaxWidth="420"
+                                                   Margin="20"
+                                                   TextAlignment="Center"
+                                                   HorizontalAlignment="Center"
+                                                   VerticalAlignment="Center"
+                                                   IsHitTestVisible="False"
+                                                   Visibility="Visible" />
+                                    </Grid>
+                                </Border>
+
+                                <!-- Search Status Message -->
+                                <TextBlock Grid.Row="2"
+                                           x:Name="RadioSearchStatusMessage"
+                                           FontSize="{DynamicResource TypeCaptionFontSize}"
+                                           FontWeight="{DynamicResource TypeCaptionFontWeight}"
+                                           Foreground="{DynamicResource StatusErrorBrush}"
+                                           Margin="0,6,0,0"
+                                           TextWrapping="Wrap"
+                                           Visibility="Collapsed" />
                             </Grid>
 
-                            <!-- Search Results List -->
-                            <Border Grid.Row="1"
-                                    Background="{DynamicResource WidgetDividerBrush}"
-                                    BorderBrush="#25FFFFFF"
-                                    BorderThickness="1"
-                                    CornerRadius="{DynamicResource ControlCornerRadius}"
-                                    Margin="0,8,0,0"
-                                    >
-                                <Grid>
-                                    <ListBox x:Name="RadioSearchResultsList"
-                                             Background="Transparent"
-                                             BorderThickness="0"
-                                             Padding="2"
-                                             ScrollViewer.HorizontalScrollBarVisibility="Disabled"
-                                             ScrollViewer.VerticalScrollBarVisibility="Auto"
-                                             controls:AutoHideScrollBehavior.IsEnabled="True"
-                                             ItemContainerStyle="{StaticResource SuggestionListBoxItemStyle}"
-                                             ItemTemplate="{StaticResource RadioSearchResultItemTemplate}"
-                                             SelectionChanged="OnRadioSearchResultsSelectionChanged" />
+                            <!-- VIEW 2: Selected Station Confirmation & Display Name Editor -->
+                            <StackPanel x:Name="RadioSearchSelectionPanel"
+                                        VerticalAlignment="Top"
+                                        Visibility="Collapsed">
 
-                                    <!-- Search Initial Hint / Empty Text -->
-                                    <TextBlock x:Name="RadioSearchPlaceholderText"
-                                               Text="Type 2 or more characters to search 40,000+ online stations"
-                                               FontSize="{DynamicResource TypeCaptionFontSize}"
-                                               FontWeight="{DynamicResource TypeCaptionFontWeight}"
-                                               Foreground="{DynamicResource TextSubtleBrush}"
-                                               TextWrapping="Wrap"
-                                               TextTrimming="CharacterEllipsis"
-                                               MaxWidth="420"
-                                               Margin="20"
-                                               TextAlignment="Center"
-                                               HorizontalAlignment="Center"
-                                               VerticalAlignment="Center"
-                                               IsHitTestVisible="False"
-                                               Visibility="Visible" />
-                                </Grid>
-                            </Border>
+                                <!-- Top Navigation Row -->
+                                <Button Style="{DynamicResource SubtleButtonStyle}"
+                                        Height="28"
+                                        Padding="8,0,10,0"
+                                        Click="OnChangeSelectedStationClick"
+                                        ToolTip="Return to search results (Esc)"
+                                        HorizontalAlignment="Left"
+                                        VerticalAlignment="Center"
+                                        Margin="0,0,0,10">
+                                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                        <ui:SymbolIcon Symbol="ArrowLeft24"
+                                                       FontSize="13"
+                                                       Foreground="{DynamicResource TextSecondaryBrush}"
+                                                       Margin="0,0,6,0"
+                                                       VerticalAlignment="Center" />
+                                        <TextBlock Text="Back to search results"
+                                                   FontSize="{DynamicResource TypeCaptionFontSize}"
+                                                   FontWeight="{DynamicResource TypeBodyStrongFontWeight}"
+                                                   Foreground="{DynamicResource TextSecondaryBrush}"
+                                                   VerticalAlignment="Center" />
+                                    </StackPanel>
+                                </Button>
 
-                            <!-- Search Status Message -->
-                            <TextBlock Grid.Row="2"
-                                       x:Name="RadioSearchStatusMessage"
-                                       FontSize="{DynamicResource TypeCaptionFontSize}"
-                                       FontWeight="{DynamicResource TypeCaptionFontWeight}"
-                                       Foreground="{DynamicResource StatusErrorBrush}"
-                                       Margin="0,6,0,0"
-                                       TextWrapping="Wrap"
-                                       Visibility="Collapsed" />
+                                <!-- Selected Station Card -->
+                                <Border Background="{DynamicResource SurfaceGlassBrush}"
+                                        BorderBrush="{DynamicResource SurfaceBorderBrush}"
+                                        BorderThickness="1"
+                                        CornerRadius="{DynamicResource ControlCornerRadius}"
+                                        Margin="0,0,0,14">
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="Auto" />
+                                        </Grid.ColumnDefinitions>
+
+                                        <!-- Left & Middle: Station Identity -->
+                                        <Border Grid.Column="0" Padding="14,12">
+                                            <Grid>
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="Auto" />
+                                                    <ColumnDefinition Width="*" />
+                                                </Grid.ColumnDefinitions>
+
+                                                <!-- Circular Icon Container -->
+                                                <Border Grid.Column="0"
+                                                        Width="40"
+                                                        Height="40"
+                                                        CornerRadius="20"
+                                                        Background="{DynamicResource SurfaceGlassSubtleBrush}"
+                                                        BorderBrush="{DynamicResource SurfaceBorderSubtleBrush}"
+                                                        BorderThickness="1"
+                                                        VerticalAlignment="Center">
+                                                    <ui:SymbolIcon Symbol="HeadphonesSoundWave24"
+                                                                   FontSize="20"
+                                                                   Foreground="{DynamicResource TextPrimaryBrush}"
+                                                                   HorizontalAlignment="Center"
+                                                                   VerticalAlignment="Center" />
+                                                </Border>
+
+                                                <!-- Station Name & URL -->
+                                                <StackPanel Grid.Column="1"
+                                                            Margin="12,0,0,0"
+                                                            VerticalAlignment="Center">
+                                                    <TextBlock x:Name="RadioSelectedStationOriginalName"
+                                                               Text="Radio Name"
+                                                               FontSize="{DynamicResource TypeBodyStrongFontSize}"
+                                                               FontWeight="{DynamicResource TypeBodyStrongFontWeight}"
+                                                               Foreground="{DynamicResource TextPrimaryBrush}"
+                                                               TextTrimming="CharacterEllipsis" />
+                                                    <TextBlock x:Name="RadioSelectedStationStreamUrl"
+                                                               Text="Radio Link"
+                                                               FontSize="{DynamicResource TypeCaptionFontSize}"
+                                                               FontWeight="{DynamicResource TypeCaptionFontWeight}"
+                                                               Foreground="{DynamicResource TextSubtleBrush}"
+                                                               TextTrimming="CharacterEllipsis"
+                                                               Margin="0,3,0,0" />
+                                                </StackPanel>
+                                            </Grid>
+                                        </Border>
+
+                                        <!-- Right: Metadata Split Pane (Country / Format) -->
+                                        <Border Grid.Column="1"
+                                                BorderThickness="1,0,0,0"
+                                                BorderBrush="{DynamicResource SurfaceBorderBrush}"
+                                                MinWidth="110">
+                                            <Grid>
+                                                <Grid.RowDefinitions>
+                                                    <RowDefinition Height="*" />
+                                                    <RowDefinition Height="*" />
+                                                </Grid.RowDefinitions>
+
+                                                <!-- Country (Top Half) -->
+                                                <Border Grid.Row="0" Padding="12,6">
+                                                    <TextBlock x:Name="RadioSelectedStationCountryText"
+                                                               Text="Country"
+                                                               FontSize="{DynamicResource TypeCaptionFontSize}"
+                                                               FontWeight="{DynamicResource TypeBodyStrongFontWeight}"
+                                                               Foreground="{DynamicResource TextPrimaryBrush}"
+                                                               HorizontalAlignment="Center"
+                                                               VerticalAlignment="Center"
+                                                               TextTrimming="CharacterEllipsis" />
+                                                </Border>
+
+                                                <!-- Divider -->
+                                                <Border Grid.Row="0"
+                                                        Height="1"
+                                                        Background="{DynamicResource SurfaceBorderBrush}"
+                                                        VerticalAlignment="Bottom" />
+
+                                                <!-- Format (Bottom Half) -->
+                                                <Border Grid.Row="1" Padding="12,6">
+                                                    <TextBlock x:Name="RadioSelectedStationFormatText"
+                                                               Text="Format"
+                                                               FontSize="{DynamicResource TypeCaptionFontSize}"
+                                                               FontWeight="{DynamicResource TypeCaptionFontWeight}"
+                                                               Foreground="{DynamicResource TextSecondaryBrush}"
+                                                               HorizontalAlignment="Center"
+                                                               VerticalAlignment="Center"
+                                                               TextTrimming="CharacterEllipsis" />
+                                                </Border>
+                                            </Grid>
+                                        </Border>
+                                    </Grid>
+                                </Border>
+
+                                <!-- Station Display Name Editor Section -->
+                                <TextBlock Text="Edit Station Name"
+                                           FontSize="{DynamicResource TypeCaptionFontSize}"
+                                           FontWeight="{DynamicResource TypeCaptionFontWeight}"
+                                           Foreground="{DynamicResource TextMutedBrush}"
+                                           Margin="0,0,0,6" />
+
+                                <TextBox x:Name="RadioSearchNameInput"
+                                         Height="36"
+                                         Style="{DynamicResource MetroInputStyle}"
+                                         TextChanged="OnRadioSearchNameInputTextChanged"
+                                         PreviewKeyDown="OnRadioSearchNameInputKeyDown" />
+
+                                <!-- Validation Error Message -->
+                                <TextBlock x:Name="RadioSearchEditorStatusMessage"
+                                           FontSize="{DynamicResource TypeCaptionFontSize}"
+                                           FontWeight="{DynamicResource TypeCaptionFontWeight}"
+                                           Foreground="{DynamicResource StatusErrorBrush}"
+                                           Margin="0,4,0,0"
+                                           TextWrapping="Wrap"
+                                           Visibility="Collapsed" />
+                            </StackPanel>
                         </Grid>
 
                         <!-- TAB 2: Direct Stream URL Panel -->

@@ -79,7 +79,7 @@
                                                FontSize="{DynamicResource TypeBodyStrongFontSize}"
                                                FontWeight="{DynamicResource TypeBodyStrongFontWeight}"
                                                Foreground="{DynamicResource TextPrimaryBrush}"
-                                               HorizontalAlignment="Center"
+                                               HorizontalAlignment="Stretch"
                                                VerticalAlignment="Center"
                                                TextAlignment="Center"
                                                TextWrapping="Wrap"

@@ -85,4 +85,6 @@ public sealed class RadioSearchResultItem
     public required string? StationUuid { get; init; }
     public required int BitrateKbps { get; init; }
     public string? Codec { get; init; }
+    public string? CountryCode { get; init; }
+    public string? Tags { get; init; }
 }

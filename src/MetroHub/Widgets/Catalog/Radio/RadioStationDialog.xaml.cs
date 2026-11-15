@@ -5,6 +5,7 @@ using System.Collections.ObjectModel;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Text.RegularExpressions;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
@@ -140,6 +141,10 @@ public sealed partial class RadioStationDialog : MetroDialog
         RadioSearchPlaceholderText.Text = "Type 2 or more characters to search 40,000+ online stations";
         RadioSearchPlaceholderText.Visibility = Visibility.Visible;
         RadioSearchStatusMessage.Visibility = Visibility.Collapsed;
+        RadioSearchBrowseView.Visibility = Visibility.Visible;
+        RadioSearchSelectionPanel.Visibility = Visibility.Collapsed;
+        RadioSearchNameInput.Text = string.Empty;
+        RadioSearchEditorStatusMessage.Visibility = Visibility.Collapsed;
 
         RadioDirectUrlInput.Text = string.Empty;
         RadioDirectNameInput.Text = string.Empty;
@@ -158,8 +163,16 @@ public sealed partial class RadioStationDialog : MetroDialog
         {
             RadioSearchPanel.Visibility = Visibility.Visible;
             RadioDirectPanel.Visibility = Visibility.Collapsed;
-            PrimaryActionButton.IsEnabled = _selectedRadioSearchResult != null;
-            RadioSearchInput.Focus();
+            if (RadioSearchSelectionPanel.Visibility == Visibility.Visible)
+            {
+                UpdateSearchButtonState();
+                RadioSearchNameInput.Focus();
+            }
+            else
+            {
+                PrimaryActionButton.IsEnabled = false;
+                RadioSearchInput.Focus();
+            }
         }
         else
         {
@@ -206,9 +219,15 @@ public sealed partial class RadioStationDialog : MetroDialog
         }
         else if (e.Key == Key.Enter)
         {
-            if (RadioSearchResultsList.SelectedItem != null)
+            if (RadioSearchResultsList.SelectedItem is RadioSearchResultItem item)
             {
-                ApplyRadioStationAsync().FireAndForget("RadioStationDialog.ApplyStationOnEnter");
+                SelectRadioSearchResult(item);
+                e.Handled = true;
+            }
+            else if (RadioSearchResults.Count > 0)
+            {
+                RadioSearchResultsList.SelectedIndex = 0;
+                SelectRadioSearchResult(RadioSearchResults[0]);
                 e.Handled = true;
             }
         }
@@ -285,7 +304,9 @@ public sealed partial class RadioStationDialog : MetroDialog
                             ResolvedStreamUrl = !string.IsNullOrWhiteSpace(s.UrlResolved) ? s.UrlResolved : s.Url,
                             StationUuid = !string.IsNullOrWhiteSpace(s.StationUuid) ? s.StationUuid : null,
                             BitrateKbps = s.Bitrate > 0 ? s.Bitrate : 128,
-                            Codec = !string.IsNullOrWhiteSpace(s.Codec) ? s.Codec.ToUpperInvariant() : null
+                            Codec = !string.IsNullOrWhiteSpace(s.Codec) ? s.Codec.ToUpperInvariant() : null,
+                            CountryCode = !string.IsNullOrWhiteSpace(s.CountryCode) ? s.CountryCode.Trim().ToUpperInvariant() : null,
+                            Tags = parts.Count > 1 ? parts[1] : (!string.IsNullOrWhiteSpace(s.Tags) ? s.Tags.Trim() : null)
                         });
                     }
                 });
@@ -315,17 +336,97 @@ public sealed partial class RadioStationDialog : MetroDialog
     {
         if (RadioSearchResultsList.SelectedItem is RadioSearchResultItem item)
         {
-            _selectedRadioSearchResult = item;
-            PrimaryActionButton.IsEnabled = true;
-            RadioSearchStatusMessage.Text = $"Selected: {item.Name}";
-            RadioSearchStatusMessage.Foreground = SearchStatusSelectedBrush;
-            RadioSearchStatusMessage.Visibility = Visibility.Visible;
+            SelectRadioSearchResult(item);
+        }
+    }
+
+    internal void SelectRadioSearchResult(RadioSearchResultItem item)
+    {
+        _selectedRadioSearchResult = item;
+        RadioSearchBrowseView.Visibility = Visibility.Collapsed;
+        RadioSearchSelectionPanel.Visibility = Visibility.Visible;
+
+        RadioSelectedStationOriginalName.Text = item.Name;
+        RadioSelectedStationStreamUrl.Text = item.ResolvedStreamUrl;
+        RadioSelectedStationStreamUrl.ToolTip = item.ResolvedStreamUrl;
+
+        RadioSelectedStationCountryText.Text = !string.IsNullOrWhiteSpace(item.CountryCode)
+            ? (item.CountryCode.Length <= 3 ? item.CountryCode.ToUpperInvariant() : item.CountryCode)
+            : "Global";
+
+        bool hasKbps = item.BitrateDisplay.Contains("kbps", StringComparison.OrdinalIgnoreCase);
+        bool hasCodec = !string.IsNullOrWhiteSpace(item.Codec);
+        string formatText;
+
+        if (hasKbps && hasCodec)
+        {
+            formatText = $"{item.BitrateDisplay} • {item.Codec!.Trim().ToUpperInvariant()}";
+        }
+        else if (hasKbps)
+        {
+            formatText = item.BitrateDisplay;
+        }
+        else if (hasCodec)
+        {
+            formatText = item.Codec!.Trim().ToUpperInvariant();
         }
         else
         {
-            _selectedRadioSearchResult = null;
-            PrimaryActionButton.IsEnabled = false;
+            formatText = "Audio Stream";
         }
+
+        RadioSelectedStationFormatText.Text = formatText;
+
+        RadioSearchNameInput.Text = CleanStationName(item.Name);
+        RadioSearchNameInput.Focus();
+        RadioSearchNameInput.SelectAll();
+        RadioSearchEditorStatusMessage.Visibility = Visibility.Collapsed;
+        UpdateSearchButtonState();
+    }
+
+    private void OnChangeSelectedStationClick(object sender, RoutedEventArgs e)
+    {
+        ReturnToSearchResults();
+    }
+
+    private void ReturnToSearchResults()
+    {
+        RadioSearchSelectionPanel.Visibility = Visibility.Collapsed;
+        RadioSearchBrowseView.Visibility = Visibility.Visible;
+        RadioSearchResultsList.SelectedItem = null;
+        _selectedRadioSearchResult = null;
+        PrimaryActionButton.IsEnabled = false;
+        RadioSearchInput.Focus();
+        RadioSearchInput.SelectAll();
+    }
+
+    private void OnRadioSearchNameInputTextChanged(object sender, TextChangedEventArgs e)
+    {
+        UpdateSearchButtonState();
+    }
+
+    private void OnRadioSearchNameInputKeyDown(object sender, KeyEventArgs e)
+    {
+        if (e.Key == Key.Enter)
+        {
+            if (PrimaryActionButton.IsEnabled)
+            {
+                ApplyRadioStationAsync().FireAndForget("RadioStationDialog.ApplyStationOnNameEnter");
+                e.Handled = true;
+            }
+        }
+        else if (e.Key == Key.Escape)
+        {
+            ReturnToSearchResults();
+            e.Handled = true;
+        }
+    }
+
+    private void UpdateSearchButtonState()
+    {
+        bool hasSelection = _selectedRadioSearchResult != null;
+        bool hasName = !string.IsNullOrWhiteSpace(RadioSearchNameInput.Text);
+        PrimaryActionButton.IsEnabled = hasSelection && hasName;
     }
 
 
@@ -493,16 +594,26 @@ public sealed partial class RadioStationDialog : MetroDialog
         {
             if (_selectedRadioSearchResult is not { } selected)
             {
-                RadioSearchStatusMessage.Text = "Please select a station from the search results.";
-                RadioSearchStatusMessage.Foreground = ThemeTokens.StatusErrorBrush;
-                RadioSearchStatusMessage.Visibility = Visibility.Visible;
+                RadioSearchEditorStatusMessage.Text = "Please select a station from the search results.";
+                RadioSearchEditorStatusMessage.Foreground = ThemeTokens.StatusErrorBrush;
+                RadioSearchEditorStatusMessage.Visibility = Visibility.Visible;
+                return;
+            }
+
+            string chosenName = RadioSearchNameInput.Text.Trim();
+            if (string.IsNullOrWhiteSpace(chosenName))
+            {
+                RadioSearchEditorStatusMessage.Text = "Please enter a station name.";
+                RadioSearchEditorStatusMessage.Foreground = ThemeTokens.StatusErrorBrush;
+                RadioSearchEditorStatusMessage.Visibility = Visibility.Visible;
+                RadioSearchNameInput.Focus();
                 return;
             }
 
             stationToAdd = new RadioStation
             {
                 Id = $"custom_{Guid.NewGuid():N}",
-                Name = selected.Name.Trim(),
+                Name = chosenName,
                 StreamUrl = selected.ResolvedStreamUrl.Trim(),
                 BitrateKbps = selected.BitrateKbps > 0 ? selected.BitrateKbps : 128,
                 Category = categoryId,
@@ -567,7 +678,7 @@ public sealed partial class RadioStationDialog : MetroDialog
             {
                 Safe.Log(ex, "RadioStationDialog.AddCustomStation");
                 PrimaryActionButton.IsEnabled = true;
-                var targetStatus = RadioModeTabSelector.SelectedIndex == 0 ? RadioSearchStatusMessage : RadioDirectStatusMessage;
+                var targetStatus = RadioModeTabSelector.SelectedIndex == 0 ? RadioSearchEditorStatusMessage : RadioDirectStatusMessage;
                 targetStatus.Text = $"Failed to save station: {ex.Message}";
                 targetStatus.Foreground = ThemeTokens.StatusErrorBrush;
                 targetStatus.Visibility = Visibility.Visible;
@@ -589,6 +700,32 @@ public sealed partial class RadioStationDialog : MetroDialog
         if (ct.Contains("flac", StringComparison.OrdinalIgnoreCase)) return "FLAC";
         if (ct.ContainsAny(s_codecMp3Keywords)) return "MP3";
         return null;
+    }
+
+    [GeneratedRegex(@"\s*[\(\[\{]\s*(?:\d+\s*[kK](?:bps)?)?\s*(?:mp3|aac\+?|ogg|flac|opus|hd|hq|audio|stream)?\s*[\)\]\}]", RegexOptions.IgnoreCase)]
+    private static partial Regex BitrateBracketRegex();
+
+    [GeneratedRegex(@"\s*\|\s*\d+\s*(?:k|kbps|kbit|aac|mp3|ogg|opus).*$", RegexOptions.IgnoreCase)]
+    private static partial Regex PipeBitrateRegex();
+
+    [GeneratedRegex(@"\s*-\s*(?:online|live stream|stream|webradio)\b.*$", RegexOptions.IgnoreCase)]
+    private static partial Regex StreamSuffixRegex();
+
+    [GeneratedRegex(@"^[+#]\s*")]
+    private static partial Regex LeadingSymbolRegex();
+
+    internal static string CleanStationName(string? raw)
+    {
+        if (string.IsNullOrWhiteSpace(raw)) return string.Empty;
+
+        string s = raw.Trim();
+        s = LeadingSymbolRegex().Replace(s, string.Empty);
+        s = BitrateBracketRegex().Replace(s, string.Empty);
+        s = PipeBitrateRegex().Replace(s, string.Empty);
+        s = StreamSuffixRegex().Replace(s, string.Empty);
+        s = s.Trim();
+
+        return s.Length > 0 ? s : raw.Trim();
     }
 
     private void CancelPendingSearch()

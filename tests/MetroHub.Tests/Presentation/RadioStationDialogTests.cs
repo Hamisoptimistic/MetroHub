@@ -106,4 +106,56 @@ public class RadioStationDialogTests
             dlg.Close();
         });
     }
+
+    [Fact]
+    public void RadioStationDialog_SelectRadioSearchResult_UpdatesSelectionViewFields()
+    {
+        WpfTestHost.RunSta(() =>
+        {
+            var dlg = new RadioStationDialog();
+            dlg.Setup("ambient");
+
+            var itemWithBoth = new RadioSearchResultItem
+            {
+                Name = "SomaFM - Groove Salad [128k MP3]",
+                Subtitle = "Downtempo • Electronic",
+                BitrateDisplay = "128 kbps",
+                ResolvedStreamUrl = "https://ice1.somafm.com/groovesalad-128-mp3",
+                StationUuid = "test-uuid-1",
+                BitrateKbps = 128,
+                Codec = "MP3",
+                CountryCode = "US",
+                Tags = "downtempo, ambient"
+            };
+
+            dlg.SelectRadioSearchResult(itemWithBoth);
+
+            Assert.Equal(System.Windows.Visibility.Visible, dlg.RadioSearchSelectionPanel.Visibility);
+            Assert.Equal("SomaFM - Groove Salad [128k MP3]", dlg.RadioSelectedStationOriginalName.Text);
+            Assert.Equal("https://ice1.somafm.com/groovesalad-128-mp3", dlg.RadioSelectedStationStreamUrl.Text);
+            Assert.Equal("US", dlg.RadioSelectedStationCountryText.Text);
+            Assert.Equal("128 kbps • MP3", dlg.RadioSelectedStationFormatText.Text);
+            Assert.Equal("SomaFM - Groove Salad", dlg.RadioSearchNameInput.Text);
+
+            var itemGlobalFallback = new RadioSearchResultItem
+            {
+                Name = "Ambient Stream",
+                Subtitle = "Chill",
+                BitrateDisplay = "Stream",
+                ResolvedStreamUrl = "https://example.com/stream",
+                StationUuid = "test-uuid-2",
+                BitrateKbps = 0,
+                Codec = null,
+                CountryCode = null,
+                Tags = null
+            };
+
+            dlg.SelectRadioSearchResult(itemGlobalFallback);
+
+            Assert.Equal("Global", dlg.RadioSelectedStationCountryText.Text);
+            Assert.Equal("Audio Stream", dlg.RadioSelectedStationFormatText.Text);
+
+            dlg.Close();
+        });
+    }
 }
