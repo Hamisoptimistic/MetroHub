@@ -10,11 +10,6 @@
     <!-- Frosted Acrylic Left Sidebar Content Slot -->
     <dialogs:MetroDialog.SidebarContent>
         <Grid HorizontalAlignment="Center" VerticalAlignment="Center">
-            <Ellipse Width="70" Height="70" Fill="#182563EB">
-                <Ellipse.Effect>
-                    <BlurEffect Radius="16" />
-                </Ellipse.Effect>
-            </Ellipse>
             <ui:SymbolIcon Symbol="Cube24"
                            FontSize="48"
                            Foreground="{DynamicResource TextSecondaryBrush}"

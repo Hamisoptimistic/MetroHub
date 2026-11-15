@@ -185,7 +185,6 @@
                                        FontSize="{DynamicResource TypeDisplayFontSize}"
                                        FontWeight="Bold"
                                        Foreground="{DynamicResource TextPrimaryBrush}"
-                                       Effect="{DynamicResource ShadowCard}"
                                        HorizontalAlignment="Center"
                                        Margin="0,0,0,16" />
                             <Button Style="{DynamicResource AccentButtonStyle}"
@@ -193,7 +192,6 @@
                                     Content="Try Again"
                                     Height="32"
                                     Padding="16,0"
-                                    Effect="{DynamicResource ShadowCard}"
                                     HorizontalAlignment="Center" />
                         </StackPanel>
                     </Border>
@@ -211,14 +209,12 @@
                                        FontSize="{DynamicResource TypeDisplayFontSize}"
                                        FontWeight="Bold"
                                        Foreground="{DynamicResource SystemAccentColorPrimaryBrush}"
-                                       Effect="{DynamicResource ShadowCard}"
                                        HorizontalAlignment="Center"
                                        Margin="0,0,0,4" />
                             <TextBlock Text="Reached 2048 Tile"
                                        FontFamily="{DynamicResource AppFontFamily}"
                                        FontSize="{DynamicResource TypeBodyFontSize}"
                                        Foreground="{DynamicResource TextSecondaryBrush}"
-                                       Effect="{DynamicResource ShadowCard}"
                                        HorizontalAlignment="Center"
                                        Margin="0,0,0,18" />
                             <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
@@ -227,14 +223,12 @@
                                         Content="Keep Playing"
                                         Height="32"
                                         Padding="16,0"
-                                        Effect="{DynamicResource ShadowCard}"
                                         Margin="0,0,10,0" />
                                 <Button Style="{StaticResource DefaultButtonStyle}"
                                         Command="{Binding RestartGameCommand}"
                                         Content="New Game"
                                         Height="32"
-                                        Padding="16,0"
-                                        Effect="{DynamicResource ShadowCard}" />
+                                        Padding="16,0" />
                             </StackPanel>
                         </StackPanel>
                     </Border>

@@ -10,11 +10,6 @@
 
     <dialogs:MetroDialog.SidebarContent>
         <Grid HorizontalAlignment="Center" VerticalAlignment="Center">
-            <Ellipse Width="80" Height="80" Fill="#184A90E2">
-                <Ellipse.Effect>
-                    <BlurEffect Radius="20" />
-                </Ellipse.Effect>
-            </Ellipse>
             <ui:SymbolIcon Symbol="HeadphonesSoundWave24"
                            FontSize="56"
                            Foreground="{DynamicResource TextSecondaryBrush}"

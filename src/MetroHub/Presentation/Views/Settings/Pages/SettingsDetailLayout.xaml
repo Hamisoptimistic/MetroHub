@@ -29,14 +29,6 @@
         <!-- ========================================================================= -->
         <!-- BACKGROUND PLATES (FULL-BLEED Y=0..640 SPANNING BOTH ROWS)                -->
         <!-- ========================================================================= -->
-        <!-- Column 0: Left Rail Hairline Right Divider -->
-        <Border Grid.Row="0"
-                Grid.RowSpan="2"
-                Grid.Column="0"
-                Background="Transparent"
-                BorderBrush="{DynamicResource SurfaceBorderSubtleBrush}"
-                BorderThickness="0,0,1,0" />
-
         <!-- Column 1: Full-Bleed Obsidian Deck -->
         <Border Grid.Row="0"
                 Grid.RowSpan="2"
