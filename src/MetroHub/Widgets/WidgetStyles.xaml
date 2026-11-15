@@ -214,20 +214,14 @@
                                 HorizontalAlignment="Left"
                                 Width="0"
                                 CornerRadius="{TemplateBinding IndicatorCornerRadius}"
+                                SnapsToDevicePixels="False"
+                                UseLayoutRounding="False"
                                 Opacity="0"
                                 Panel.ZIndex="25"
                                 >
                             <Border.RenderTransform>
                                 <TranslateTransform x:Name="PART_IndicatorTransform" X="0" />
                             </Border.RenderTransform>
-                            <Border.Effect>
-                                <DropShadowEffect x:Name="PART_IndicatorShadow"
-                                                  Color="{DynamicResource StatusSuccessColor}"
-                                                  BlurRadius="8"
-                                                  ShadowDepth="0"
-                                                  Opacity="0.8"
-                                                  RenderingBias="Performance" />
-                            </Border.Effect>
                         </Border>
                     </Grid>
                 </ControlTemplate>
