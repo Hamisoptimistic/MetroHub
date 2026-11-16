@@ -29,6 +29,7 @@ public class AppSettingsTests
         Assert.Equal(8, settings.GroupColumnWidth);
         Assert.False(settings.SidebarAutoHide);
         Assert.True(settings.SidebarPinned);
+        Assert.True(settings.ShowRunningAppIndicators);
         Assert.True(settings.ShowWorkspacesButton);
         Assert.True(settings.ShowAddShortcutButton);
         Assert.True(settings.ShowPowerButton);
@@ -65,6 +66,7 @@ public class AppSettingsTests
             AcrylicOpacity = 0.90,
             GroupColumnWidth = 8,
             TileCornerRadius = 4,
+            ShowRunningAppIndicators = false,
             SidebarAutoHide = false,
             SidebarPinned = true
         };
@@ -92,6 +94,7 @@ public class AppSettingsTests
         Assert.Equal(original.AcrylicOpacity, deserialized.AcrylicOpacity, 2);
         Assert.Equal(original.GroupColumnWidth, deserialized.GroupColumnWidth);
         Assert.Equal(original.TileCornerRadius, deserialized.TileCornerRadius);
+        Assert.False(deserialized.ShowRunningAppIndicators);
         Assert.Equal(original.SidebarAutoHide, deserialized.SidebarAutoHide);
         Assert.Equal(original.SidebarPinned, deserialized.SidebarPinned);
     }

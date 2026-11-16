@@ -119,4 +119,211 @@ public class RunningAppTrackerTests
         tracker.UpdateTiles(null);
         tracker.UpdateTiles(Array.Empty<TileModel>());
     }
+
+    [Fact]
+    public void RunningAppTrackerService_WhenDisabledInSettings_DoesNotInstallHooksAndResetsRunningState()
+    {
+        bool originalSetting = SettingsService.Instance.Current.ShowRunningAppIndicators;
+        try
+        {
+            SettingsService.Instance.Current.ShowRunningAppIndicators = false;
+            SettingsService.Instance.NotifyChanged(nameof(AppSettings.ShowRunningAppIndicators));
+
+            using var tracker = new RunningAppTrackerService();
+            var appTile = new TileModel
+            {
+                Title = "Calculator",
+                TargetPath = "calc.exe",
+                TileType = TileType.App,
+                IsRunning = true
+            };
+
+            tracker.Initialize(new[] { appTile });
+
+            Assert.False(tracker.AreHooksInstalled);
+            Assert.False(appTile.IsRunning);
+        }
+        finally
+        {
+            SettingsService.Instance.Current.ShowRunningAppIndicators = originalSetting;
+            SettingsService.Instance.NotifyChanged(nameof(AppSettings.ShowRunningAppIndicators));
+        }
+    }
+
+    [Fact]
+    public void RunningAppTrackerService_SettingToggledOff_ClearsRunningStateAndDropsResources()
+    {
+        bool originalSetting = SettingsService.Instance.Current.ShowRunningAppIndicators;
+        try
+        {
+            SettingsService.Instance.Current.ShowRunningAppIndicators = true;
+            SettingsService.Instance.NotifyChanged(nameof(AppSettings.ShowRunningAppIndicators));
+
+            using var tracker = new RunningAppTrackerService();
+            var appTile = new TileModel
+            {
+                Title = "Calculator",
+                TargetPath = "calc.exe",
+                TileType = TileType.App,
+                IsRunning = true
+            };
+
+            tracker.Initialize(new[] { appTile });
+            Assert.True(tracker.AreHooksInstalled);
+
+            // Toggle off
+            SettingsService.Instance.Current.ShowRunningAppIndicators = false;
+            SettingsService.Instance.NotifyChanged(nameof(AppSettings.ShowRunningAppIndicators));
+
+            Assert.False(tracker.AreHooksInstalled);
+            Assert.False(appTile.IsRunning);
+            Assert.Equal(0, tracker.TrackedProcessCount);
+
+            // Toggle back on
+            SettingsService.Instance.Current.ShowRunningAppIndicators = true;
+            SettingsService.Instance.NotifyChanged(nameof(AppSettings.ShowRunningAppIndicators));
+
+            Assert.True(tracker.AreHooksInstalled);
+        }
+        finally
+        {
+            SettingsService.Instance.Current.ShowRunningAppIndicators = originalSetting;
+            SettingsService.Instance.NotifyChanged(nameof(AppSettings.ShowRunningAppIndicators));
+        }
+    }
+
+    [Fact]
+    public void WorkspacesSettingsViewModel_Toggle_UpdatesCurrentSettingsAndNotifies()
+    {
+        bool originalSetting = SettingsService.Instance.Current.ShowRunningAppIndicators;
+        try
+        {
+            SettingsService.Instance.Current.ShowRunningAppIndicators = true;
+            SettingsService.Instance.NotifyChanged(nameof(AppSettings.ShowRunningAppIndicators));
+
+            var vm = new MetroHub.Presentation.Views.Settings.ViewModels.WorkspacesSettingsViewModel();
+            Assert.True(vm.ShowRunningAppIndicators);
+
+            vm.ShowRunningAppIndicators = false;
+            Assert.False(SettingsService.Instance.Current.ShowRunningAppIndicators);
+
+            vm.ShowRunningAppIndicators = true;
+            Assert.True(SettingsService.Instance.Current.ShowRunningAppIndicators);
+        }
+        finally
+        {
+            SettingsService.Instance.Current.ShowRunningAppIndicators = originalSetting;
+            SettingsService.Instance.NotifyChanged(nameof(AppSettings.ShowRunningAppIndicators));
+        }
+    }
+
+    [Fact]
+    public void WorkspacesPage_InitializesProperly()
+    {
+        WpfTestHost.RunSta(() =>
+        {
+            var page = new MetroHub.Presentation.Views.Settings.Pages.WorkspacesPage();
+            Assert.NotNull(page);
+        });
+    }
+
+    [Fact]
+    public void RunningAppTrackerService_RapidToggleStress_CleanlyDropsResourcesWithoutExceptions()
+    {
+        bool originalSetting = SettingsService.Instance.Current.ShowRunningAppIndicators;
+        try
+        {
+            SettingsService.Instance.Current.ShowRunningAppIndicators = true;
+            SettingsService.Instance.NotifyChanged(nameof(AppSettings.ShowRunningAppIndicators));
+
+            using var tracker = new RunningAppTrackerService();
+            var appTile = new TileModel
+            {
+                Title = "TestApp",
+                TargetPath = "notepad.exe",
+                TileType = TileType.App,
+                IsRunning = true
+            };
+
+            tracker.Initialize(new[] { appTile });
+
+            // Rapidly flip the toggle 10 times
+            for (int i = 0; i < 10; i++)
+            {
+                bool newState = (i % 2) != 0;
+                SettingsService.Instance.Current.ShowRunningAppIndicators = newState;
+                SettingsService.Instance.NotifyChanged(nameof(AppSettings.ShowRunningAppIndicators));
+            }
+
+            // Ensure disabled at the end
+            SettingsService.Instance.Current.ShowRunningAppIndicators = false;
+            SettingsService.Instance.NotifyChanged(nameof(AppSettings.ShowRunningAppIndicators));
+
+            Assert.False(tracker.AreHooksInstalled);
+            Assert.False(appTile.IsRunning);
+            Assert.Equal(0, tracker.TrackedProcessCount);
+        }
+        finally
+        {
+            SettingsService.Instance.Current.ShowRunningAppIndicators = originalSetting;
+            SettingsService.Instance.NotifyChanged(nameof(AppSettings.ShowRunningAppIndicators));
+        }
+    }
+
+    [Fact]
+    public async Task RunningAppTrackerService_OffThreadSettingChange_DoesNotDeadlockOrThrow()
+    {
+        bool originalSetting = SettingsService.Instance.Current.ShowRunningAppIndicators;
+        try
+        {
+            SettingsService.Instance.Current.ShowRunningAppIndicators = true;
+            SettingsService.Instance.NotifyChanged(nameof(AppSettings.ShowRunningAppIndicators));
+
+            using var tracker = new RunningAppTrackerService();
+            var appTile = new TileModel
+            {
+                Title = "TestApp",
+                TargetPath = "cmd.exe",
+                TileType = TileType.App,
+                IsRunning = true
+            };
+
+            tracker.Initialize(new[] { appTile });
+
+            await Task.Run(() =>
+            {
+                SettingsService.Instance.Current.ShowRunningAppIndicators = false;
+                SettingsService.Instance.NotifyChanged(nameof(AppSettings.ShowRunningAppIndicators));
+
+                SettingsService.Instance.Current.ShowRunningAppIndicators = true;
+                SettingsService.Instance.NotifyChanged(nameof(AppSettings.ShowRunningAppIndicators));
+            });
+
+            Assert.True(tracker.AreHooksInstalled);
+        }
+        finally
+        {
+            SettingsService.Instance.Current.ShowRunningAppIndicators = originalSetting;
+            SettingsService.Instance.NotifyChanged(nameof(AppSettings.ShowRunningAppIndicators));
+        }
+    }
+
+    [Fact]
+    public void SettingsDetailLayoutViewModel_WorkspacesCategory_LoadsWorkspacesSettingsViewModel()
+    {
+        var shell = new MetroHub.Presentation.Views.Settings.SettingsShellViewModel();
+        var workspacesCategory = new MetroHub.Presentation.Views.Settings.ViewModels.SettingsCategoryItem
+        {
+            Id = "Workspaces",
+            Title = "Workspaces & Canvas"
+        };
+        var categories = new System.Collections.ObjectModel.ObservableCollection<MetroHub.Presentation.Views.Settings.ViewModels.SettingsCategoryItem>
+        {
+            workspacesCategory
+        };
+        var layout = new MetroHub.Presentation.Views.Settings.ViewModels.SettingsDetailLayoutViewModel(shell, categories, workspacesCategory);
+
+        Assert.NotNull(layout.CurrentPageViewModel);
+        Assert.IsType<MetroHub.Presentation.Views.Settings.ViewModels.WorkspacesSettingsViewModel>(layout.CurrentPageViewModel);
+    }
 }

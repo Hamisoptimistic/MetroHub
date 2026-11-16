@@ -37,6 +37,9 @@
         <DataTemplate DataType="{x:Type vm:GeneralSettingsViewModel}">
             <pages:GeneralPage />
         </DataTemplate>
+        <DataTemplate DataType="{x:Type vm:WorkspacesSettingsViewModel}">
+            <pages:WorkspacesPage />
+        </DataTemplate>
         <DataTemplate DataType="{x:Type vm:SidebarSettingsViewModel}">
             <pages:SidebarPage />
         </DataTemplate>

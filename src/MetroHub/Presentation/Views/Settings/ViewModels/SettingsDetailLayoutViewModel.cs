@@ -50,6 +50,7 @@ public sealed partial class SettingsDetailLayoutViewModel : ObservableObject
             vm = category.Id switch
             {
                 "General" => new GeneralSettingsViewModel(),
+                "Workspaces" => new WorkspacesSettingsViewModel(),
                 "Sidebar" => new SidebarSettingsViewModel(),
                 _ => null
             };

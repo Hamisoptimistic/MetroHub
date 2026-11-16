@@ -25,6 +25,7 @@ public sealed class AppSettings
     public double AcrylicOpacity { get; set; } = 0.85;
     public int GroupColumnWidth { get; set; } = 8; // Fixed 8 units
     public int TileCornerRadius { get; set; } = 2; // 0 (Metro Sharp), 2 (Subtle Edge), 4 (Medium), 8 (Fluent Rounded)
+    public bool ShowRunningAppIndicators { get; set; } = true;
 
     public bool SidebarAutoHide { get; set; }
     public bool SidebarPinned { get; set; } = true;

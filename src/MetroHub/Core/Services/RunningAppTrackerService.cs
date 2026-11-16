@@ -126,12 +126,14 @@ public sealed partial class RunningAppTrackerService : IDisposable
 
     private static readonly ConcurrentDictionary<string, ResolvedTargetInfo> s_resolvedCache = new(StringComparer.OrdinalIgnoreCase);
 
+    private readonly SettingsService _settingsService;
     private readonly Lock _syncLock = new();
     private readonly NativeMethods.WinEventDelegate _winEventDelegate;
     private readonly NativeMethods.WaitOrTimerCallback _waitOrTimerCallback;
     private IntPtr _hookShow = IntPtr.Zero;
     private IntPtr _hookForeground = IntPtr.Zero;
     private bool _isDisposed;
+    private bool _isInitialized;
 
     private List<TrackedTile> _trackedTiles = new();
     private readonly Dictionary<int, TrackedProcess> _trackedProcesses = new();
@@ -139,10 +141,16 @@ public sealed partial class RunningAppTrackerService : IDisposable
     private readonly HashSet<int> _unmatchedPids = new();
     private const int MaxUnmatchedPids = 128;
 
-    public RunningAppTrackerService()
+    internal bool AreHooksInstalled => _hookShow != IntPtr.Zero && _hookForeground != IntPtr.Zero;
+    internal int TrackedTileCount => _trackedTiles.Count;
+    internal int TrackedProcessCount => _trackedProcesses.Count;
+
+    public RunningAppTrackerService(SettingsService? settingsService = null)
     {
+        _settingsService = settingsService ?? SettingsService.Instance;
         _winEventDelegate = OnWinEvent;
         _waitOrTimerCallback = OnProcessExited;
+        _settingsService.SettingChanged += OnSettingChanged;
     }
 
     /// <summary>
@@ -151,30 +159,155 @@ public sealed partial class RunningAppTrackerService : IDisposable
     public void Initialize(IEnumerable<TileModel>? initialTiles)
     {
         if (_isDisposed) return;
-
-        // Install OS window lifecycle hooks (requires active message pump on calling thread)
-        _hookShow = NativeMethods.SetWinEventHook(
-            NativeMethods.EVENT_OBJECT_SHOW,
-            NativeMethods.EVENT_OBJECT_SHOW,
-            IntPtr.Zero,
-            _winEventDelegate,
-            0,
-            0,
-            NativeMethods.WINEVENT_OUTOFCONTEXT);
-
-        _hookForeground = NativeMethods.SetWinEventHook(
-            NativeMethods.EVENT_SYSTEM_FOREGROUND,
-            NativeMethods.EVENT_SYSTEM_FOREGROUND,
-            IntPtr.Zero,
-            _winEventDelegate,
-            0,
-            0,
-            NativeMethods.WINEVENT_OUTOFCONTEXT);
+        _isInitialized = true;
 
         if (initialTiles != null)
         {
             UpdateTiles(initialTiles);
         }
+
+        if (_settingsService.Current.ShowRunningAppIndicators)
+        {
+            InstallHooks();
+        }
+    }
+
+    private void InstallHooks()
+    {
+        if (_isDisposed) return;
+
+        lock (_syncLock)
+        {
+            if (_isDisposed || !_settingsService.Current.ShowRunningAppIndicators) return;
+
+            if (_hookShow == IntPtr.Zero)
+            {
+                _hookShow = NativeMethods.SetWinEventHook(
+                    NativeMethods.EVENT_OBJECT_SHOW,
+                    NativeMethods.EVENT_OBJECT_SHOW,
+                    IntPtr.Zero,
+                    _winEventDelegate,
+                    0,
+                    0,
+                    NativeMethods.WINEVENT_OUTOFCONTEXT);
+            }
+
+            if (_hookForeground == IntPtr.Zero)
+            {
+                _hookForeground = NativeMethods.SetWinEventHook(
+                    NativeMethods.EVENT_SYSTEM_FOREGROUND,
+                    NativeMethods.EVENT_SYSTEM_FOREGROUND,
+                    IntPtr.Zero,
+                    _winEventDelegate,
+                    0,
+                    0,
+                    NativeMethods.WINEVENT_OUTOFCONTEXT);
+            }
+        }
+    }
+
+    private void UninstallHooks()
+    {
+        lock (_syncLock)
+        {
+            if (_hookShow != IntPtr.Zero)
+            {
+                NativeMethods.UnhookWinEvent(_hookShow);
+                _hookShow = IntPtr.Zero;
+            }
+
+            if (_hookForeground != IntPtr.Zero)
+            {
+                NativeMethods.UnhookWinEvent(_hookForeground);
+                _hookForeground = IntPtr.Zero;
+            }
+        }
+    }
+
+    private void OnSettingChanged(string? propertyName)
+    {
+        if (_isDisposed) return;
+        if (!string.Equals(propertyName, nameof(AppSettings.ShowRunningAppIndicators), StringComparison.Ordinal)) return;
+
+        if (_settingsService.Current.ShowRunningAppIndicators)
+        {
+            if (_isInitialized)
+            {
+                EnableTracking();
+            }
+        }
+        else
+        {
+            DisableTracking();
+        }
+    }
+
+    private void EnableTracking()
+    {
+        InstallHooks();
+        Task.Run(ScanRunningWindows).FireAndForget("RunningAppTrackerService.EnableTrackingScan");
+    }
+
+    private void DisableTracking()
+    {
+        UninstallHooks();
+
+        List<TrackedProcess> processesToClose;
+        List<TileModel> tilesToTurnOff = new();
+
+        lock (_syncLock)
+        {
+            processesToClose = new List<TrackedProcess>(_trackedProcesses.Values);
+            _trackedProcesses.Clear();
+            _unmatchedPids.Clear();
+            _unmatchedPidsOrder.Clear();
+
+            foreach (var tile in _trackedTiles)
+            {
+                tile.RunningPids.Clear();
+                if (tile.Model.IsRunning)
+                {
+                    tilesToTurnOff.Add(tile.Model);
+                }
+            }
+        }
+
+        CleanupTrackedProcesses(processesToClose);
+
+        if (tilesToTurnOff.Count > 0)
+        {
+            NotifyTilesRunning(tilesToTurnOff, false);
+        }
+    }
+
+    private static void CleanupTrackedProcesses(List<TrackedProcess> processes)
+    {
+        if (processes.Count == 0) return;
+
+        Task.Run(() =>
+        {
+            foreach (var proc in processes)
+            {
+                try
+                {
+                    if (proc.WaitHandle != IntPtr.Zero)
+                    {
+                        NativeMethods.UnregisterWaitEx(proc.WaitHandle, NativeMethods.INVALID_HANDLE_VALUE);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Safe.Ignore(ex, "RunningAppTrackerService.CleanupTrackedProcesses.UnregisterWaitEx");
+                }
+                finally
+                {
+                    if (proc.ProcessHandle != IntPtr.Zero)
+                    {
+                        NativeMethods.CloseHandle(proc.ProcessHandle);
+                    }
+                }
+            }
+        }).FireAndForget("RunningAppTrackerService.CleanupTrackedProcesses");
     }
 
     /// <summary>
@@ -184,6 +317,8 @@ public sealed partial class RunningAppTrackerService : IDisposable
     public void UpdateTiles(IEnumerable<TileModel>? tiles)
     {
         if (_isDisposed || tiles == null) return;
+
+        bool isTrackingEnabled = _settingsService.Current.ShowRunningAppIndicators;
 
         var newTrackedTiles = new List<TrackedTile>();
 
@@ -200,6 +335,20 @@ public sealed partial class RunningAppTrackerService : IDisposable
             {
                 newTrackedTiles.Add(tracked);
             }
+        }
+
+        if (!isTrackingEnabled)
+        {
+            lock (_syncLock)
+            {
+                _trackedTiles = newTrackedTiles;
+                foreach (var t in _trackedTiles)
+                {
+                    t.RunningPids.Clear();
+                    t.Model.IsRunning = false;
+                }
+            }
+            return;
         }
 
         List<TileModel>? tilesToTurnOn = null;
@@ -267,11 +416,13 @@ public sealed partial class RunningAppTrackerService : IDisposable
 
     private void ScanRunningWindows()
     {
+        if (_isDisposed || !_settingsService.Current.ShowRunningAppIndicators) return;
+
         try
         {
             NativeMethods.EnumWindows((hwnd, _) =>
             {
-                if (_isDisposed) return false;
+                if (_isDisposed || !_settingsService.Current.ShowRunningAppIndicators) return false;
                 if (NativeMethods.IsWindow(hwnd))
                 {
                     ProcessWindow(hwnd);
@@ -288,7 +439,7 @@ public sealed partial class RunningAppTrackerService : IDisposable
     private void OnWinEvent(IntPtr hWinEventHook, uint eventType, IntPtr hwnd, int idObject, int idChild, uint dwEventThread, uint dwmsEventTime)
     {
         // Filter to top-level window objects (OBJID_WINDOW = 0)
-        if (idObject != 0 || hwnd == IntPtr.Zero || _isDisposed) return;
+        if (idObject != 0 || hwnd == IntPtr.Zero || _isDisposed || !_settingsService.Current.ShowRunningAppIndicators) return;
 
         // Dispatch off the hook message loop immediately
         Task.Run(() => ProcessWindow(hwnd)).FireAndForget("RunningAppTrackerService.OnWinEvent");
@@ -296,7 +447,7 @@ public sealed partial class RunningAppTrackerService : IDisposable
 
     private void ProcessWindow(IntPtr hwnd)
     {
-        if (hwnd == IntPtr.Zero || _isDisposed) return;
+        if (hwnd == IntPtr.Zero || _isDisposed || !_settingsService.Current.ShowRunningAppIndicators) return;
 
         if (NativeMethods.GetWindowThreadProcessId(hwnd, out uint pid) == 0 ||
             pid == 0 ||
@@ -338,7 +489,7 @@ public sealed partial class RunningAppTrackerService : IDisposable
 
         lock (_syncLock)
         {
-            if (_isDisposed) return;
+            if (_isDisposed || !_settingsService.Current.ShowRunningAppIndicators) return;
             if (_trackedProcesses.ContainsKey(processId)) return;
             if (_unmatchedPids.Contains(processId)) return;
         }
@@ -374,7 +525,7 @@ public sealed partial class RunningAppTrackerService : IDisposable
         List<TileModel>? matchedTiles = null;
         lock (_syncLock)
         {
-            if (_isDisposed || _trackedProcesses.ContainsKey(processId))
+            if (_isDisposed || !_settingsService.Current.ShowRunningAppIndicators || _trackedProcesses.ContainsKey(processId))
             {
                 NativeMethods.CloseHandle(hProcess);
                 return;
@@ -432,6 +583,8 @@ public sealed partial class RunningAppTrackerService : IDisposable
 
     private void OnProcessExited(IntPtr lpParameter, bool timerOrWaitFired)
     {
+        if (_isDisposed || !_settingsService.Current.ShowRunningAppIndicators) return;
+
         int pid = lpParameter.ToInt32();
         TrackedProcess? tracked = null;
         List<TileModel>? tilesToTurnOff = null;
@@ -683,17 +836,8 @@ public sealed partial class RunningAppTrackerService : IDisposable
         if (_isDisposed) return;
         _isDisposed = true;
 
-        if (_hookShow != IntPtr.Zero)
-        {
-            NativeMethods.UnhookWinEvent(_hookShow);
-            _hookShow = IntPtr.Zero;
-        }
-
-        if (_hookForeground != IntPtr.Zero)
-        {
-            NativeMethods.UnhookWinEvent(_hookForeground);
-            _hookForeground = IntPtr.Zero;
-        }
+        _settingsService.SettingChanged -= OnSettingChanged;
+        UninstallHooks();
 
         List<TrackedProcess> processesToClose;
         lock (_syncLock)
