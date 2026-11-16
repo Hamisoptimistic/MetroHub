@@ -177,6 +177,7 @@
     <Color x:Key="StatusSuccessHoverColor">#00FF85</Color>
     <Color x:Key="StatusSuccessPressedColor">#00CC6A</Color>
     <SolidColorBrush x:Key="StatusSuccessBrush" Color="{StaticResource StatusSuccessColor}" po:Freeze="True" />
+    <SolidColorBrush x:Key="SystemFillColorSuccessBrush" Color="{StaticResource StatusSuccessColor}" po:Freeze="True" />
     <SolidColorBrush x:Key="StatusSuccessHoverBrush" Color="{StaticResource StatusSuccessHoverColor}" po:Freeze="True" />
     <SolidColorBrush x:Key="StatusSuccessPressedBrush" Color="{StaticResource StatusSuccessPressedColor}" po:Freeze="True" />
 

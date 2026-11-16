@@ -526,6 +526,7 @@ internal static class NativeMethods
     internal static extern bool UnhookWinEvent(IntPtr hWinEventHook);
 
     public const uint EVENT_SYSTEM_FOREGROUND = 0x0003;
+    public const uint EVENT_OBJECT_SHOW = 0x8002;
     public const uint WINEVENT_OUTOFCONTEXT = 0x0000;
 
     [DllImport("user32.dll", ExactSpelling = true)]
@@ -781,6 +782,109 @@ internal static class NativeMethods
     [DefaultDllImportSearchPaths(DllImportSearchPath.System32)]
     [return: MarshalAs(UnmanagedType.Bool)]
     internal static extern bool SHChangeNotifyDeregister(uint ulID);
+
+    #endregion
+
+    #region Process & Wait Tracking
+
+    public const uint PROCESS_QUERY_LIMITED_INFORMATION = 0x1000;
+    public const uint SYNCHRONIZE = 0x00100000;
+    public const uint WT_EXECUTEONLYONCE = 0x00000008;
+    public const uint INFINITE = 0xFFFFFFFF;
+    public static readonly IntPtr INVALID_HANDLE_VALUE = new IntPtr(-1);
+
+    public delegate bool EnumWindowsProc(IntPtr hWnd, IntPtr lParam);
+    public delegate void WaitOrTimerCallback(IntPtr lpParameter, [MarshalAs(UnmanagedType.U1)] bool timerOrWaitFired);
+
+    [DllImport("user32.dll")]
+    [DefaultDllImportSearchPaths(DllImportSearchPath.System32)]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    internal static extern bool EnumWindows(EnumWindowsProc lpEnumFunc, IntPtr lParam);
+
+    [DllImport("user32.dll")]
+    [DefaultDllImportSearchPaths(DllImportSearchPath.System32)]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    internal static extern bool EnumChildWindows(IntPtr hWndParent, EnumWindowsProc lpEnumFunc, IntPtr lParam);
+
+    [DllImport("kernel32.dll", SetLastError = true)]
+    [DefaultDllImportSearchPaths(DllImportSearchPath.System32)]
+    internal static extern IntPtr OpenProcess(uint processAccess, [MarshalAs(UnmanagedType.Bool)] bool bInheritHandle, int processId);
+
+    [DllImport("kernel32.dll", SetLastError = true)]
+    [DefaultDllImportSearchPaths(DllImportSearchPath.System32)]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    internal static extern bool CloseHandle(IntPtr hObject);
+
+    [DllImport("kernel32.dll", SetLastError = true, CharSet = CharSet.Unicode, EntryPoint = "QueryFullProcessImageNameW")]
+    [DefaultDllImportSearchPaths(DllImportSearchPath.System32)]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    internal static extern bool QueryFullProcessImageName(IntPtr hProcess, int flags, [Out] char[] lpExeName, ref int lpdwSize);
+
+    [DllImport("kernel32.dll", CharSet = CharSet.Unicode, SetLastError = true)]
+    [DefaultDllImportSearchPaths(DllImportSearchPath.System32)]
+    internal static extern int GetPackageFamilyName(IntPtr hProcess, ref uint packageFamilyNameLength, [Out] char[] packageFamilyName);
+
+    [DllImport("kernel32.dll", SetLastError = true)]
+    [DefaultDllImportSearchPaths(DllImportSearchPath.System32)]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    internal static extern bool RegisterWaitForSingleObject(
+        out IntPtr phNewWaitObject,
+        IntPtr hObject,
+        WaitOrTimerCallback Callback,
+        IntPtr Context,
+        uint dwMilliseconds,
+        uint dwFlags);
+
+    [DllImport("kernel32.dll", SetLastError = true)]
+    [DefaultDllImportSearchPaths(DllImportSearchPath.System32)]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    internal static extern bool UnregisterWait(IntPtr WaitHandle);
+
+    [DllImport("kernel32.dll", SetLastError = true)]
+    [DefaultDllImportSearchPaths(DllImportSearchPath.System32)]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    internal static extern bool UnregisterWaitEx(IntPtr WaitHandle, IntPtr CompletionEvent);
+
+    public static string? TryGetProcessPath(IntPtr hProcess)
+    {
+        if (hProcess == IntPtr.Zero) return null;
+        try
+        {
+            char[] buffer = new char[1024];
+            int size = buffer.Length;
+            if (QueryFullProcessImageName(hProcess, 0, buffer, ref size) && size > 0)
+            {
+                return new string(buffer, 0, size);
+            }
+        }
+        catch (Exception ex)
+        {
+            Safe.Log(ex, "NativeMethods.TryGetProcessPath");
+        }
+        return null;
+    }
+
+    public static string? TryGetPackageFamilyName(IntPtr hProcess)
+    {
+        if (hProcess == IntPtr.Zero) return null;
+        try
+        {
+            char[] buffer = new char[128];
+            uint length = (uint)buffer.Length;
+            int rc = GetPackageFamilyName(hProcess, ref length, buffer);
+            if (rc == 0 && length > 1)
+            {
+                // length includes null terminator
+                return new string(buffer, 0, (int)length).TrimEnd('\0');
+            }
+        }
+        catch (Exception ex)
+        {
+            Safe.Log(ex, "NativeMethods.TryGetPackageFamilyName");
+            return null;
+        }
+        return null;
+    }
 
     #endregion
 

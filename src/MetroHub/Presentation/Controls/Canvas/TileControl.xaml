@@ -260,6 +260,46 @@
                     </RadialGradientBrush>
                 </Border.BorderBrush>
             </Border>
+
+            <!-- Layer 5: Running App Indicator Dot -->
+            <Border x:Name="RunningIndicator"
+                    Width="6"
+                    Height="6"
+                    CornerRadius="3"
+                    HorizontalAlignment="Right"
+                    VerticalAlignment="Top"
+                    Margin="0,6,6,0"
+                    Background="{DynamicResource SystemFillColorSuccessBrush}"
+                    IsHitTestVisible="False">
+                <Border.Style>
+                    <Style TargetType="Border">
+                        <Setter Property="Opacity" Value="0" />
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding IsRunning}" Value="True">
+                                <Setter Property="Opacity" Value="1.0" />
+                                <DataTrigger.EnterActions>
+                                    <BeginStoryboard>
+                                        <Storyboard>
+                                            <DoubleAnimation Storyboard.TargetProperty="Opacity"
+                                                             To="1.0"
+                                                             Duration="0:0:0.180" />
+                                        </Storyboard>
+                                    </BeginStoryboard>
+                                </DataTrigger.EnterActions>
+                                <DataTrigger.ExitActions>
+                                    <BeginStoryboard>
+                                        <Storyboard>
+                                            <DoubleAnimation Storyboard.TargetProperty="Opacity"
+                                                             To="0.0"
+                                                             Duration="0:0:0.180" />
+                                        </Storyboard>
+                                    </BeginStoryboard>
+                                </DataTrigger.ExitActions>
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </Border.Style>
+            </Border>
         </Grid>
     </Border>
 </UserControl>

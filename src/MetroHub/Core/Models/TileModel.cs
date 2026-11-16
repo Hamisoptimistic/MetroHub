@@ -86,6 +86,15 @@ public sealed class TileModel : INotifyPropertyChanged
         set => SetField(ref _isSelected, value);
     }
 
+    private bool _isRunning;
+
+    [JsonIgnore]
+    public bool IsRunning
+    {
+        get => _isRunning;
+        set => SetField(ref _isRunning, value);
+    }
+
     public string? SectionHeader
     {
         get => _sectionHeader;

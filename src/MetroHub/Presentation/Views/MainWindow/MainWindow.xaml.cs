@@ -1,4 +1,5 @@
 using System.Collections.ObjectModel;
+using System.Collections.Specialized;
 using System.Diagnostics;
 using System.IO;
 using System.Windows;
@@ -38,6 +39,7 @@ namespace MetroHub;
 [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1001:Types that own disposable fields should be disposable", Justification = "WPF Window lifecycle manages disposable fields via OnClosed and App teardown.")]
 public sealed partial class MainWindow : BorderlessFluentWindow, INotifyPropertyChanged
 {
+    private RunningAppTrackerService? _runningAppTracker;
     private ObservableCollection<TileModel> _tiles = new();
     public ObservableCollection<TileModel> Tiles
     {
@@ -46,9 +48,30 @@ public sealed partial class MainWindow : BorderlessFluentWindow, INotifyProperty
         {
             if (_tiles != value)
             {
+                if (_tiles != null)
+                {
+                    _tiles.CollectionChanged -= OnTilesCollectionChanged;
+                }
                 _tiles = value;
+                if (_tiles != null)
+                {
+                    _tiles.CollectionChanged += OnTilesCollectionChanged;
+                }
                 NotifyPropertyChanged();
+                if (_tiles != null)
+                {
+                    _runningAppTracker?.UpdateTiles(_tiles);
+                }
             }
+        }
+    }
+
+    private void OnTilesCollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)
+    {
+        if (e.Action == NotifyCollectionChangedAction.Move) return;
+        if (_tiles != null)
+        {
+            _runningAppTracker?.UpdateTiles(_tiles);
         }
     }
 
@@ -284,6 +307,7 @@ public sealed partial class MainWindow : BorderlessFluentWindow, INotifyProperty
             AllAppsDrawer.InitializeSettings(Settings);
         }
 
+        Loaded += OnMainWindowLoaded;
         Activated += OnWindowActivated;
         RootGrid.LostMouseCapture += OnRootGridLostMouseCapture;
         LostMouseCapture += OnRootGridLostMouseCapture;
@@ -553,6 +577,12 @@ public sealed partial class MainWindow : BorderlessFluentWindow, INotifyProperty
         }
 
         return false;
+    }
+
+    private void OnMainWindowLoaded(object sender, RoutedEventArgs e)
+    {
+        _runningAppTracker = new RunningAppTrackerService();
+        _runningAppTracker.Initialize(Tiles);
     }
 
     private void OnWindowActivated(object? sender, EventArgs e)
@@ -1121,6 +1151,8 @@ public sealed partial class MainWindow : BorderlessFluentWindow, INotifyProperty
     protected override void OnClosed(EventArgs e)
     {
         CancelWorkspaceTransition();
+        _runningAppTracker?.Dispose();
+        _runningAppTracker = null;
         _keepWarmTimer?.Dispose();
         _keepWarmTimer = null;
         CancelPendingWallpaperLoad();
@@ -1597,6 +1629,8 @@ public sealed partial class MainWindow : BorderlessFluentWindow, INotifyProperty
         Safe.Try(InstalledAppsService.Shutdown, "MainWindow.ExitApplication.InstalledAppsServiceShutdown");
         UninstallWinEventHook();
         UninstallShellChangeNotify();
+        _runningAppTracker?.Dispose();
+        _runningAppTracker = null;
         _hotkeyService.Dispose();
         Close();
         Application.Current?.Shutdown();
