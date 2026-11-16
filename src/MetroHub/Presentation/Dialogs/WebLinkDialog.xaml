@@ -4,7 +4,38 @@
                      xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
                      xmlns:controls="clr-namespace:MetroHub.Presentation.Controls"
                      xmlns:dialogs="clr-namespace:MetroHub.Presentation.Dialogs"
+                     xmlns:po="http://schemas.microsoft.com/winfx/2006/xaml/presentation/options"
                      Title="Add Web Shortcut">
+
+    <dialogs:MetroDialog.Resources>
+        <DrawingImage x:Key="BookmarkVectorImage" po:Freeze="True">
+            <DrawingImage.Drawing>
+                <DrawingGroup>
+                    <!-- Ribbon Body -->
+                    <GeometryDrawing>
+                        <GeometryDrawing.Brush>
+                            <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                                <GradientStop Color="#258BFF" Offset="0" />
+                                <GradientStop Color="#0A4EA8" Offset="1" />
+                            </LinearGradientBrush>
+                        </GeometryDrawing.Brush>
+                        <GeometryDrawing.Geometry>
+                            <PathGeometry FillRule="EvenOdd"
+                                          Figures="M3.25,6 C3.25,3.37665 5.37665,1.25 8,1.25 H16 C18.6234,1.25 20.75,3.37665 20.75,6 V20.4648 C20.75,21.7269 19.7269,22.75 18.4648,22.75 C18.0137,22.75 17.5726,22.6165 17.1972,22.3662 L12.6934,19.3636 C12.2735,19.0837 11.7265,19.0837 11.3066,19.3636 L6.80278,22.3662 C6.42739,22.6165 5.98634,22.75 5.53518,22.75 C4.27311,22.75 3.25,21.7269 3.25,20.4648 V6 Z" />
+                        </GeometryDrawing.Geometry>
+                    </GeometryDrawing>
+
+                    <!-- Crisp White Accent Strip -->
+                    <GeometryDrawing Brush="#FFFFFF">
+                        <GeometryDrawing.Geometry>
+                            <PathGeometry FillRule="EvenOdd"
+                                          Figures="M8.25,7.5 C8.25,7.08579 8.58579,6.75 9,6.75 H15 C15.4142,6.75 15.75,7.08579 15.75,7.5 C15.75,7.91421 15.4142,8.25 15,8.25 H9 C8.58579,8.25 8.25,7.91421 8.25,7.5 Z" />
+                        </GeometryDrawing.Geometry>
+                    </GeometryDrawing>
+                </DrawingGroup>
+            </DrawingImage.Drawing>
+        </DrawingImage>
+    </dialogs:MetroDialog.Resources>
 
     <!-- Frosted Acrylic Left Sidebar Content Slot -->
     <dialogs:MetroDialog.SidebarContent>
@@ -17,7 +48,7 @@
                    RenderOptions.BitmapScalingMode="HighQuality" />
 
             <Image x:Name="WebLinkFallbackIcon"
-                   Source="/Assets/link.png"
+                   Source="{StaticResource BookmarkVectorImage}"
                    Width="72"
                    Height="72"
                    Stretch="Uniform"

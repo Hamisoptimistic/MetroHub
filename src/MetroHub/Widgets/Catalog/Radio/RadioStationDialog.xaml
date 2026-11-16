@@ -4,21 +4,102 @@
                      xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
                      xmlns:controls="clr-namespace:MetroHub.Presentation.Controls"
                      xmlns:dialogs="clr-namespace:MetroHub.Presentation.Dialogs"
+                     xmlns:po="http://schemas.microsoft.com/winfx/2006/xaml/presentation/options"
                      Title="Add Radio Station"
                      Width="680"
                      Height="480">
 
-    <dialogs:MetroDialog.SidebarContent>
-        <Grid HorizontalAlignment="Center" VerticalAlignment="Center">
-            <ui:SymbolIcon Symbol="HeadphonesSoundWave24"
-                           FontSize="56"
-                           Foreground="{DynamicResource TextSecondaryBrush}"
-                           HorizontalAlignment="Center"
-                           VerticalAlignment="Center" />
-        </Grid>
-    </dialogs:MetroDialog.SidebarContent>
-
     <Window.Resources>
+        <DrawingImage x:Key="RadioVectorImage" po:Freeze="True">
+            <DrawingImage.Drawing>
+                <DrawingGroup>
+                    <!-- Antenna Body -->
+                    <GeometryDrawing>
+                        <GeometryDrawing.Brush>
+                            <LinearGradientBrush StartPoint="0,1" EndPoint="1,0">
+                                <GradientStop Color="#00A4EF" Offset="0" />
+                                <GradientStop Color="#50E6FF" Offset="1" />
+                            </LinearGradientBrush>
+                        </GeometryDrawing.Brush>
+                        <GeometryDrawing.Geometry>
+                            <PathGeometry Figures="M 2.697,12.389 a 0.999,0.999 0 1 0 1.414,1.414 l 9.192,-9.192 a 0.999,0.999 0 1 0 -1.414,-1.414 l -9.192,9.192 z" />
+                        </GeometryDrawing.Geometry>
+                    </GeometryDrawing>
+
+                    <!-- Antenna Tip -->
+                    <GeometryDrawing Brush="#50E6FF">
+                        <GeometryDrawing.Geometry>
+                            <PathGeometry Figures="M 15.561,3.061 a 0.999,0.999 0 0 1 -1.414,0 l -0.707,-0.707 A 0.999,0.999 0 1 1 14.854,0.94 l 0.707,0.707 a 1,1 0 0 1 0,1.414 z" />
+                        </GeometryDrawing.Geometry>
+                    </GeometryDrawing>
+
+                    <!-- Chassis with ClipGeometry -->
+                    <DrawingGroup>
+                        <DrawingGroup.ClipGeometry>
+                            <PathGeometry Figures="M 36,32 c 0,4 -4,4 -4,4 H 4 s -4,0 -4,-4 V 14 s 0,-4 4,-4 h 28 c 4,0 4,4 4,4 v 18 z" />
+                        </DrawingGroup.ClipGeometry>
+                        <GeometryDrawing>
+                            <GeometryDrawing.Brush>
+                                <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                                    <GradientStop Color="#258BFF" Offset="0" />
+                                    <GradientStop Color="#0A4EA8" Offset="1" />
+                                </LinearGradientBrush>
+                            </GeometryDrawing.Brush>
+                            <GeometryDrawing.Geometry>
+                                <RectangleGeometry Rect="0,10,36,26" />
+                            </GeometryDrawing.Geometry>
+                        </GeometryDrawing>
+                        <GeometryDrawing Brush="#1F000000">
+                            <GeometryDrawing.Geometry>
+                                <RectangleGeometry Rect="21,10,15,26" />
+                            </GeometryDrawing.Geometry>
+                        </GeometryDrawing>
+                    </DrawingGroup>
+
+                    <!-- Speaker Holes -->
+                    <GeometryDrawing Brush="#00264D">
+                        <GeometryDrawing.Geometry>
+                            <GeometryGroup>
+                                <EllipseGeometry Center="5.5,15.5" RadiusX="1.5" RadiusY="1.5" />
+                                <EllipseGeometry Center="10.5,15.5" RadiusX="1.5" RadiusY="1.5" />
+                                <EllipseGeometry Center="15.5,15.5" RadiusX="1.5" RadiusY="1.5" />
+                                <EllipseGeometry Center="5.5,20.5" RadiusX="1.5" RadiusY="1.5" />
+                                <EllipseGeometry Center="10.5,20.5" RadiusX="1.5" RadiusY="1.5" />
+                                <EllipseGeometry Center="15.5,20.5" RadiusX="1.5" RadiusY="1.5" />
+                                <EllipseGeometry Center="5.5,25.5" RadiusX="1.5" RadiusY="1.5" />
+                                <EllipseGeometry Center="10.5,25.5" RadiusX="1.5" RadiusY="1.5" />
+                                <EllipseGeometry Center="15.5,25.5" RadiusX="1.5" RadiusY="1.5" />
+                                <EllipseGeometry Center="5.5,30.5" RadiusX="1.5" RadiusY="1.5" />
+                                <EllipseGeometry Center="10.5,30.5" RadiusX="1.5" RadiusY="1.5" />
+                                <EllipseGeometry Center="15.5,30.5" RadiusX="1.5" RadiusY="1.5" />
+                            </GeometryGroup>
+                        </GeometryDrawing.Geometry>
+                    </GeometryDrawing>
+
+                    <!-- Dials -->
+                    <GeometryDrawing Brush="#FFFFFF">
+                        <GeometryDrawing.Geometry>
+                            <EllipseGeometry Center="27.5,18.5" RadiusX="5.5" RadiusY="5.5" />
+                        </GeometryDrawing.Geometry>
+                    </GeometryDrawing>
+                    <GeometryDrawing Brush="#0A4EA8">
+                        <GeometryDrawing.Geometry>
+                            <EllipseGeometry Center="27.5,18.5" RadiusX="3.5" RadiusY="3.5" />
+                        </GeometryDrawing.Geometry>
+                    </GeometryDrawing>
+                    <GeometryDrawing Brush="#38D9F9">
+                        <GeometryDrawing.Geometry>
+                            <EllipseGeometry Center="27.5,29.5" RadiusX="3.5" RadiusY="3.5" />
+                        </GeometryDrawing.Geometry>
+                    </GeometryDrawing>
+                    <GeometryDrawing Brush="#00264D">
+                        <GeometryDrawing.Geometry>
+                            <EllipseGeometry Center="27.5,29.5" RadiusX="1.5" RadiusY="1.5" />
+                        </GeometryDrawing.Geometry>
+                    </GeometryDrawing>
+                </DrawingGroup>
+            </DrawingImage.Drawing>
+        </DrawingImage>
 
 
         <Style x:Key="SuggestionListBoxItemStyle" TargetType="ListBoxItem">
@@ -81,6 +162,19 @@
             </Grid>
         </DataTemplate>
     </Window.Resources>
+
+    <!-- Frosted Acrylic Left Sidebar Content Slot -->
+    <dialogs:MetroDialog.SidebarContent>
+        <Grid HorizontalAlignment="Center" VerticalAlignment="Center">
+            <Image Source="{StaticResource RadioVectorImage}"
+                   Width="72"
+                   Height="72"
+                   Stretch="Uniform"
+                   HorizontalAlignment="Center"
+                   VerticalAlignment="Center"
+                   RenderOptions.BitmapScalingMode="HighQuality" />
+        </Grid>
+    </dialogs:MetroDialog.SidebarContent>
 
     <!-- Dark Obsidian Form Content Slot -->
     <Grid>
