@@ -38,9 +38,11 @@ Windows desktop live-tile launcher (WPF, `net10.0-windows10.0.19041.0`, SVMs via
 ## UI & Design System
 
 - Read `docs/DESIGN_SYSTEM.md` before modifying XAML.
+- Cut taglines, helper text and secondary labels. If a screen needs them to make sense, fix the layout.
 - Never show permanent scrollbars. Always use `controls:AutoHideScrollBehavior.IsEnabled="True"`.
 - Never hardcode accent colors. Bind to `{DynamicResource SystemAccentColorPrimaryBrush}` and Foreground equivalent.
 - Cut taglines, helper text, and secondary labels. If a view is confusing, fix the layout.
+- 
 
 ## Architecture & Concurrency
 
