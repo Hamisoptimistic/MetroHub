@@ -86,7 +86,7 @@
                     <TextBlock Text="No media playing"
                                FontSize="{DynamicResource TypeCaptionFontSize}"
                                FontWeight="Normal"
-                               Foreground="{DynamicResource TextSubtleBrush}"
+                               Foreground="{DynamicResource TextSecondaryBrush}"
                                FontFamily="{DynamicResource AppFontFamily}"
                                HorizontalAlignment="Center"
                                VerticalAlignment="Center"

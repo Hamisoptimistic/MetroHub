@@ -250,7 +250,7 @@
                                        FontFamily="{DynamicResource AppFontFamily}"
                                        FontSize="{DynamicResource TypeCaptionFontSize}"
                                        FontWeight="Normal"
-                                       Foreground="{DynamicResource TextSubtleBrush}"
+                                       Foreground="{DynamicResource TextSecondaryBrush}"
                                        Margin="0,2,0,0"
                                        TextTrimming="CharacterEllipsis" />
                         </StackPanel>
@@ -303,7 +303,7 @@
                                        FontFamily="{DynamicResource AppFontFamily}"
                                        FontSize="{DynamicResource TypeCaptionFontSize}"
                                        FontWeight="Normal"
-                                       Foreground="{DynamicResource TextSubtleBrush}"
+                                       Foreground="{DynamicResource TextSecondaryBrush}"
                                        Margin="0,2,0,0"
                                        TextTrimming="CharacterEllipsis" />
                         </StackPanel>
@@ -361,7 +361,7 @@
                                        FontFamily="{DynamicResource AppFontFamily}"
                                        FontSize="{DynamicResource TypeCaptionFontSize}"
                                        FontWeight="Normal"
-                                       Foreground="{DynamicResource TextSubtleBrush}"
+                                       Foreground="{DynamicResource TextSecondaryBrush}"
                                        Margin="0,2,0,0"
                                        TextTrimming="CharacterEllipsis" />
                         </StackPanel>
@@ -455,7 +455,7 @@
                                        FontFamily="{DynamicResource AppFontFamily}"
                                        FontSize="{DynamicResource TypeCaptionFontSize}"
                                        FontWeight="Normal"
-                                       Foreground="{DynamicResource TextSubtleBrush}"
+                                       Foreground="{DynamicResource TextSecondaryBrush}"
                                        Margin="0,2,0,0"
                                        TextTrimming="CharacterEllipsis" />
                         </StackPanel>
@@ -513,7 +513,7 @@
                                        FontFamily="{DynamicResource AppFontFamily}"
                                        FontSize="{DynamicResource TypeCaptionFontSize}"
                                        FontWeight="Normal"
-                                       Foreground="{DynamicResource TextSubtleBrush}"
+                                       Foreground="{DynamicResource TextSecondaryBrush}"
                                        Margin="0,2,0,0"
                                        TextTrimming="CharacterEllipsis" />
                         </StackPanel>

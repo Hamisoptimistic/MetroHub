@@ -144,7 +144,7 @@
                     <TextBlock Text="{Binding Subtitle}"
                                FontSize="{DynamicResource TypeCaptionFontSize}"
                                FontWeight="Normal"
-                               Foreground="{DynamicResource TextSubtleBrush}"
+                               Foreground="{DynamicResource TextSecondaryBrush}"
                                Margin="0,2,0,0"
                                TextTrimming="CharacterEllipsis" />
                 </StackPanel>
@@ -157,7 +157,7 @@
                     <TextBlock Text="{Binding BitrateDisplay}"
                                FontSize="{DynamicResource TypeCaptionFontSize}"
                                FontWeight="Normal"
-                               Foreground="{DynamicResource TextMutedBrush}" />
+                               Foreground="{DynamicResource TextSecondaryBrush}" />
                 </Border>
             </Grid>
         </DataTemplate>
@@ -222,7 +222,7 @@
                                                Text="Search station name, genre (e.g. lofi, jazz, ambient)..."
                                                FontSize="{DynamicResource TypeBodyFontSize}"
                                                FontWeight="Normal"
-                                               Foreground="{DynamicResource TextSubtleBrush}"
+                                               Foreground="{DynamicResource TextSecondaryBrush}"
                                                IsHitTestVisible="False"
                                                VerticalAlignment="Center"
                                                Margin="34,0,28,0" />
@@ -259,7 +259,7 @@
                                                    Text="Type 2 or more characters to search 40,000+ online stations"
                                                    FontSize="{DynamicResource TypeCaptionFontSize}"
                                                    FontWeight="Normal"
-                                                   Foreground="{DynamicResource TextSubtleBrush}"
+                                                   Foreground="{DynamicResource TextSecondaryBrush}"
                                                    TextWrapping="Wrap"
                                                    TextTrimming="CharacterEllipsis"
                                                    MaxWidth="420"
@@ -361,7 +361,7 @@
                                                                Text="Radio Link"
                                                                FontSize="{DynamicResource TypeCaptionFontSize}"
                                                                FontWeight="Normal"
-                                                               Foreground="{DynamicResource TextSubtleBrush}"
+                                                               Foreground="{DynamicResource TextSecondaryBrush}"
                                                                TextTrimming="CharacterEllipsis"
                                                                Margin="0,3,0,0" />
                                                 </StackPanel>
@@ -417,7 +417,7 @@
                                 <TextBlock Text="Edit Station Name"
                                            FontSize="{DynamicResource TypeCaptionFontSize}"
                                            FontWeight="Normal"
-                                           Foreground="{DynamicResource TextMutedBrush}"
+                                           Foreground="{DynamicResource TextSecondaryBrush}"
                                            Margin="0,0,0,6" />
 
                                 <TextBox x:Name="RadioSearchNameInput"
@@ -443,7 +443,7 @@
                                 <TextBlock Text="Audio Stream URL"
                                            FontSize="{DynamicResource TypeCaptionFontSize}"
                                            FontWeight="Normal"
-                                           Foreground="{DynamicResource TextMutedBrush}"
+                                           Foreground="{DynamicResource TextSecondaryBrush}"
                                            Margin="0,0,0,6" />
 
                                 <TextBox x:Name="RadioDirectUrlInput"
@@ -474,7 +474,7 @@
                                                Text="Supports MP3/AAC/OGG streams or single-station .pls/.m3u"
                                                FontSize="{DynamicResource TypeCaptionFontSize}"
                                                FontWeight="Normal"
-                                               Foreground="{DynamicResource TextSubtleBrush}"
+                                               Foreground="{DynamicResource TextSecondaryBrush}"
                                                TextWrapping="Wrap"
                                                VerticalAlignment="Center" />
                                 </Grid>
@@ -482,7 +482,7 @@
                                 <TextBlock Text="Station Name"
                                            FontSize="{DynamicResource TypeCaptionFontSize}"
                                            FontWeight="Normal"
-                                           Foreground="{DynamicResource TextMutedBrush}"
+                                           Foreground="{DynamicResource TextSecondaryBrush}"
                                            Margin="0,8,0,6" />
                                 <TextBox x:Name="RadioDirectNameInput"
                                          TextChanged="OnRadioDirectNameTextChanged"
@@ -506,7 +506,7 @@
                             <TextBlock Text="Category:"
                                        FontSize="{DynamicResource TypeCaptionFontSize}"
                                        FontWeight="Normal"
-                                       Foreground="{DynamicResource TextMutedBrush}"
+                                       Foreground="{DynamicResource TextSecondaryBrush}"
                                        VerticalAlignment="Center"
                                        Margin="0,0,8,0" />
                             <ComboBox x:Name="RadioCategoryComboBox"

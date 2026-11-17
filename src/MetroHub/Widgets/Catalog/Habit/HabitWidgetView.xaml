@@ -117,7 +117,7 @@
                                        FontFamily="{DynamicResource AppFontFamily}"
                                        FontSize="{DynamicResource TypeCaptionFontSize}"
                                        FontWeight="Normal"
-                                       Foreground="{DynamicResource TextMutedBrush}"
+                                       Foreground="{DynamicResource TextSecondaryBrush}"
                                        HorizontalAlignment="Center"
                                        VerticalAlignment="Center" />
                         </DataTemplate>
@@ -316,7 +316,7 @@
                                         <ui:SymbolIcon x:Name="EditPencil"
                                                        Symbol="Edit16"
                                                        FontSize="12"
-                                                       Foreground="{DynamicResource TextSubtleBrush}"
+                                                       Foreground="{DynamicResource TextSecondaryBrush}"
                                                        VerticalAlignment="Center"
                                                        Margin="6,0,0,0"
                                                        Opacity="0" />
@@ -404,7 +404,7 @@
                     <TextBlock Text="Habit Name"
                                FontSize="{DynamicResource TypeCaptionFontSize}"
                                FontWeight="Normal"
-                               Foreground="{DynamicResource TextMutedBrush}"
+                               Foreground="{DynamicResource TextSecondaryBrush}"
                                Margin="0,0,0,6" />
                     <TextBox x:Name="HabitNameInput"
                              controls:InputHelper.Icon="Edit20"
@@ -417,7 +417,7 @@
                     <TextBlock Text="Choose Icon"
                                FontSize="{DynamicResource TypeCaptionFontSize}"
                                FontWeight="Normal"
-                               Foreground="{DynamicResource TextMutedBrush}"
+                               Foreground="{DynamicResource TextSecondaryBrush}"
                                Margin="0,0,0,6" />
                     <controls:GlyphPickerControl SelectedGlyph="{Binding SetupSelectedIcon, Mode=TwoWay}" />
                 </StackPanel>

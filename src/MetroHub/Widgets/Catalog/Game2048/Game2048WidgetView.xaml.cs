@@ -596,7 +596,6 @@ public sealed partial class Game2048WidgetView : UserControl
         if (value == 2048)
         {
             var accent = element.TryFindResource("SystemAccentColorPrimaryBrush") as Brush
-                         ?? element.TryFindResource("SystemAccentColorSolidBrush") as Brush
                          ?? FreezeBrush("#B04CC2FF");
             var accentFg = element.TryFindResource("SystemAccentColorForegroundBrush") as Brush ?? FgLight;
             return (accent, accentFg, fontSize);

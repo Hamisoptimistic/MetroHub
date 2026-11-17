@@ -176,7 +176,7 @@
                             <TextBlock Text="{Binding StatusString}"
                                        FontSize="{DynamicResource TypeCaptionFontSize}"
                                        FontWeight="Normal"
-                                       Foreground="{DynamicResource TextMutedBrush}"
+                                       Foreground="{DynamicResource TextSecondaryBrush}"
                                        VerticalAlignment="Center" />
                         </StackPanel>
                     </Grid>

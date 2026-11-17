@@ -82,7 +82,7 @@
                                 <!-- Fallback Symbol Icon while FaviconImage is null -->
                                 <ui:SymbolIcon Symbol="Globe24"
                                                FontSize="14"
-                                               Foreground="{DynamicResource TextSubtleBrush}"
+                                               Foreground="{DynamicResource TextSecondaryBrush}"
                                                HorizontalAlignment="Center"
                                                VerticalAlignment="Center">
                                     <ui:SymbolIcon.Style>
@@ -131,7 +131,7 @@
                     <!-- Inline / Bottom-Right Timestamp -->
                     <TextBlock Text="{Binding TimeDisplay}"
                                FontSize="10"
-                               Foreground="{DynamicResource TextSubtleBrush}"
+                               Foreground="{DynamicResource TextSecondaryBrush}"
                                Opacity="0.75"
                                VerticalAlignment="Bottom"
                                IsHitTestVisible="False" />
@@ -382,7 +382,7 @@
 
                             <TextBlock Text="{Binding TimeDisplay}"
                                        FontSize="10"
-                                       Foreground="{DynamicResource TextSubtleBrush}"
+                                       Foreground="{DynamicResource TextSecondaryBrush}"
                                        Opacity="0.75"
                                        VerticalAlignment="Bottom"
                                        IsHitTestVisible="False" />
@@ -567,7 +567,7 @@
                                         <TextBlock Grid.Column="1"
                                                    Text="{Binding TimeDisplay}"
                                                    FontSize="10"
-                                                   Foreground="{DynamicResource TextSubtleBrush}"
+                                                   Foreground="{DynamicResource TextSecondaryBrush}"
                                                    Opacity="0.75"
                                                    VerticalAlignment="Center"
                                                    IsHitTestVisible="False" />

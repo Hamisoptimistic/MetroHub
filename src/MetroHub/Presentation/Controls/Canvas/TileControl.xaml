@@ -15,7 +15,6 @@
 
     <UserControl.Resources>
         <conv:TileSpanToPixelsConverter x:Key="SpanConverter" />
-        <conv:StringToBrushConverter x:Key="StringToBrushConverter" />
         <conv:IconPathToBitmapConverter x:Key="IconConverter" />
         <widgets:WidgetTemplateSelector x:Key="WidgetTemplateSelector" />
 
@@ -269,7 +268,7 @@
                     HorizontalAlignment="Right"
                     VerticalAlignment="Top"
                     Margin="0,6,6,0"
-                    Background="{DynamicResource SystemFillColorSuccessBrush}"
+                    Background="{DynamicResource StatusSuccessBrush}"
                     IsHitTestVisible="False">
                 <Border.Style>
                     <Style TargetType="Border">

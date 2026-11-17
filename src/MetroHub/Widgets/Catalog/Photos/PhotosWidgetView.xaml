@@ -68,7 +68,7 @@
                     <TextBlock Text="Select a folder to start your live photo stream."
                                FontSize="{DynamicResource TypeCaptionFontSize}"
                                FontWeight="Normal"
-                               Foreground="{DynamicResource TextMutedBrush}"
+                               Foreground="{DynamicResource TextSecondaryBrush}"
                                HorizontalAlignment="Center"
                                TextAlignment="Center"
                                TextWrapping="Wrap"

@@ -30,7 +30,7 @@
             <TextBlock Text="Widget Label"
                        FontSize="{DynamicResource TypeCaptionFontSize}"
                        FontWeight="Normal"
-                       Foreground="{DynamicResource TextMutedBrush}"
+                       Foreground="{DynamicResource TextSecondaryBrush}"
                        Margin="0,0,0,6" />
             <TextBox x:Name="LabelInput"
                      Margin="0,0,0,16" />
@@ -38,7 +38,7 @@
             <TextBlock Text="Options"
                        FontSize="{DynamicResource TypeCaptionFontSize}"
                        FontWeight="Normal"
-                       Foreground="{DynamicResource TextMutedBrush}"
+                       Foreground="{DynamicResource TextSecondaryBrush}"
                        Margin="0,0,0,6" />
             <CheckBox x:Name="FeatureToggleCheckbox"
                       Content="Enable Active Mode"

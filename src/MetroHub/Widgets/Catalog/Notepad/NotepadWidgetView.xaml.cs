@@ -444,7 +444,7 @@ public sealed partial class NotepadWidgetView : UserControl
     {
         try
         {
-            var accentBrush = (TryFindResource("SystemAccentColorSolidBrush") ?? TryFindResource("SystemAccentColorPrimaryBrush")) as Brush;
+            var accentBrush = TryFindResource("SystemAccentColorPrimaryBrush") as Brush;
             var primaryBrush = TryFindResource("TextPrimaryBrush") as Brush;
             if (primaryBrush == null || accentBrush == null) return;
 

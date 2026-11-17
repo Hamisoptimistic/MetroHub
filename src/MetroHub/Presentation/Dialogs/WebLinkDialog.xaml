@@ -77,7 +77,7 @@
             <TextBlock Text="Website URL"
                        FontSize="{DynamicResource TypeCaptionFontSize}"
                        FontWeight="Normal"
-                       Foreground="{DynamicResource TextMutedBrush}"
+                       Foreground="{DynamicResource TextSecondaryBrush}"
                        Margin="0,0,0,6" />
 
             <TextBox x:Name="WebLinkUrlInput"
@@ -88,7 +88,7 @@
             <TextBlock Text="Shortcut Label (Optional)"
                        FontSize="{DynamicResource TypeCaptionFontSize}"
                        FontWeight="Normal"
-                       Foreground="{DynamicResource TextMutedBrush}"
+                       Foreground="{DynamicResource TextSecondaryBrush}"
                        Margin="0,14,0,6" />
             <TextBox x:Name="WebLinkTitleInput"
                      KeyDown="OnWebLinkInputKeyDown"

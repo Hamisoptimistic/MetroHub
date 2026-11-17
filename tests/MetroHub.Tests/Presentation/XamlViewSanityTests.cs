@@ -117,7 +117,6 @@ public class XamlViewSanityTests
     [InlineData("SystemAccentColorPrimaryBrush")]
     [InlineData("TextPrimaryBrush")]
     [InlineData("TextSecondaryBrush")]
-    [InlineData("TextMutedBrush")]
     [InlineData("TextDisabledBrush")]
     [InlineData("StatusSuccessBrush")]
     [InlineData("StatusWarningBrush")]

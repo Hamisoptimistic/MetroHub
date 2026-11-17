@@ -196,7 +196,6 @@
                     Style="{DynamicResource ModalDismissButtonStyle}"
                     HorizontalAlignment="Right"
                     VerticalAlignment="Top"
-                    Margin="{DynamicResource ModalDismissButtonMargin}"
                     Click="OnCloseClick"
                     TabIndex="4"
                     Panel.ZIndex="100"
@@ -260,7 +259,7 @@
                            Grid.Column="0"
                            Text="0 words · 0 char"
                            FontSize="{DynamicResource TypeCaptionFontSize}"
-                           Foreground="{DynamicResource TextMutedBrush}"
+                           Foreground="{DynamicResource TextSecondaryBrush}"
                            FontFamily="{DynamicResource AppFontFamily}"
                            VerticalAlignment="Center"
                            HorizontalAlignment="Left" />

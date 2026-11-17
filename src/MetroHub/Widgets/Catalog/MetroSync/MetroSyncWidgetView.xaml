@@ -370,7 +370,7 @@
                                    Text="Write a message…"
                                    FontSize="{DynamicResource TypeBodyFontSize}"
                                    FontWeight="Normal"
-                                   Foreground="{DynamicResource TextSubtleBrush}"
+                                   Foreground="{DynamicResource TextSecondaryBrush}"
                                    Opacity="0.55"
                                    IsHitTestVisible="False"
                                    VerticalAlignment="Center"
@@ -437,7 +437,7 @@
                                         <Setter Property="Foreground" Value="{DynamicResource SystemAccentColorPrimaryBrush}" />
                                     </Trigger>
                                     <Trigger Property="IsEnabled" Value="False">
-                                        <Setter Property="Foreground" Value="{DynamicResource TextSubtleBrush}" />
+                                        <Setter Property="Foreground" Value="{DynamicResource TextSecondaryBrush}" />
                                         <Setter Property="Cursor" Value="Arrow" />
                                     </Trigger>
                                 </Style.Triggers>

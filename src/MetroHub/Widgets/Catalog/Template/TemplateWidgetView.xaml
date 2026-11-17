@@ -85,7 +85,7 @@
                     <TextBlock Text="Click tile to interact"
                                HorizontalAlignment="Center"
                                FontSize="{DynamicResource TypeCaptionFontSize}"
-                               Foreground="{DynamicResource TextMutedBrush}"
+                               Foreground="{DynamicResource TextSecondaryBrush}"
                                Margin="0,2,0,0" />
                 </StackPanel>
             </Border>
@@ -103,7 +103,7 @@
                                Foreground="{DynamicResource TextSecondaryBrush}" />
                     <TextBlock Text="{Binding LiveStatus}"
                                FontSize="{DynamicResource TypeCaptionFontSize}"
-                               Foreground="{DynamicResource TextSubtleBrush}"
+                               Foreground="{DynamicResource TextSecondaryBrush}"
                                Margin="0,1,0,0" />
                 </StackPanel>
                 <ui:ToggleSwitch DockPanel.Dock="Right"

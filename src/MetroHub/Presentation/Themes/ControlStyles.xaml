@@ -157,6 +157,7 @@
 
     <!-- Universal Modal Window Close / Dismiss Button (32x32 vector "X") -->
     <Style x:Key="ModalDismissButtonStyle" TargetType="Button">
+        <Setter Property="Margin" Value="0,10,10,0" />
         <Setter Property="Background" Value="Transparent" />
         <Setter Property="BorderThickness" Value="0" />
         <Setter Property="Foreground" Value="{DynamicResource TextSecondaryBrush}" />
@@ -246,7 +247,7 @@
             <SolidColorBrush x:Key="ToggleSwitchStrokeOnPointerOver" Color="{StaticResource StatusWarningHoverColor}" po:Freeze="True" />
             <SolidColorBrush x:Key="ToggleSwitchStrokeOnPressed" Color="{StaticResource StatusWarningPressedColor}" po:Freeze="True" />
 
-            <SolidColorBrush x:Key="SystemAccentColorBrush" Color="{StaticResource StatusWarningColor}" po:Freeze="True" />
+            <SolidColorBrush x:Key="SystemAccentColorPrimaryBrush" Color="{StaticResource StatusWarningColor}" po:Freeze="True" />
             <SolidColorBrush x:Key="SystemAccentColorSecondaryBrush" Color="{StaticResource StatusWarningColor}" po:Freeze="True" />
             <SolidColorBrush x:Key="SystemAccentColorTertiaryBrush" Color="{StaticResource StatusWarningPressedColor}" po:Freeze="True" />
         </Style.Resources>
@@ -265,7 +266,7 @@
             <SolidColorBrush x:Key="ToggleSwitchStrokeOnPointerOver" Color="{StaticResource StatusDangerHoverColor}" po:Freeze="True" />
             <SolidColorBrush x:Key="ToggleSwitchStrokeOnPressed" Color="{StaticResource StatusDangerPressedColor}" po:Freeze="True" />
 
-            <SolidColorBrush x:Key="SystemAccentColorBrush" Color="{StaticResource StatusDangerColor}" po:Freeze="True" />
+            <SolidColorBrush x:Key="SystemAccentColorPrimaryBrush" Color="{StaticResource StatusDangerColor}" po:Freeze="True" />
             <SolidColorBrush x:Key="SystemAccentColorSecondaryBrush" Color="{StaticResource StatusDangerColor}" po:Freeze="True" />
             <SolidColorBrush x:Key="SystemAccentColorTertiaryBrush" Color="{StaticResource StatusDangerPressedColor}" po:Freeze="True" />
         </Style.Resources>
@@ -307,7 +308,7 @@
                                            Grid.Column="0"
                                            Symbol="{Binding RelativeSource={RelativeSource TemplatedParent}, Path=(controls:InputHelper.Icon)}"
                                            FontSize="14"
-                                           Foreground="{DynamicResource TextMutedBrush}"
+                                           Foreground="{DynamicResource TextSecondaryBrush}"
                                            VerticalAlignment="Center"
                                            Margin="0,0,8,0"
                                            Visibility="Collapsed" />
@@ -429,7 +430,7 @@
                       Margin="0,0,12,0"
                       HorizontalAlignment="Center"
                       VerticalAlignment="Center"
-                      Stroke="{DynamicResource TextMutedBrush}"
+                      Stroke="{DynamicResource TextSecondaryBrush}"
                       StrokeThickness="1.2"
                       StrokeStartLineCap="Round"
                       StrokeEndLineCap="Round"

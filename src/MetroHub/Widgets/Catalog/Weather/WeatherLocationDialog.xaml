@@ -84,7 +84,7 @@
                            Text="{Binding DisplaySubtitle}"
                            FontSize="{DynamicResource TypeCaptionFontSize}"
                            FontWeight="Normal"
-                           Foreground="{DynamicResource TextSubtleBrush}"
+                           Foreground="{DynamicResource TextSecondaryBrush}"
                            VerticalAlignment="Center"
                            Margin="8,0,0,0"
                            TextTrimming="CharacterEllipsis" />
@@ -104,7 +104,7 @@
             <TextBlock Text="City Name"
                        FontSize="{DynamicResource TypeCaptionFontSize}"
                        FontWeight="Normal"
-                       Foreground="{DynamicResource TextMutedBrush}"
+                       Foreground="{DynamicResource TextSecondaryBrush}"
                        Margin="0,0,0,6" />
 
             <Grid>
@@ -147,11 +147,11 @@
                     Style="{StaticResource SubtleActionButtonStyle}"
                     Click="OnWeatherAutoLocationClick">
                 <StackPanel Orientation="Horizontal">
-                    <ui:SymbolIcon Symbol="MyLocation24" FontSize="13" Foreground="{DynamicResource TextMutedBrush}" Margin="0,0,6,0" VerticalAlignment="Center" />
+                    <ui:SymbolIcon Symbol="MyLocation24" FontSize="13" Foreground="{DynamicResource TextSecondaryBrush}" Margin="0,0,6,0" VerticalAlignment="Center" />
                     <TextBlock Text="Reset to automatic location (GPS / IP)"
                                FontSize="{DynamicResource TypeCaptionFontSize}"
                                FontWeight="Normal"
-                               Foreground="{DynamicResource TextMutedBrush}"
+                               Foreground="{DynamicResource TextSecondaryBrush}"
                                VerticalAlignment="Center" />
                 </StackPanel>
             </Button>

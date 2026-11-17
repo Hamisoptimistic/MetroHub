@@ -114,7 +114,7 @@ All design tokens are **automatically available globally** from `Tokens.xaml`. N
 | :--- | :--- | :--- |
 | `Foreground="{DynamicResource TextPrimaryBrush}"` | Clean white/high-contrast | Primary readable titles and labels |
 | `Foreground="{DynamicResource TextSecondaryBrush}"` | Soft white/gray | Secondary descriptions |
-| `Foreground="{DynamicResource TextMutedBrush}"` | Subdued gray | Captions and inactive hints |
+| `Foreground="{DynamicResource TextSecondaryBrush}"` | Subdued gray | Captions and inactive hints |
 | `Background="{DynamicResource WidgetDividerBrush}"` | Subtle hairline line | Dividers separating card sections |
 | `Foreground="{DynamicResource SystemAccentColorPrimaryBrush}"` | User's system accent | Icons, active highlights, key values |
 | `Background="{DynamicResource SystemAccentColorSecondaryBrush}"`| Hover accent | Button hover tints |

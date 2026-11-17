@@ -68,7 +68,6 @@
                     Style="{DynamicResource ModalDismissButtonStyle}"
                     HorizontalAlignment="Right"
                     VerticalAlignment="Top"
-                    Margin="{DynamicResource ModalDismissButtonMargin}"
                     Panel.ZIndex="100"
                     Click="OnCloseButtonClick"
                     ToolTip="Close (Esc)" />

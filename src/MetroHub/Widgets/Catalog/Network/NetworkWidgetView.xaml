@@ -53,7 +53,7 @@
                             <ui:SymbolIcon x:Name="CopyIcon"
                                            Symbol="Copy16"
                                            FontSize="11"
-                                           Foreground="{DynamicResource TextMutedBrush}"
+                                           Foreground="{DynamicResource TextSecondaryBrush}"
                                            HorizontalAlignment="Center"
                                            VerticalAlignment="Center" />
                         </Border>
@@ -722,7 +722,7 @@
                             <TextBlock Text="Scanning for available networks..."
                                        FontSize="{DynamicResource TypeBodyFontSize}"
                                        FontWeight="Normal"
-                                       Foreground="{DynamicResource TextSubtleBrush}"
+                                       Foreground="{DynamicResource TextSecondaryBrush}"
                                        HorizontalAlignment="Center" />
                         </StackPanel>
 
@@ -861,7 +861,7 @@
                                                     <TextBlock Text="{Binding SubtitleText}"
                                                                FontSize="{DynamicResource TypeCaptionFontSize}"
                                                                FontWeight="Normal"
-                                                               Foreground="{DynamicResource TextMutedBrush}"
+                                                               Foreground="{DynamicResource TextSecondaryBrush}"
                                                                Margin="0,2,0,0" />
                                                 </StackPanel>
                                             </Grid>
@@ -936,7 +936,7 @@
                                                 <TextBlock Text="{Binding SecurityDetailsDisplay}"
                                                            FontSize="{DynamicResource TypeCaptionFontSize}"
                                                            FontWeight="Normal"
-                                                           Foreground="{DynamicResource TextSubtleBrush}"
+                                                           Foreground="{DynamicResource TextSecondaryBrush}"
                                                            Margin="0,0,0,8" />
 
                                                 <!-- Password section (only for unsaved secured non-connected networks) -->
@@ -1316,7 +1316,7 @@
                                                     <TextBlock Text="{Binding SubtitleText}"
                                                                FontSize="{DynamicResource TypeCaptionFontSize}"
                                                                FontWeight="Normal"
-                                                               Foreground="{DynamicResource TextMutedBrush}"
+                                                               Foreground="{DynamicResource TextSecondaryBrush}"
                                                                TextWrapping="Wrap"
                                                                TextTrimming="CharacterEllipsis"
                                                                ToolTip="{Binding SubtitleText}"
@@ -1374,7 +1374,7 @@
                                 <TextBlock Text="No physical Ethernet or Wi-Fi hardware interfaces available"
                                            FontSize="{DynamicResource TypeCaptionFontSize}"
                                            FontWeight="Normal"
-                                           Foreground="{DynamicResource TextMutedBrush}"
+                                           Foreground="{DynamicResource TextSecondaryBrush}"
                                            HorizontalAlignment="Center"
                                            Margin="0,6,0,0" />
                             </StackPanel>
@@ -1557,7 +1557,7 @@
                                            Text="Mbps"
                                            FontSize="{DynamicResource TypeCaptionFontSize}"
                                            FontWeight="Normal"
-                                           Foreground="{DynamicResource TextMutedBrush}"
+                                           Foreground="{DynamicResource TextSecondaryBrush}"
                                            HorizontalAlignment="Left"
                                            VerticalAlignment="Bottom"
                                            Margin="0,0,0,2" />
@@ -1599,7 +1599,7 @@
                                            Text="Mbps"
                                            FontSize="{DynamicResource TypeCaptionFontSize}"
                                            FontWeight="Normal"
-                                           Foreground="{DynamicResource TextMutedBrush}"
+                                           Foreground="{DynamicResource TextSecondaryBrush}"
                                            HorizontalAlignment="Left"
                                            VerticalAlignment="Bottom"
                                            Margin="0,0,0,2" />
@@ -1641,7 +1641,7 @@
                                            Text="ms"
                                            FontSize="{DynamicResource TypeCaptionFontSize}"
                                            FontWeight="Normal"
-                                           Foreground="{DynamicResource TextMutedBrush}"
+                                           Foreground="{DynamicResource TextSecondaryBrush}"
                                            HorizontalAlignment="Left"
                                            VerticalAlignment="Bottom"
                                            Margin="0,0,0,2" />
@@ -1683,7 +1683,7 @@
                                            Text="ms"
                                            FontSize="{DynamicResource TypeCaptionFontSize}"
                                            FontWeight="Normal"
-                                           Foreground="{DynamicResource TextMutedBrush}"
+                                           Foreground="{DynamicResource TextSecondaryBrush}"
                                            HorizontalAlignment="Left"
                                            VerticalAlignment="Bottom"
                                            Margin="0,0,0,2" />
@@ -1764,26 +1764,26 @@
                                 <TextBlock Text="&#xE896;"
                                            FontFamily="{DynamicResource AppIconFontFamily}"
                                            FontSize="10"
-                                           Foreground="{DynamicResource TextMutedBrush}"
+                                           Foreground="{DynamicResource TextSecondaryBrush}"
                                            VerticalAlignment="Center"
                                            Margin="0,0,4,0" />
                                 <TextBlock Text="{Binding EthernetDataUsage.FormattedReceived}"
                                            FontSize="{DynamicResource TypeCaptionFontSize}"
                                            FontWeight="Normal"
-                                           Foreground="{DynamicResource TextMutedBrush}"
+                                           Foreground="{DynamicResource TextSecondaryBrush}"
                                            VerticalAlignment="Center"
                                            Typography.NumeralAlignment="Tabular" />
                                 <TextBlock Text="   " />
                                 <TextBlock Text="&#xE898;"
                                            FontFamily="{DynamicResource AppIconFontFamily}"
                                            FontSize="10"
-                                           Foreground="{DynamicResource TextMutedBrush}"
+                                           Foreground="{DynamicResource TextSecondaryBrush}"
                                            VerticalAlignment="Center"
                                            Margin="0,0,4,0" />
                                 <TextBlock Text="{Binding EthernetDataUsage.FormattedSent}"
                                            FontSize="{DynamicResource TypeCaptionFontSize}"
                                            FontWeight="Normal"
-                                           Foreground="{DynamicResource TextMutedBrush}"
+                                           Foreground="{DynamicResource TextSecondaryBrush}"
                                            VerticalAlignment="Center"
                                            Typography.NumeralAlignment="Tabular" />
                             </StackPanel>
@@ -1792,7 +1792,7 @@
                             <TextBlock Text="No adapter detected"
                                        FontSize="{DynamicResource TypeCaptionFontSize}"
                                        FontWeight="Normal"
-                                       Foreground="{DynamicResource TextSubtleBrush}"
+                                       Foreground="{DynamicResource TextSecondaryBrush}"
                                        HorizontalAlignment="Center"
                                        VerticalAlignment="Center"
                                        Visibility="{Binding ShowEthernetNoAdapterText, Converter={StaticResource BoolToVis}}" />
@@ -1839,26 +1839,26 @@
                                 <TextBlock Text="&#xE896;"
                                            FontFamily="{DynamicResource AppIconFontFamily}"
                                            FontSize="10"
-                                           Foreground="{DynamicResource TextMutedBrush}"
+                                           Foreground="{DynamicResource TextSecondaryBrush}"
                                            VerticalAlignment="Center"
                                            Margin="0,0,4,0" />
                                 <TextBlock Text="{Binding WifiDataUsage.FormattedReceived}"
                                            FontSize="{DynamicResource TypeCaptionFontSize}"
                                            FontWeight="Normal"
-                                           Foreground="{DynamicResource TextMutedBrush}"
+                                           Foreground="{DynamicResource TextSecondaryBrush}"
                                            VerticalAlignment="Center"
                                            Typography.NumeralAlignment="Tabular" />
                                 <TextBlock Text="   " />
                                 <TextBlock Text="&#xE898;"
                                            FontFamily="{DynamicResource AppIconFontFamily}"
                                            FontSize="10"
-                                           Foreground="{DynamicResource TextMutedBrush}"
+                                           Foreground="{DynamicResource TextSecondaryBrush}"
                                            VerticalAlignment="Center"
                                            Margin="0,0,4,0" />
                                 <TextBlock Text="{Binding WifiDataUsage.FormattedSent}"
                                            FontSize="{DynamicResource TypeCaptionFontSize}"
                                            FontWeight="Normal"
-                                           Foreground="{DynamicResource TextMutedBrush}"
+                                           Foreground="{DynamicResource TextSecondaryBrush}"
                                            VerticalAlignment="Center"
                                            Typography.NumeralAlignment="Tabular" />
                             </StackPanel>
@@ -1867,7 +1867,7 @@
                             <TextBlock Text="No adapter detected"
                                        FontSize="{DynamicResource TypeCaptionFontSize}"
                                        FontWeight="Normal"
-                                       Foreground="{DynamicResource TextSubtleBrush}"
+                                       Foreground="{DynamicResource TextSecondaryBrush}"
                                        HorizontalAlignment="Center"
                                        VerticalAlignment="Center"
                                        Visibility="{Binding ShowWifiNoAdapterText, Converter={StaticResource BoolToVis}}" />
@@ -1898,7 +1898,7 @@
                             <Run Text="TOTAL CONSUMED"
                                  FontSize="{DynamicResource TypeCaptionFontSize}"
                                  FontWeight="Normal"
-                                 Foreground="{DynamicResource TextSubtleBrush}" />
+                                 Foreground="{DynamicResource TextSecondaryBrush}" />
                             <Run Text="  "
                                  FontSize="{DynamicResource TypeBodyFontSize}" />
                             <Run Text="{Binding TotalCombinedDisplay, Mode=OneWay}"
@@ -1913,26 +1913,26 @@
                             <TextBlock Text="&#xE896;"
                                        FontFamily="{DynamicResource AppIconFontFamily}"
                                        FontSize="10"
-                                       Foreground="{DynamicResource TextMutedBrush}"
+                                       Foreground="{DynamicResource TextSecondaryBrush}"
                                        VerticalAlignment="Center"
                                        Margin="0,0,4,0" />
                             <TextBlock Text="{Binding TotalCombinedReceivedDisplay}"
                                        FontSize="{DynamicResource TypeCaptionFontSize}"
                                        FontWeight="Normal"
-                                       Foreground="{DynamicResource TextMutedBrush}"
+                                       Foreground="{DynamicResource TextSecondaryBrush}"
                                        VerticalAlignment="Center"
                                        Typography.NumeralAlignment="Tabular" />
                             <TextBlock Text="   " />
                             <TextBlock Text="&#xE898;"
                                        FontFamily="{DynamicResource AppIconFontFamily}"
                                        FontSize="10"
-                                       Foreground="{DynamicResource TextMutedBrush}"
+                                       Foreground="{DynamicResource TextSecondaryBrush}"
                                        VerticalAlignment="Center"
                                        Margin="0,0,4,0" />
                             <TextBlock Text="{Binding TotalCombinedSentDisplay}"
                                        FontSize="{DynamicResource TypeCaptionFontSize}"
                                        FontWeight="Normal"
-                                       Foreground="{DynamicResource TextMutedBrush}"
+                                       Foreground="{DynamicResource TextSecondaryBrush}"
                                        VerticalAlignment="Center"
                                        Typography.NumeralAlignment="Tabular" />
                         </StackPanel>

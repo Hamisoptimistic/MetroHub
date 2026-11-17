@@ -38,8 +38,6 @@
 
     <!-- Viewbox Coordinate Tokens (Geometry basis, not physical screen pixels) -->
     <sys:Double x:Key="TypeHeroCoordinateFontSize">100.0</sys:Double>
-    <sys:Double x:Key="TypeQuoteBodyCoordinateFontSize">19.5</sys:Double>
-    <sys:Double x:Key="TypeCalendarDayCoordinateFontSize">112.0</sys:Double>
 
     <!-- Responsive Hub UI Scale Factor Token (Default 1.0 = 100%) -->
     <sys:Double x:Key="AppUiScale">1.0</sys:Double>
@@ -49,12 +47,6 @@
     <SolidColorBrush x:Key="TextPrimaryBrush" Color="{StaticResource TextPrimaryColor}" po:Freeze="True" />
     <Color x:Key="TextSecondaryColor">#D8E2EC</Color>
     <SolidColorBrush x:Key="TextSecondaryBrush" Color="{StaticResource TextSecondaryColor}" po:Freeze="True" />
-
-    <!-- Unified Aliases: All subtitles, descriptions, and labels inherit the single luminous off-white -->
-    <Color x:Key="TextMutedColor">#D8E2EC</Color>
-    <SolidColorBrush x:Key="TextMutedBrush" Color="{StaticResource TextSecondaryColor}" po:Freeze="True" />
-    <Color x:Key="TextSubtleColor">#D8E2EC</Color>
-    <SolidColorBrush x:Key="TextSubtleBrush" Color="{StaticResource TextSecondaryColor}" po:Freeze="True" />
 
     <!-- Utility: Truly Disabled Controls Only -->
     <Color x:Key="TextDisabledColor">#45FFFFFF</Color>
@@ -66,18 +58,13 @@
     <SolidColorBrush x:Key="ContentDialogBackground" Color="#F214161A" po:Freeze="True" />
     <SolidColorBrush x:Key="ContentDialogBorderBrush" Color="#35FFFFFF" po:Freeze="True" />
     <SolidColorBrush x:Key="SmokeFillColorDefaultBrush" Color="#1A08080C" po:Freeze="True" />
-    <SolidColorBrush x:Key="ContentDialogSeparatorBorderBrush" Color="#18FFFFFF" po:Freeze="True" />
-    <SolidColorBrush x:Key="ContentDialogTopOverlay" Color="#08FFFFFF" po:Freeze="True" />
     <!-- Tier 2 Obsidian Deck Tint (calibrated translucent acrylic tint matching SettingsWindow) -->
     <SolidColorBrush x:Key="DialogPanelBackground" Color="#280D0D11" po:Freeze="True" />
-    <SolidColorBrush x:Key="DialogShellBackground" Color="#202020" po:Freeze="True" />
-    <SolidColorBrush x:Key="DialogShellBorderBrush" Color="#33FFFFFF" po:Freeze="True" />
 
     <!-- ========================================================================= -->
     <!-- SHELL & CANVAS CHROME OVERLAY TOKENS                                      -->
     <!-- ========================================================================= -->
     <SolidColorBrush x:Key="ShellBadgeBackground" Color="#F0202022" po:Freeze="True" />
-    <SolidColorBrush x:Key="ShellToastBackground" Color="#EE18181C" po:Freeze="True" />
 
     <!-- ========================================================================= -->
     <!-- CANVAS GROUP COLOR PALETTE (10 Standard Metro/Fluent Accents)             -->
@@ -127,9 +114,6 @@
     <!-- Modal Dialogs, Settings, and System Overlays (Strict Sharp Metro: 0px) -->
     <CornerRadius x:Key="DialogCornerRadius">0</CornerRadius>
 
-    <!-- Universal Modal Window Close Button Inset (Equidistant 10px from Top & Right) -->
-    <Thickness x:Key="ModalDismissButtonMargin">0,10,10,0</Thickness>
-
     <!-- Context Menu & Flyout Container / Items -->
     <CornerRadius x:Key="ContextMenuCornerRadius">8</CornerRadius>
     <CornerRadius x:Key="ContextMenuItemCornerRadius">4</CornerRadius>
@@ -137,11 +121,9 @@
     <!-- Universal Fluent Dark-Glass Interaction Brushes -->
     <SolidColorBrush x:Key="FluentHoverBrush" Color="#12FFFFFF" po:Freeze="True" />
     <SolidColorBrush x:Key="FluentPressedBrush" Color="#1EFFFFFF" po:Freeze="True" />
-    <SolidColorBrush x:Key="FluentHoverBorderBrush" Color="Transparent" po:Freeze="True" />
 
     <!-- Fluent Dark-Glass Surface & Border Tokens -->
     <SolidColorBrush x:Key="SurfaceGlassBrush" Color="#18FFFFFF" po:Freeze="True" />
-    <SolidColorBrush x:Key="MonthBackplateBrush" Color="#18FFFFFF" po:Freeze="True" />
     <SolidColorBrush x:Key="SurfaceGlassSubtleBrush" Color="#10FFFFFF" po:Freeze="True" />
     <SolidColorBrush x:Key="SurfaceBorderBrush" Color="#20FFFFFF" po:Freeze="True" />
     <SolidColorBrush x:Key="SurfaceBorderSubtleBrush" Color="#15FFFFFF" po:Freeze="True" />
@@ -152,9 +134,7 @@
     <!-- CENTRAL FLUENT 2 SYSTEM ACCENT COLOR TOKENS                               -->
     <!-- ========================================================================= -->
     <Color x:Key="SystemAccentColor">#4CC2FF</Color>
-    <SolidColorBrush x:Key="SystemAccentColorBrush" Color="{StaticResource SystemAccentColor}" po:Freeze="True" />
     <SolidColorBrush x:Key="SystemAccentColorPrimaryBrush" Color="{StaticResource SystemAccentColor}" po:Freeze="True" />
-    <SolidColorBrush x:Key="SystemAccentColorSolidBrush" Color="{StaticResource SystemAccentColor}" po:Freeze="True" />
     <SolidColorBrush x:Key="SystemAccentColorSecondaryBrush" Color="#60CDFF" po:Freeze="True" />
     <SolidColorBrush x:Key="SystemAccentColorTertiaryBrush" Color="#2886C8" po:Freeze="True" />
     <SolidColorBrush x:Key="SystemAccentColorForegroundBrush" Color="#FFFFFF" po:Freeze="True" />
@@ -169,7 +149,6 @@
     <Color x:Key="StatusSuccessHoverColor">#00FF85</Color>
     <Color x:Key="StatusSuccessPressedColor">#00CC6A</Color>
     <SolidColorBrush x:Key="StatusSuccessBrush" Color="{StaticResource StatusSuccessColor}" po:Freeze="True" />
-    <SolidColorBrush x:Key="SystemFillColorSuccessBrush" Color="{StaticResource StatusSuccessColor}" po:Freeze="True" />
     <SolidColorBrush x:Key="StatusSuccessHoverBrush" Color="{StaticResource StatusSuccessHoverColor}" po:Freeze="True" />
     <SolidColorBrush x:Key="StatusSuccessPressedBrush" Color="{StaticResource StatusSuccessPressedColor}" po:Freeze="True" />
 
@@ -218,7 +197,6 @@
     <!-- FLUENT 2 ELEVATION & SHADOW TOKENS                                        -->
     <!-- Note: x:Shared="False" ensures independent Freezable instances per element -->
     <!-- ========================================================================= -->
-    <DropShadowEffect x:Key="ShadowCard" BlurRadius="14" Direction="270" ShadowDepth="3" Opacity="0.28" Color="#000000" x:Shared="False" />
     <DropShadowEffect x:Key="StudioGlassTextShadow" BlurRadius="6" Direction="270" ShadowDepth="2" Opacity="0.30" Color="#080E1A" RenderingBias="Performance" x:Shared="False" />
 
 </ResourceDictionary>

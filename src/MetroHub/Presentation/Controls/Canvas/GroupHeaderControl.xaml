@@ -158,7 +158,7 @@
                                Text="&#xE7C2;"
                                FontFamily="{DynamicResource AppIconFontFamily}"
                                FontSize="14"
-                               Foreground="{DynamicResource TextSubtleBrush}"
+                               Foreground="{DynamicResource TextSecondaryBrush}"
                                Margin="8,1,4,0"
                                VerticalAlignment="Center"
                                Opacity="0"

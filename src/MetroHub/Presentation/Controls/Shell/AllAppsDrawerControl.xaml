@@ -168,7 +168,7 @@
                                FontSize="14"
                                FontWeight="SemiBold"
                                FontFamily="{DynamicResource AppDisplayFontFamily}"
-                               Foreground="{DynamicResource TextSubtleBrush}" />
+                               Foreground="{DynamicResource TextSecondaryBrush}" />
                 </Border>
 
                 <!-- Search Result Item Row Card: isolated selection highlight, hover effect, and accent pill -->
@@ -232,7 +232,7 @@
 
                             <TextBlock Text="{Binding Subtitle}"
                                        FontSize="12"
-                                       Foreground="{DynamicResource TextMutedBrush}"
+                                       Foreground="{DynamicResource TextSecondaryBrush}"
                                        Opacity="0.6"
                                        TextWrapping="WrapWithOverflow"
                                        TextTrimming="CharacterEllipsis"
@@ -245,7 +245,7 @@
                         <TextBlock Grid.Column="2"
                                    Text="{Binding KindBadge}"
                                    FontSize="11"
-                                   Foreground="{DynamicResource TextMutedBrush}"
+                                   Foreground="{DynamicResource TextSecondaryBrush}"
                                    Opacity="0.55"
                                    VerticalAlignment="Center"
                                    HorizontalAlignment="Right"
@@ -457,7 +457,7 @@
                 <Grid>
                     <ui:SymbolIcon Symbol="Search24"
                                    FontSize="15"
-                                   Foreground="{DynamicResource TextSubtleBrush}"
+                                   Foreground="{DynamicResource TextSecondaryBrush}"
                                    HorizontalAlignment="Left"
                                    VerticalAlignment="Center"
                                    Margin="10,0,0,0"
@@ -467,7 +467,7 @@
                                Text="Type to search, or '?' for shortcuts..."
                                FontSize="{DynamicResource TypeBodyFontSize}"
                                FontWeight="Normal"
-                               Foreground="{DynamicResource TextSubtleBrush}"
+                               Foreground="{DynamicResource TextSecondaryBrush}"
                                VerticalAlignment="Center"
                                Margin="32,0,28,0"
                                IsHitTestVisible="False" />
@@ -490,7 +490,7 @@
                             Height="24"
                             Visibility="Collapsed"
                             Click="OnClearSearchClick">
-                        <ui:SymbolIcon Symbol="Dismiss20" FontSize="12" Foreground="{DynamicResource TextMutedBrush}" />
+                        <ui:SymbolIcon Symbol="Dismiss20" FontSize="12" Foreground="{DynamicResource TextSecondaryBrush}" />
                     </Button>
                 </Grid>
             </Border>
@@ -519,7 +519,7 @@
                                            FontSize="18"
                                            FontWeight="SemiBold"
                                            FontFamily="{DynamicResource AppFontFamily}"
-                                           Foreground="{DynamicResource TextSubtleBrush}" />
+                                           Foreground="{DynamicResource TextSecondaryBrush}" />
                             </Border>
 
                             <ListBox x:Name="RecentSuggestionsListBox"
@@ -566,7 +566,7 @@
                                                FontSize="18"
                                                FontWeight="SemiBold"
                                                FontFamily="{DynamicResource AppFontFamily}"
-                                               Foreground="{DynamicResource TextSubtleBrush}"
+                                               Foreground="{DynamicResource TextSecondaryBrush}"
                                                Margin="{StaticResource DrawerGutterGroupHeaderMargin}" />
                                 </DataTemplate>
 
@@ -717,7 +717,7 @@
                                 BorderThickness="1">
                             <ui:SymbolIcon Symbol="SearchInfo24"
                                            FontSize="22"
-                                           Foreground="{DynamicResource TextSubtleBrush}"
+                                           Foreground="{DynamicResource TextSecondaryBrush}"
                                            HorizontalAlignment="Center"
                                            VerticalAlignment="Center" />
                         </Border>
@@ -737,7 +737,7 @@
                                    FontSize="{DynamicResource TypeBodyFontSize}"
                                    FontWeight="Normal"
                                    FontFamily="{DynamicResource AppFontFamily}"
-                                   Foreground="{DynamicResource TextSubtleBrush}"
+                                   Foreground="{DynamicResource TextSecondaryBrush}"
                                    TextWrapping="Wrap"
                                    TextAlignment="Center"
                                    HorizontalAlignment="Center"

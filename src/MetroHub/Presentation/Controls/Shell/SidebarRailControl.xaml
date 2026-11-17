@@ -24,7 +24,7 @@
             <Setter Property="Margin" Value="0" />
             <Setter Property="Padding" Value="0" />
             <Setter Property="FocusVisualStyle" Value="{x:Null}" />
-            <Setter Property="Foreground" Value="{DynamicResource TextMutedBrush}" />
+            <Setter Property="Foreground" Value="{DynamicResource TextSecondaryBrush}" />
             <Setter Property="ToolTipService.Placement" Value="Right" />
             <Setter Property="ToolTipService.HorizontalOffset" Value="8" />
             <Setter Property="ToolTipService.InitialShowDelay" Value="350" />
@@ -315,7 +315,7 @@
                                 <Setter Property="Height" Value="38" />
                                 <Setter Property="Padding" Value="0" />
                                 <Setter Property="FocusVisualStyle" Value="{x:Null}" />
-                                <Setter Property="Foreground" Value="{DynamicResource TextMutedBrush}" />
+                                <Setter Property="Foreground" Value="{DynamicResource TextSecondaryBrush}" />
                                 <Setter Property="ToolTipService.Placement" Value="Right" />
                                 <Setter Property="ToolTipService.HorizontalOffset" Value="8" />
                                 <Setter Property="ToolTipService.InitialShowDelay" Value="350" />

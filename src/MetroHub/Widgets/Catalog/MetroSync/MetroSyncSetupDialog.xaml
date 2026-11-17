@@ -378,7 +378,7 @@
                             Padding="0"
                             Height="Auto"
                             Cursor="Hand"
-                            Foreground="{DynamicResource TextSubtleBrush}"
+                            Foreground="{DynamicResource TextSecondaryBrush}"
                             FontSize="{DynamicResource TypeCaptionFontSize}"
                             Click="OnManualIdToggleClick" />
                 </StackPanel>
