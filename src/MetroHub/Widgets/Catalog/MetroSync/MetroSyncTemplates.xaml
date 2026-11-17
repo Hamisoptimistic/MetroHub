@@ -544,7 +544,7 @@
                                     <!-- Row 0: File Name -->
                                     <TextBlock Grid.Row="0"
                                                Text="{Binding FileName}"
-                                               FontWeight="{DynamicResource TypeBodyStrongFontWeight}"
+                                               FontWeight="SemiBold"
                                                FontSize="{DynamicResource TypeBodyFontSize}"
                                                Foreground="{DynamicResource TextPrimaryBrush}"
                                                TextTrimming="CharacterEllipsis" />

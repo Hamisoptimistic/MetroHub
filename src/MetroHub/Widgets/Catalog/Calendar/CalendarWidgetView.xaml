@@ -43,7 +43,7 @@
                                Text="{Binding MonthYearTitle}"
                                FontFamily="{DynamicResource AppDisplayFontFamily}"
                                FontSize="{DynamicResource TypeHeaderFontSize}"
-                               FontWeight="{DynamicResource TypeHeaderFontWeight}"
+                               FontWeight="SemiBold"
                                Foreground="{DynamicResource TextPrimaryBrush}" />
 
                     <!-- Right Chevron Button -->
@@ -58,13 +58,13 @@
 
                 <!-- 2. Weekday Header (Su, Mo, Tu, We, Th, Fr, Sa) -->
                 <UniformGrid Grid.Row="1" Columns="7" Margin="0,0,0,6">
-                    <TextBlock Text="Su" HorizontalAlignment="Center" FontFamily="{DynamicResource AppFontFamily}" FontWeight="{DynamicResource TypeCaptionFontWeight}" FontSize="{DynamicResource TypeCaptionFontSize}" Foreground="{DynamicResource TextSubtleBrush}" />
-                    <TextBlock Text="Mo" HorizontalAlignment="Center" FontFamily="{DynamicResource AppFontFamily}" FontWeight="{DynamicResource TypeCaptionFontWeight}" FontSize="{DynamicResource TypeCaptionFontSize}" Foreground="{DynamicResource TextSubtleBrush}" />
-                    <TextBlock Text="Tu" HorizontalAlignment="Center" FontFamily="{DynamicResource AppFontFamily}" FontWeight="{DynamicResource TypeCaptionFontWeight}" FontSize="{DynamicResource TypeCaptionFontSize}" Foreground="{DynamicResource TextSubtleBrush}" />
-                    <TextBlock Text="We" HorizontalAlignment="Center" FontFamily="{DynamicResource AppFontFamily}" FontWeight="{DynamicResource TypeCaptionFontWeight}" FontSize="{DynamicResource TypeCaptionFontSize}" Foreground="{DynamicResource TextSubtleBrush}" />
-                    <TextBlock Text="Th" HorizontalAlignment="Center" FontFamily="{DynamicResource AppFontFamily}" FontWeight="{DynamicResource TypeCaptionFontWeight}" FontSize="{DynamicResource TypeCaptionFontSize}" Foreground="{DynamicResource TextSubtleBrush}" />
-                    <TextBlock Text="Fr" HorizontalAlignment="Center" FontFamily="{DynamicResource AppFontFamily}" FontWeight="{DynamicResource TypeCaptionFontWeight}" FontSize="{DynamicResource TypeCaptionFontSize}" Foreground="{DynamicResource TextSubtleBrush}" />
-                    <TextBlock Text="Sa" HorizontalAlignment="Center" FontFamily="{DynamicResource AppFontFamily}" FontWeight="{DynamicResource TypeCaptionFontWeight}" FontSize="{DynamicResource TypeCaptionFontSize}" Foreground="{DynamicResource TextSubtleBrush}" />
+                    <TextBlock Text="Su" HorizontalAlignment="Center" FontFamily="{DynamicResource AppFontFamily}" FontWeight="Normal" FontSize="{DynamicResource TypeCaptionFontSize}" Foreground="{DynamicResource TextSubtleBrush}" />
+                    <TextBlock Text="Mo" HorizontalAlignment="Center" FontFamily="{DynamicResource AppFontFamily}" FontWeight="Normal" FontSize="{DynamicResource TypeCaptionFontSize}" Foreground="{DynamicResource TextSubtleBrush}" />
+                    <TextBlock Text="Tu" HorizontalAlignment="Center" FontFamily="{DynamicResource AppFontFamily}" FontWeight="Normal" FontSize="{DynamicResource TypeCaptionFontSize}" Foreground="{DynamicResource TextSubtleBrush}" />
+                    <TextBlock Text="We" HorizontalAlignment="Center" FontFamily="{DynamicResource AppFontFamily}" FontWeight="Normal" FontSize="{DynamicResource TypeCaptionFontSize}" Foreground="{DynamicResource TextSubtleBrush}" />
+                    <TextBlock Text="Th" HorizontalAlignment="Center" FontFamily="{DynamicResource AppFontFamily}" FontWeight="Normal" FontSize="{DynamicResource TypeCaptionFontSize}" Foreground="{DynamicResource TextSubtleBrush}" />
+                    <TextBlock Text="Fr" HorizontalAlignment="Center" FontFamily="{DynamicResource AppFontFamily}" FontWeight="Normal" FontSize="{DynamicResource TypeCaptionFontSize}" Foreground="{DynamicResource TextSubtleBrush}" />
+                    <TextBlock Text="Sa" HorizontalAlignment="Center" FontFamily="{DynamicResource AppFontFamily}" FontWeight="Normal" FontSize="{DynamicResource TypeCaptionFontSize}" Foreground="{DynamicResource TextSubtleBrush}" />
                 </UniformGrid>
 
                 <!-- 3. 42-Day Grid Area (Seamless Single-Polygon Month Backplate + Number Grid) -->
@@ -128,7 +128,7 @@
                                                    VerticalAlignment="Center"
                                                    FontFamily="{DynamicResource AppFontFamily}"
                                                    FontSize="{DynamicResource TypeBodyFontSize}"
-                                                   FontWeight="{DynamicResource TypeBodyFontWeight}"
+                                                   FontWeight="Normal"
                                                    Foreground="{DynamicResource TextDisabledBrush}"
                                                    />
                                     </Grid>
@@ -138,7 +138,7 @@
                                     <!-- Current Month: SemiBold White Text (Background is rendered seamlessly by Backplate) -->
                                     <DataTrigger Binding="{Binding IsCurrentMonth}" Value="True">
                                         <Setter TargetName="DayLabel" Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
-                                        <Setter TargetName="DayLabel" Property="FontWeight" Value="{DynamicResource TypeBodyStrongFontWeight}" />
+                                        <Setter TargetName="DayLabel" Property="FontWeight" Value="SemiBold" />
                                     </DataTrigger>
 
                                     <!-- Today: Solid Accent Fill -->
@@ -183,7 +183,7 @@
                            TextAlignment="Center"
                            FontFamily="{DynamicResource AppDisplayFontFamily}"
                            FontSize="{DynamicResource TypeDisplayFontSize}"
-                           FontWeight="{DynamicResource TypeDisplayFontWeight}"
+                           FontWeight="SemiBold"
                            Foreground="{DynamicResource TextMutedBrush}"
                            TextWrapping="NoWrap"
                            TextTrimming="CharacterEllipsis"
@@ -203,7 +203,7 @@
                            TextAlignment="Center"
                            FontFamily="{DynamicResource AppDisplayFontFamily}"
                            FontSize="{DynamicResource TypeCalendarDayCoordinateFontSize}"
-                           FontWeight="{DynamicResource TypeDisplayFontWeight}"
+                           FontWeight="SemiBold"
                            Foreground="{DynamicResource TextPrimaryBrush}"
                            />
 
@@ -216,7 +216,7 @@
                     <TextBlock Text="{Binding TodayMonthName}"
                                FontFamily="{DynamicResource AppFontFamily}"
                                FontSize="{DynamicResource TypeBodyFontSize}"
-                               FontWeight="{DynamicResource TypeBodyFontWeight}"
+                               FontWeight="Normal"
                                Foreground="{DynamicResource TextSecondaryBrush}"
                                TextWrapping="NoWrap"
                                TextTrimming="CharacterEllipsis"
@@ -225,7 +225,7 @@
                                Margin="6,0,0,0"
                                FontFamily="{DynamicResource AppFontFamily}"
                                FontSize="{DynamicResource TypeBodyFontSize}"
-                               FontWeight="{DynamicResource TypeBodyFontWeight}"
+                               FontWeight="Normal"
                                Foreground="{DynamicResource TextSubtleBrush}"
                                TextWrapping="NoWrap"
                                />

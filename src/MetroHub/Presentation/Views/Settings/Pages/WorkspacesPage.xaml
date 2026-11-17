@@ -19,7 +19,7 @@
                 <StackPanel>
                     <TextBlock Text="Running App Indicators"
                                FontSize="{DynamicResource TypeBodyFontSize}"
-                               FontWeight="{DynamicResource TypeBodyStrongFontWeight}"
+                               FontWeight="SemiBold"
                                Foreground="{DynamicResource TextPrimaryBrush}" />
                     <TextBlock Text="Show a green dot on tiles for apps that are currently open"
                                FontSize="{DynamicResource TypeCaptionFontSize}"

@@ -50,7 +50,7 @@
             <Setter Property="CaretBrush" Value="{DynamicResource TextPrimaryBrush}" />
             <Setter Property="FontFamily" Value="{DynamicResource AppFontFamily}" />
             <Setter Property="FontSize" Value="{DynamicResource TypeBodyFontSize}" />
-            <Setter Property="FontWeight" Value="{DynamicResource TypeBodyFontWeight}" />
+            <Setter Property="FontWeight" Value="Normal" />
             <Setter Property="VerticalContentAlignment" Value="Center" />
             <Setter Property="Padding" Value="0" />
             <Setter Property="Margin" Value="0" />
@@ -226,7 +226,7 @@
                         <StackPanel Grid.Column="1" VerticalAlignment="Center" Margin="10,0,8,0">
                             <TextBlock Text="{Binding DisplayName}"
                                        FontSize="{DynamicResource TypeBodyFontSize}"
-                                       FontWeight="{DynamicResource TypeBodyFontWeight}"
+                                       FontWeight="Normal"
                                        Foreground="{DynamicResource TextPrimaryBrush}"
                                        TextTrimming="CharacterEllipsis" />
 
@@ -413,7 +413,7 @@
                 <!-- Left-aligned Title flush to 12px baseline -->
                 <TextBlock Text="All apps"
                            FontSize="{DynamicResource TypeHeaderFontSize}"
-                           FontWeight="{DynamicResource TypeHeaderFontWeight}"
+                           FontWeight="SemiBold"
                            FontFamily="{DynamicResource AppFontFamily}"
                            Foreground="{DynamicResource TextPrimaryBrush}"
                            VerticalAlignment="Center"
@@ -466,7 +466,7 @@
                     <TextBlock x:Name="SearchPlaceholder"
                                Text="Type to search, or '?' for shortcuts..."
                                FontSize="{DynamicResource TypeBodyFontSize}"
-                               FontWeight="{DynamicResource TypeBodyFontWeight}"
+                               FontWeight="Normal"
                                Foreground="{DynamicResource TextSubtleBrush}"
                                VerticalAlignment="Center"
                                Margin="32,0,28,0"
@@ -517,7 +517,7 @@
                             <Border Margin="{StaticResource DrawerGutterSectionHeaderMargin}">
                                 <TextBlock Text="Recent"
                                            FontSize="18"
-                                           FontWeight="{DynamicResource TypeBodyStrongFontWeight}"
+                                           FontWeight="SemiBold"
                                            FontFamily="{DynamicResource AppFontFamily}"
                                            Foreground="{DynamicResource TextSubtleBrush}" />
                             </Border>
@@ -564,7 +564,7 @@
                                 <DataTemplate DataType="{x:Type controls:DrawerGroupHeader}">
                                     <TextBlock Text="{Binding Header}"
                                                FontSize="18"
-                                               FontWeight="{DynamicResource TypeBodyStrongFontWeight}"
+                                               FontWeight="SemiBold"
                                                FontFamily="{DynamicResource AppFontFamily}"
                                                Foreground="{DynamicResource TextSubtleBrush}"
                                                Margin="{StaticResource DrawerGutterGroupHeaderMargin}" />
@@ -595,7 +595,7 @@
                                             <TextBlock Grid.Column="1"
                                                        Text="{Binding App.Name}"
                                                        FontSize="{DynamicResource TypeBodyFontSize}"
-                                                       FontWeight="{DynamicResource TypeBodyFontWeight}"
+                                                       FontWeight="Normal"
                                                        Foreground="{DynamicResource TextPrimaryBrush}"
                                                        VerticalAlignment="Center"
                                                        Margin="10,0,8,0"
@@ -725,7 +725,7 @@
                         <!-- Title: 16px SemiBold -->
                         <TextBlock Text="No results found"
                                    FontSize="{DynamicResource TypeHeaderFontSize}"
-                                   FontWeight="{DynamicResource TypeHeaderFontWeight}"
+                                   FontWeight="SemiBold"
                                    FontFamily="{DynamicResource AppFontFamily}"
                                    Foreground="{DynamicResource TextPrimaryBrush}"
                                    HorizontalAlignment="Center"
@@ -735,7 +735,7 @@
                         <TextBlock x:Name="NoResultsDetailTextBlock"
                                    Text="Check your spelling or try another search term."
                                    FontSize="{DynamicResource TypeBodyFontSize}"
-                                   FontWeight="{DynamicResource TypeBodyFontWeight}"
+                                   FontWeight="Normal"
                                    FontFamily="{DynamicResource AppFontFamily}"
                                    Foreground="{DynamicResource TextSubtleBrush}"
                                    TextWrapping="Wrap"

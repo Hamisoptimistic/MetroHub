@@ -88,7 +88,7 @@
                         <TextBlock Text="{Binding DisplayMonthYear}"
                                    FontFamily="{DynamicResource AppDisplayFontFamily}"
                                    FontSize="{DynamicResource TypeHeaderFontSize}"
-                                   FontWeight="{DynamicResource TypeHeaderFontWeight}"
+                                   FontWeight="SemiBold"
                                    Foreground="{DynamicResource TextPrimaryBrush}"
                                    HorizontalAlignment="Center"
                                    VerticalAlignment="Center" />
@@ -116,7 +116,7 @@
                             <TextBlock Text="{Binding}"
                                        FontFamily="{DynamicResource AppFontFamily}"
                                        FontSize="{DynamicResource TypeCaptionFontSize}"
-                                       FontWeight="{DynamicResource TypeCaptionFontWeight}"
+                                       FontWeight="Normal"
                                        Foreground="{DynamicResource TextMutedBrush}"
                                        HorizontalAlignment="Center"
                                        VerticalAlignment="Center" />
@@ -228,7 +228,7 @@
                                                    Text="{Binding DayNumber}"
                                                    FontFamily="{DynamicResource AppFontFamily}"
                                                    FontSize="{DynamicResource TypeBodyFontSize}"
-                                                   FontWeight="{DynamicResource TypeBodyFontWeight}"
+                                                   FontWeight="Normal"
                                                    Foreground="{DynamicResource TextPrimaryBrush}"
                                                    HorizontalAlignment="Center"
                                                    VerticalAlignment="Center"
@@ -308,7 +308,7 @@
                                         <TextBlock Text="{Binding HabitName}"
                                                    FontFamily="{DynamicResource AppDisplayFontFamily}"
                                                    FontSize="{DynamicResource TypeHeaderFontSize}"
-                                                   FontWeight="{DynamicResource TypeHeaderFontWeight}"
+                                                   FontWeight="SemiBold"
                                                    Foreground="{DynamicResource TextPrimaryBrush}"
                                                    VerticalAlignment="Center"
                                                    TextTrimming="CharacterEllipsis"
@@ -351,7 +351,7 @@
                         <TextBlock Text="{Binding ActiveStreakText}"
                                    FontFamily="{DynamicResource AppDisplayFontFamily}"
                                    FontSize="{DynamicResource TypeHeaderFontSize}"
-                                   FontWeight="{DynamicResource TypeHeaderFontWeight}"
+                                   FontWeight="SemiBold"
                                    VerticalAlignment="Center"
                                    >
                             <TextBlock.Style>
@@ -389,7 +389,7 @@
                     <TextBlock Text="Habit"
                                FontFamily="{DynamicResource AppFontFamily}"
                                FontSize="{DynamicResource TypeHeaderFontSize}"
-                               FontWeight="{DynamicResource TypeHeaderFontWeight}"
+                               FontWeight="SemiBold"
                                Foreground="{DynamicResource TextPrimaryBrush}"
                                VerticalAlignment="Center" />
 
@@ -403,7 +403,7 @@
                 <StackPanel Grid.Row="1" Margin="0,0,0,16">
                     <TextBlock Text="Habit Name"
                                FontSize="{DynamicResource TypeCaptionFontSize}"
-                               FontWeight="{DynamicResource TypeCaptionFontWeight}"
+                               FontWeight="Normal"
                                Foreground="{DynamicResource TextMutedBrush}"
                                Margin="0,0,0,6" />
                     <TextBox x:Name="HabitNameInput"
@@ -416,7 +416,7 @@
                 <StackPanel Grid.Row="2" Margin="0,0,0,16">
                     <TextBlock Text="Choose Icon"
                                FontSize="{DynamicResource TypeCaptionFontSize}"
-                               FontWeight="{DynamicResource TypeCaptionFontWeight}"
+                               FontWeight="Normal"
                                Foreground="{DynamicResource TextMutedBrush}"
                                Margin="0,0,0,6" />
                     <controls:GlyphPickerControl SelectedGlyph="{Binding SetupSelectedIcon, Mode=TwoWay}" />

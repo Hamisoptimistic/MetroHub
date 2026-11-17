@@ -88,7 +88,7 @@
                             <!-- Track Title -->
                             <TextBlock Text="{Binding Title}"
                                        FontSize="{DynamicResource TypeHeaderFontSize}"
-                                       FontWeight="{DynamicResource TypeHeaderFontWeight}"
+                                       FontWeight="SemiBold"
                                        FontFamily="{DynamicResource AppDisplayFontFamily}"
                                        Foreground="{DynamicResource TextPrimaryBrush}"
                                        TextTrimming="CharacterEllipsis"
@@ -98,7 +98,7 @@
                             <!-- Artist Name -->
                             <TextBlock Text="{Binding Artist}"
                                        FontSize="{DynamicResource TypeBodyFontSize}"
-                                       FontWeight="{DynamicResource TypeBodyFontWeight}"
+                                       FontWeight="Normal"
                                        FontFamily="{DynamicResource AppFontFamily}"
                                        Foreground="{DynamicResource TextSecondaryBrush}"
                                        TextTrimming="CharacterEllipsis"
@@ -131,7 +131,7 @@
                                            Margin="0,1,6,0" />
                                 <TextBlock Text="{Binding Album}"
                                            FontSize="{DynamicResource TypeCaptionFontSize}"
-                                           FontWeight="{DynamicResource TypeCaptionFontWeight}"
+                                           FontWeight="Normal"
                                            FontFamily="{DynamicResource AppFontFamily}"
                                            Foreground="{DynamicResource TextMutedBrush}"
                                            TextTrimming="CharacterEllipsis"
@@ -210,7 +210,7 @@
                                    VerticalAlignment="Center"
                                    HorizontalAlignment="Right"
                                    FontSize="{DynamicResource TypeCaptionFontSize}"
-                                   FontWeight="{DynamicResource TypeCaptionFontWeight}"
+                                   FontWeight="Normal"
                                    Foreground="{DynamicResource TextPrimaryBrush}"
                                    Visibility="{Binding HasMedia, Converter={StaticResource BoolToVis}}" />
                     </Grid>
@@ -275,7 +275,7 @@
                     <!-- Idle State: 'No media playing' subtle text -->
                     <TextBlock Text="No media playing"
                                FontSize="{DynamicResource TypeCaptionFontSize}"
-                               FontWeight="{DynamicResource TypeCaptionFontWeight}"
+                               FontWeight="Normal"
                                Foreground="{DynamicResource TextSubtleBrush}"
                                FontFamily="{DynamicResource AppFontFamily}"
                                HorizontalAlignment="Center"
@@ -288,14 +288,14 @@
                                 Visibility="{Binding HasMedia, Converter={StaticResource BoolToVis}}">
                         <TextBlock Text="{Binding Title}"
                                    FontSize="{DynamicResource TypeBodyStrongFontSize}"
-                                   FontWeight="{DynamicResource TypeBodyStrongFontWeight}"
+                                   FontWeight="SemiBold"
                                    Foreground="{DynamicResource TextPrimaryBrush}"
                                    FontFamily="{DynamicResource AppDisplayFontFamily}"
                                    TextTrimming="CharacterEllipsis"
                                    TextWrapping="NoWrap" />
                         <TextBlock Text="{Binding Artist}"
                                    FontSize="{DynamicResource TypeCaptionFontSize}"
-                                   FontWeight="{DynamicResource TypeCaptionFontWeight}"
+                                   FontWeight="Normal"
                                    FontFamily="{DynamicResource AppFontFamily}"
                                    Foreground="{DynamicResource TextSecondaryBrush}"
                                    TextTrimming="CharacterEllipsis"
@@ -464,7 +464,7 @@
                             <TextBlock Text="{Binding Title}"
                                        FontFamily="{DynamicResource AppDisplayFontFamily}"
                                        FontSize="{DynamicResource TypeHeaderFontSize}"
-                                       FontWeight="{DynamicResource TypeHeaderFontWeight}"
+                                       FontWeight="SemiBold"
                                        Foreground="{DynamicResource TextPrimaryBrush}"
                                        TextTrimming="CharacterEllipsis"
                                        TextWrapping="NoWrap"
@@ -478,7 +478,7 @@
                             <TextBlock Text="{Binding Artist}"
                                        FontFamily="{DynamicResource AppFontFamily}"
                                        FontSize="{DynamicResource TypeBodyFontSize}"
-                                       FontWeight="{DynamicResource TypeBodyFontWeight}"
+                                       FontWeight="Normal"
                                        Foreground="{DynamicResource TextSecondaryBrush}"
                                        TextTrimming="CharacterEllipsis"
                                        TextWrapping="NoWrap"

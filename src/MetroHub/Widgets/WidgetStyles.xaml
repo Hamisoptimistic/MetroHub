@@ -131,7 +131,7 @@
                             <TextBlock Grid.Row="2"
                                        Text="{TemplateBinding Header}"
                                        FontSize="{DynamicResource TypeCaptionFontSize}"
-                                       FontWeight="{DynamicResource TypeBodyStrongFontWeight}"
+                                       FontWeight="SemiBold"
                                        Foreground="{DynamicResource TextPrimaryBrush}"
                                        HorizontalAlignment="Center"
                                        VerticalAlignment="Center"

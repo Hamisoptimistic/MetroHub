@@ -138,12 +138,12 @@
                 <StackPanel Grid.Column="0" VerticalAlignment="Center">
                     <TextBlock Text="{Binding Name}"
                                FontSize="{DynamicResource TypeBodyFontSize}"
-                               FontWeight="{DynamicResource TypeBodyStrongFontWeight}"
+                               FontWeight="SemiBold"
                                Foreground="{DynamicResource TextPrimaryBrush}"
                                TextTrimming="CharacterEllipsis" />
                     <TextBlock Text="{Binding Subtitle}"
                                FontSize="{DynamicResource TypeCaptionFontSize}"
-                               FontWeight="{DynamicResource TypeCaptionFontWeight}"
+                               FontWeight="Normal"
                                Foreground="{DynamicResource TextSubtleBrush}"
                                Margin="0,2,0,0"
                                TextTrimming="CharacterEllipsis" />
@@ -156,7 +156,7 @@
                         Margin="8,0,0,0">
                     <TextBlock Text="{Binding BitrateDisplay}"
                                FontSize="{DynamicResource TypeCaptionFontSize}"
-                               FontWeight="{DynamicResource TypeCaptionFontWeight}"
+                               FontWeight="Normal"
                                Foreground="{DynamicResource TextMutedBrush}" />
                 </Border>
             </Grid>
@@ -221,7 +221,7 @@
                                     <TextBlock x:Name="RadioSearchWatermark"
                                                Text="Search station name, genre (e.g. lofi, jazz, ambient)..."
                                                FontSize="{DynamicResource TypeBodyFontSize}"
-                                               FontWeight="{DynamicResource TypeBodyFontWeight}"
+                                               FontWeight="Normal"
                                                Foreground="{DynamicResource TextSubtleBrush}"
                                                IsHitTestVisible="False"
                                                VerticalAlignment="Center"
@@ -258,7 +258,7 @@
                                         <TextBlock x:Name="RadioSearchPlaceholderText"
                                                    Text="Type 2 or more characters to search 40,000+ online stations"
                                                    FontSize="{DynamicResource TypeCaptionFontSize}"
-                                                   FontWeight="{DynamicResource TypeCaptionFontWeight}"
+                                                   FontWeight="Normal"
                                                    Foreground="{DynamicResource TextSubtleBrush}"
                                                    TextWrapping="Wrap"
                                                    TextTrimming="CharacterEllipsis"
@@ -276,7 +276,7 @@
                                 <TextBlock Grid.Row="2"
                                            x:Name="RadioSearchStatusMessage"
                                            FontSize="{DynamicResource TypeCaptionFontSize}"
-                                           FontWeight="{DynamicResource TypeCaptionFontWeight}"
+                                           FontWeight="Normal"
                                            Foreground="{DynamicResource StatusErrorBrush}"
                                            Margin="0,6,0,0"
                                            TextWrapping="Wrap"
@@ -305,7 +305,7 @@
                                                        VerticalAlignment="Center" />
                                         <TextBlock Text="Back to search results"
                                                    FontSize="{DynamicResource TypeCaptionFontSize}"
-                                                   FontWeight="{DynamicResource TypeBodyStrongFontWeight}"
+                                                   FontWeight="SemiBold"
                                                    Foreground="{DynamicResource TextSecondaryBrush}"
                                                    VerticalAlignment="Center" />
                                     </StackPanel>
@@ -354,13 +354,13 @@
                                                     <TextBlock x:Name="RadioSelectedStationOriginalName"
                                                                Text="Radio Name"
                                                                FontSize="{DynamicResource TypeBodyStrongFontSize}"
-                                                               FontWeight="{DynamicResource TypeBodyStrongFontWeight}"
+                                                               FontWeight="SemiBold"
                                                                Foreground="{DynamicResource TextPrimaryBrush}"
                                                                TextTrimming="CharacterEllipsis" />
                                                     <TextBlock x:Name="RadioSelectedStationStreamUrl"
                                                                Text="Radio Link"
                                                                FontSize="{DynamicResource TypeCaptionFontSize}"
-                                                               FontWeight="{DynamicResource TypeCaptionFontWeight}"
+                                                               FontWeight="Normal"
                                                                Foreground="{DynamicResource TextSubtleBrush}"
                                                                TextTrimming="CharacterEllipsis"
                                                                Margin="0,3,0,0" />
@@ -384,7 +384,7 @@
                                                     <TextBlock x:Name="RadioSelectedStationCountryText"
                                                                Text="Country"
                                                                FontSize="{DynamicResource TypeCaptionFontSize}"
-                                                               FontWeight="{DynamicResource TypeBodyStrongFontWeight}"
+                                                               FontWeight="SemiBold"
                                                                Foreground="{DynamicResource TextPrimaryBrush}"
                                                                HorizontalAlignment="Center"
                                                                VerticalAlignment="Center"
@@ -402,7 +402,7 @@
                                                     <TextBlock x:Name="RadioSelectedStationFormatText"
                                                                Text="Format"
                                                                FontSize="{DynamicResource TypeCaptionFontSize}"
-                                                               FontWeight="{DynamicResource TypeCaptionFontWeight}"
+                                                               FontWeight="Normal"
                                                                Foreground="{DynamicResource TextSecondaryBrush}"
                                                                HorizontalAlignment="Center"
                                                                VerticalAlignment="Center"
@@ -416,7 +416,7 @@
                                 <!-- Station Display Name Editor Section -->
                                 <TextBlock Text="Edit Station Name"
                                            FontSize="{DynamicResource TypeCaptionFontSize}"
-                                           FontWeight="{DynamicResource TypeCaptionFontWeight}"
+                                           FontWeight="Normal"
                                            Foreground="{DynamicResource TextMutedBrush}"
                                            Margin="0,0,0,6" />
 
@@ -429,7 +429,7 @@
                                 <!-- Validation Error Message -->
                                 <TextBlock x:Name="RadioSearchEditorStatusMessage"
                                            FontSize="{DynamicResource TypeCaptionFontSize}"
-                                           FontWeight="{DynamicResource TypeCaptionFontWeight}"
+                                           FontWeight="Normal"
                                            Foreground="{DynamicResource StatusErrorBrush}"
                                            Margin="0,4,0,0"
                                            TextWrapping="Wrap"
@@ -442,7 +442,7 @@
                             <StackPanel>
                                 <TextBlock Text="Audio Stream URL"
                                            FontSize="{DynamicResource TypeCaptionFontSize}"
-                                           FontWeight="{DynamicResource TypeCaptionFontWeight}"
+                                           FontWeight="Normal"
                                            Foreground="{DynamicResource TextMutedBrush}"
                                            Margin="0,0,0,6" />
 
@@ -473,7 +473,7 @@
                                                x:Name="RadioProbeStatusText"
                                                Text="Supports MP3/AAC/OGG streams or single-station .pls/.m3u"
                                                FontSize="{DynamicResource TypeCaptionFontSize}"
-                                               FontWeight="{DynamicResource TypeCaptionFontWeight}"
+                                               FontWeight="Normal"
                                                Foreground="{DynamicResource TextSubtleBrush}"
                                                TextWrapping="Wrap"
                                                VerticalAlignment="Center" />
@@ -481,7 +481,7 @@
 
                                 <TextBlock Text="Station Name"
                                            FontSize="{DynamicResource TypeCaptionFontSize}"
-                                           FontWeight="{DynamicResource TypeCaptionFontWeight}"
+                                           FontWeight="Normal"
                                            Foreground="{DynamicResource TextMutedBrush}"
                                            Margin="0,8,0,6" />
                                 <TextBox x:Name="RadioDirectNameInput"
@@ -490,7 +490,7 @@
 
                                 <TextBlock x:Name="RadioDirectStatusMessage"
                                            FontSize="{DynamicResource TypeCaptionFontSize}"
-                                           FontWeight="{DynamicResource TypeCaptionFontWeight}"
+                                           FontWeight="Normal"
                                            Foreground="{DynamicResource StatusErrorBrush}"
                                            Margin="0,6,0,0"
                                            TextWrapping="Wrap"
@@ -505,7 +505,7 @@
                         <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
                             <TextBlock Text="Category:"
                                        FontSize="{DynamicResource TypeCaptionFontSize}"
-                                       FontWeight="{DynamicResource TypeCaptionFontWeight}"
+                                       FontWeight="Normal"
                                        Foreground="{DynamicResource TextMutedBrush}"
                                        VerticalAlignment="Center"
                                        Margin="0,0,8,0" />

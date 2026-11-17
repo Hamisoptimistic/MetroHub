@@ -64,14 +64,14 @@
                         <!-- Phase Tag -->
                         <TextBlock Text="{Binding PhaseTitle}"
                                    FontSize="{DynamicResource TypeCaptionFontSize}"
-                                   FontWeight="{DynamicResource TypeBodyStrongFontWeight}"
+                                   FontWeight="SemiBold"
                                    Foreground="{Binding GlowSolidBrush}"
                                    Margin="0,0,0,2" />
 
                         <!-- Large Time Readout -->
                         <TextBlock Text="{Binding TimeString}"
                                    FontSize="{DynamicResource TypeDisplayFontSize}"
-                                   FontWeight="{DynamicResource TypeDisplayFontWeight}"
+                                   FontWeight="SemiBold"
                                    FontFamily="{DynamicResource AppDisplayFontFamily}"
                                    Foreground="{DynamicResource TextPrimaryBrush}"
                                    Margin="0,0,0,6" />
@@ -160,14 +160,14 @@
                             <TextBlock Text="{Binding PhaseTitle}"
                                        FontFamily="{DynamicResource AppDisplayFontFamily}"
                                        FontSize="{DynamicResource TypeHeaderFontSize}"
-                                       FontWeight="{DynamicResource TypeHeaderFontWeight}"
+                                       FontWeight="SemiBold"
                                        Foreground="{DynamicResource TextPrimaryBrush}"
                                        Margin="0,0,0,3" />
 
                             <!-- Big Time Readout (Matches Artist Name) -->
                             <TextBlock Text="{Binding TimeString}"
                                        FontSize="{DynamicResource TypeDisplayFontSize}"
-                                       FontWeight="{DynamicResource TypeDisplayFontWeight}"
+                                       FontWeight="SemiBold"
                                        FontFamily="{DynamicResource AppDisplayFontFamily}"
                                        Foreground="{Binding GlowSolidBrush}"
                                        Margin="0,0,0,4" />
@@ -175,7 +175,7 @@
                             <!-- Detail line with status & streak (Matches Album detail) -->
                             <TextBlock Text="{Binding StatusString}"
                                        FontSize="{DynamicResource TypeCaptionFontSize}"
-                                       FontWeight="{DynamicResource TypeCaptionFontWeight}"
+                                       FontWeight="Normal"
                                        Foreground="{DynamicResource TextMutedBrush}"
                                        VerticalAlignment="Center" />
                         </StackPanel>

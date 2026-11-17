@@ -76,14 +76,14 @@
                 </Grid.ColumnDefinitions>
                 <TextBlock Text="{Binding Name}"
                            FontSize="{DynamicResource TypeBodyFontSize}"
-                           FontWeight="{DynamicResource TypeBodyStrongFontWeight}"
+                           FontWeight="SemiBold"
                            Foreground="{DynamicResource TextPrimaryBrush}"
                            VerticalAlignment="Center"
                            TextTrimming="CharacterEllipsis" />
                 <TextBlock Grid.Column="1"
                            Text="{Binding DisplaySubtitle}"
                            FontSize="{DynamicResource TypeCaptionFontSize}"
-                           FontWeight="{DynamicResource TypeCaptionFontWeight}"
+                           FontWeight="Normal"
                            Foreground="{DynamicResource TextSubtleBrush}"
                            VerticalAlignment="Center"
                            Margin="8,0,0,0"
@@ -103,7 +103,7 @@
         <StackPanel Grid.Row="0">
             <TextBlock Text="City Name"
                        FontSize="{DynamicResource TypeCaptionFontSize}"
-                       FontWeight="{DynamicResource TypeCaptionFontWeight}"
+                       FontWeight="Normal"
                        Foreground="{DynamicResource TextMutedBrush}"
                        Margin="0,0,0,6" />
 
@@ -150,7 +150,7 @@
                     <ui:SymbolIcon Symbol="MyLocation24" FontSize="13" Foreground="{DynamicResource TextMutedBrush}" Margin="0,0,6,0" VerticalAlignment="Center" />
                     <TextBlock Text="Reset to automatic location (GPS / IP)"
                                FontSize="{DynamicResource TypeCaptionFontSize}"
-                               FontWeight="{DynamicResource TypeCaptionFontWeight}"
+                               FontWeight="Normal"
                                Foreground="{DynamicResource TextMutedBrush}"
                                VerticalAlignment="Center" />
                 </StackPanel>
@@ -171,7 +171,7 @@
                 <TextBlock x:Name="WeatherStatusMessage"
                            Grid.Column="1"
                            FontSize="{DynamicResource TypeCaptionFontSize}"
-                           FontWeight="{DynamicResource TypeCaptionFontWeight}"
+                           FontWeight="Normal"
                            Foreground="{DynamicResource StatusErrorBrush}"
                            TextWrapping="Wrap"
                            VerticalAlignment="Center"

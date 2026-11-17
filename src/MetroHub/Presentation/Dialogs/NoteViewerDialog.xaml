@@ -51,7 +51,7 @@
             <Setter Property="Foreground" Value="#F5FFFFFF" />
             <Setter Property="FontFamily" Value="{DynamicResource AppFontFamily}" />
             <Setter Property="FontSize" Value="{DynamicResource TypeBodyStrongFontSize}" />
-            <Setter Property="FontWeight" Value="{DynamicResource TypeBodyStrongFontWeight}" />
+            <Setter Property="FontWeight" Value="SemiBold" />
             <Setter Property="FocusVisualStyle" Value="{x:Null}" />
             <Setter Property="Cursor" Value="Hand" />
             <Setter Property="HorizontalContentAlignment" Value="Center" />
@@ -106,7 +106,7 @@
             <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
             <Setter Property="FontFamily" Value="{DynamicResource AppFontFamily}" />
             <Setter Property="FontSize" Value="{DynamicResource TypeBodyStrongFontSize}" />
-            <Setter Property="FontWeight" Value="{DynamicResource TypeBodyStrongFontWeight}" />
+            <Setter Property="FontWeight" Value="SemiBold" />
             <Setter Property="FocusVisualStyle" Value="{x:Null}" />
             <Setter Property="Cursor" Value="Hand" />
             <Setter Property="HorizontalContentAlignment" Value="Center" />
@@ -184,7 +184,7 @@
                 <TextBlock x:Name="TitleTextBlock"
                            Text="Note"
                            FontSize="{DynamicResource TypeHeaderFontSize}"
-                           FontWeight="{DynamicResource TypeHeaderFontWeight}"
+                           FontWeight="SemiBold"
                            Foreground="{DynamicResource TextPrimaryBrush}"
                            VerticalAlignment="Center"
                            TextTrimming="CharacterEllipsis" />
@@ -291,7 +291,7 @@
                             <TextBlock x:Name="SourceWebButtonText"
                                        Text="Website"
                                        FontSize="{DynamicResource TypeBodyStrongFontSize}"
-                                       FontWeight="{DynamicResource TypeBodyStrongFontWeight}"
+                                       FontWeight="SemiBold"
                                        Foreground="{DynamicResource TextPrimaryBrush}"
                                        VerticalAlignment="Center"
                                        MaxWidth="180"

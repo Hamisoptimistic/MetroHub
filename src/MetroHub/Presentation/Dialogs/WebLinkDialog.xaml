@@ -76,7 +76,7 @@
         <StackPanel Grid.Row="0">
             <TextBlock Text="Website URL"
                        FontSize="{DynamicResource TypeCaptionFontSize}"
-                       FontWeight="{DynamicResource TypeCaptionFontWeight}"
+                       FontWeight="Normal"
                        Foreground="{DynamicResource TextMutedBrush}"
                        Margin="0,0,0,6" />
 
@@ -87,7 +87,7 @@
 
             <TextBlock Text="Shortcut Label (Optional)"
                        FontSize="{DynamicResource TypeCaptionFontSize}"
-                       FontWeight="{DynamicResource TypeCaptionFontWeight}"
+                       FontWeight="Normal"
                        Foreground="{DynamicResource TextMutedBrush}"
                        Margin="0,14,0,6" />
             <TextBox x:Name="WebLinkTitleInput"
@@ -102,7 +102,7 @@
                              Margin="0,0,18,0">
                     <TextBlock Text="Both canvas &amp; sidebar"
                                FontSize="{DynamicResource TypeCaptionFontSize}"
-                               FontWeight="{DynamicResource TypeCaptionFontWeight}"
+                               FontWeight="Normal"
                                Foreground="{DynamicResource TextPrimaryBrush}"
                                VerticalAlignment="Center" />
                 </RadioButton>
@@ -112,7 +112,7 @@
                              Margin="0,0,18,0">
                     <TextBlock Text="Canvas only"
                                FontSize="{DynamicResource TypeCaptionFontSize}"
-                               FontWeight="{DynamicResource TypeCaptionFontWeight}"
+                               FontWeight="Normal"
                                Foreground="{DynamicResource TextPrimaryBrush}"
                                VerticalAlignment="Center" />
                 </RadioButton>
@@ -121,7 +121,7 @@
                              GroupName="ShortcutDest">
                     <TextBlock Text="Sidebar only"
                                FontSize="{DynamicResource TypeCaptionFontSize}"
-                               FontWeight="{DynamicResource TypeCaptionFontWeight}"
+                               FontWeight="Normal"
                                Foreground="{DynamicResource TextPrimaryBrush}"
                                VerticalAlignment="Center" />
                 </RadioButton>
@@ -129,7 +129,7 @@
 
             <TextBlock x:Name="WebLinkStatusMessage"
                        FontSize="{DynamicResource TypeCaptionFontSize}"
-                       FontWeight="{DynamicResource TypeCaptionFontWeight}"
+                       FontWeight="Normal"
                        Foreground="{DynamicResource StatusErrorBrush}"
                        Margin="0,8,0,0"
                        TextWrapping="Wrap"

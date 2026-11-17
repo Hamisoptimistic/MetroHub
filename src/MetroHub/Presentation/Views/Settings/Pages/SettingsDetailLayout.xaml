@@ -74,7 +74,7 @@
             <TextBlock Grid.Column="1"
                        Text="Settings"
                        FontSize="{DynamicResource TypeBodyStrongFontSize}"
-                       FontWeight="{DynamicResource TypeBodyStrongFontWeight}"
+                       FontWeight="SemiBold"
                        Foreground="{DynamicResource TextPrimaryBrush}"
                        Margin="10,0,0,0"
                        VerticalAlignment="Center" />
@@ -137,7 +137,7 @@
                         VerticalAlignment="Top">
                 <TextBlock Text="{Binding SelectedCategory.Title}"
                            FontSize="{DynamicResource TypeHeaderFontSize}"
-                           FontWeight="{DynamicResource TypeHeaderFontWeight}"
+                           FontWeight="SemiBold"
                            Foreground="{DynamicResource TextPrimaryBrush}" />
                 <TextBlock Text="{Binding SelectedCategory.Description}"
                            FontSize="{DynamicResource TypeCaptionFontSize}"

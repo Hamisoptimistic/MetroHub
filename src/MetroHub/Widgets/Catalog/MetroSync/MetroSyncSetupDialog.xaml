@@ -185,7 +185,7 @@
             <StackPanel Grid.Row="0">
                 <TextBlock Text="Bot token"
                            FontSize="{DynamicResource TypeCaptionFontSize}"
-                           FontWeight="{DynamicResource TypeCaptionFontWeight}"
+                           FontWeight="Normal"
                            Foreground="{DynamicResource TextSecondaryBrush}"
                            Margin="0,0,0,6" />
                 <TextBox x:Name="BotTokenInput"
@@ -243,7 +243,7 @@
                                                VerticalAlignment="Center" />
                                 <TextBlock Text="Open in Telegram"
                                            FontSize="{DynamicResource TypeCaptionFontSize}"
-                                           FontWeight="{DynamicResource TypeCaptionFontWeight}"
+                                           FontWeight="Normal"
                                            VerticalAlignment="Center" />
                             </StackPanel>
                         </Button>
@@ -317,7 +317,7 @@
                             <TextBlock x:Name="ConfirmationAccountNameText"
                                        Text="Anon"
                                        FontSize="{DynamicResource TypeBodyStrongFontSize}"
-                                       FontWeight="{DynamicResource TypeBodyStrongFontWeight}"
+                                       FontWeight="SemiBold"
                                        Foreground="{DynamicResource TextPrimaryBrush}"
                                        TextTrimming="CharacterEllipsis" />
 
@@ -337,7 +337,7 @@
                     <StackPanel>
                         <TextBlock Text="User ID"
                                    FontSize="{DynamicResource TypeCaptionFontSize}"
-                                   FontWeight="{DynamicResource TypeCaptionFontWeight}"
+                                   FontWeight="Normal"
                                    Foreground="{DynamicResource TextSecondaryBrush}"
                                    Margin="0,0,0,6" />
                         <TextBox x:Name="ManualUserIdInput"

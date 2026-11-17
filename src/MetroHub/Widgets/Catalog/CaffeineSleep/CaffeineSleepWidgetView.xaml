@@ -243,13 +243,13 @@
                             <TextBlock Text="Turn Off"
                                        FontFamily="{DynamicResource AppDisplayFontFamily}"
                                        FontSize="{DynamicResource TypeHeaderFontSize}"
-                                       FontWeight="{DynamicResource TypeHeaderFontWeight}"
+                                       FontWeight="SemiBold"
                                        Foreground="{DynamicResource TextPrimaryBrush}"
                                        TextTrimming="CharacterEllipsis" />
                             <TextBlock Text="Turns off all connected displays"
                                        FontFamily="{DynamicResource AppFontFamily}"
                                        FontSize="{DynamicResource TypeCaptionFontSize}"
-                                       FontWeight="{DynamicResource TypeCaptionFontWeight}"
+                                       FontWeight="Normal"
                                        Foreground="{DynamicResource TextSubtleBrush}"
                                        Margin="0,2,0,0"
                                        TextTrimming="CharacterEllipsis" />
@@ -266,7 +266,7 @@
                             ToolTip="Instantly powers down all displays into sleep">
                         <TextBlock Text="Turn Off"
                                    FontSize="{DynamicResource TypeCaptionFontSize}"
-                                   FontWeight="{DynamicResource TypeBodyStrongFontWeight}"
+                                   FontWeight="SemiBold"
                                    VerticalAlignment="Center" />
                     </Button>
                 </Grid>
@@ -296,13 +296,13 @@
                             <TextBlock Text="Cinematic fade-out"
                                        FontFamily="{DynamicResource AppDisplayFontFamily}"
                                        FontSize="{DynamicResource TypeHeaderFontSize}"
-                                       FontWeight="{DynamicResource TypeHeaderFontWeight}"
+                                       FontWeight="SemiBold"
                                        Foreground="{DynamicResource TextPrimaryBrush}"
                                        TextTrimming="CharacterEllipsis" />
                             <TextBlock Text="Smoothly dims displays to black before entering standby"
                                        FontFamily="{DynamicResource AppFontFamily}"
                                        FontSize="{DynamicResource TypeCaptionFontSize}"
-                                       FontWeight="{DynamicResource TypeCaptionFontWeight}"
+                                       FontWeight="Normal"
                                        Foreground="{DynamicResource TextSubtleBrush}"
                                        Margin="0,2,0,0"
                                        TextTrimming="CharacterEllipsis" />
@@ -354,13 +354,13 @@
                             <TextBlock Text="{Binding ModeTitle}"
                                        FontFamily="{DynamicResource AppDisplayFontFamily}"
                                        FontSize="{DynamicResource TypeHeaderFontSize}"
-                                       FontWeight="{DynamicResource TypeHeaderFontWeight}"
+                                       FontWeight="SemiBold"
                                        Foreground="{DynamicResource TextPrimaryBrush}"
                                        TextTrimming="CharacterEllipsis" />
                             <TextBlock Text="{Binding ModeSubtitle}"
                                        FontFamily="{DynamicResource AppFontFamily}"
                                        FontSize="{DynamicResource TypeCaptionFontSize}"
-                                       FontWeight="{DynamicResource TypeCaptionFontWeight}"
+                                       FontWeight="Normal"
                                        Foreground="{DynamicResource TextSubtleBrush}"
                                        Margin="0,2,0,0"
                                        TextTrimming="CharacterEllipsis" />
@@ -378,7 +378,7 @@
                         <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
                             <TextBlock Text="{Binding ModeButtonText}"
                                        FontSize="{DynamicResource TypeCaptionFontSize}"
-                                       FontWeight="{DynamicResource TypeBodyStrongFontWeight}"
+                                       FontWeight="SemiBold"
                                        VerticalAlignment="Center"
                                        Margin="0,0,6,0" />
                             <ui:SymbolIcon Symbol="ChevronDown16"
@@ -448,13 +448,13 @@
                             <TextBlock Text="Keep screen on"
                                        FontFamily="{DynamicResource AppDisplayFontFamily}"
                                        FontSize="{DynamicResource TypeHeaderFontSize}"
-                                       FontWeight="{DynamicResource TypeHeaderFontWeight}"
+                                       FontWeight="SemiBold"
                                        Foreground="{DynamicResource TextPrimaryBrush}"
                                        TextTrimming="CharacterEllipsis" />
                             <TextBlock Text="Requires Caffeine to be turned on"
                                        FontFamily="{DynamicResource AppFontFamily}"
                                        FontSize="{DynamicResource TypeCaptionFontSize}"
-                                       FontWeight="{DynamicResource TypeCaptionFontWeight}"
+                                       FontWeight="Normal"
                                        Foreground="{DynamicResource TextSubtleBrush}"
                                        Margin="0,2,0,0"
                                        TextTrimming="CharacterEllipsis" />
@@ -506,13 +506,13 @@
                             <TextBlock Text="{Binding NightLightStatusTitle}"
                                        FontFamily="{DynamicResource AppDisplayFontFamily}"
                                        FontSize="{DynamicResource TypeHeaderFontSize}"
-                                       FontWeight="{DynamicResource TypeHeaderFontWeight}"
+                                       FontWeight="SemiBold"
                                        Foreground="{DynamicResource TextPrimaryBrush}"
                                        TextTrimming="CharacterEllipsis" />
                             <TextBlock Text="{Binding NightLightStatusSubtitle}"
                                        FontFamily="{DynamicResource AppFontFamily}"
                                        FontSize="{DynamicResource TypeCaptionFontSize}"
-                                       FontWeight="{DynamicResource TypeCaptionFontWeight}"
+                                       FontWeight="Normal"
                                        Foreground="{DynamicResource TextSubtleBrush}"
                                        Margin="0,2,0,0"
                                        TextTrimming="CharacterEllipsis" />
@@ -561,7 +561,7 @@
                                Text="{Binding NightLightStrengthText}"
                                FontFamily="{DynamicResource AppFontFamily}"
                                FontSize="{DynamicResource TypeBodyStrongFontSize}"
-                               FontWeight="{DynamicResource TypeBodyStrongFontWeight}"
+                               FontWeight="SemiBold"
                                Foreground="{DynamicResource TextPrimaryBrush}"
                                Width="44"
                                TextAlignment="Right"

@@ -64,7 +64,7 @@
             <clock:AnimatedTimeBlock Grid.Row="1"
                                      Text="{Binding FullDateString}"
                                      FontSize="{DynamicResource TypeHeaderFontSize}"
-                                     FontWeight="{DynamicResource TypeHeaderFontWeight}"
+                                     FontWeight="SemiBold"
                                      Foreground="{DynamicResource TextPrimaryBrush}"
                                      HorizontalAlignment="Center"
                                      TextAlignment="Center"

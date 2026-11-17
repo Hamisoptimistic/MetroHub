@@ -13,7 +13,7 @@
         <!-- Section 1: Sidebar Rail -->
         <TextBlock Text="Sidebar Rail"
                    FontSize="{DynamicResource TypeBodyStrongFontSize}"
-                   FontWeight="{DynamicResource TypeBodyStrongFontWeight}"
+                   FontWeight="SemiBold"
                    Foreground="{DynamicResource TextPrimaryBrush}"
                    Margin="0,0,0,8" />
 
@@ -26,7 +26,7 @@
                 <StackPanel>
                     <TextBlock Text="Auto-Hide Sidebar"
                                FontSize="{DynamicResource TypeBodyFontSize}"
-                               FontWeight="{DynamicResource TypeBodyStrongFontWeight}"
+                               FontWeight="SemiBold"
                                Foreground="{DynamicResource TextPrimaryBrush}" />
                     <TextBlock Text="Automatically hide sidebar until you hover the left screen edge"
                                FontSize="{DynamicResource TypeCaptionFontSize}"
@@ -46,7 +46,7 @@
                 <StackPanel>
                     <TextBlock Text="Workspaces Button"
                                FontSize="{DynamicResource TypeBodyFontSize}"
-                               FontWeight="{DynamicResource TypeBodyStrongFontWeight}"
+                               FontWeight="SemiBold"
                                Foreground="{DynamicResource TextPrimaryBrush}" />
                     <TextBlock Text="Show the workspace switcher button on the sidebar"
                                FontSize="{DynamicResource TypeCaptionFontSize}"
@@ -66,7 +66,7 @@
                 <StackPanel>
                     <TextBlock Text="Add Button"
                                FontSize="{DynamicResource TypeBodyFontSize}"
-                               FontWeight="{DynamicResource TypeBodyStrongFontWeight}"
+                               FontWeight="SemiBold"
                                Foreground="{DynamicResource TextPrimaryBrush}" />
                     <TextBlock Text="Show the add shortcut button on the bottom rail"
                                FontSize="{DynamicResource TypeCaptionFontSize}"
@@ -86,7 +86,7 @@
                 <StackPanel>
                     <TextBlock Text="Power Button"
                                FontSize="{DynamicResource TypeBodyFontSize}"
-                               FontWeight="{DynamicResource TypeBodyStrongFontWeight}"
+                               FontWeight="SemiBold"
                                Foreground="{DynamicResource TextPrimaryBrush}" />
                     <TextBlock Text="Show the power options button on the bottom rail"
                                FontSize="{DynamicResource TypeCaptionFontSize}"
@@ -100,7 +100,7 @@
         <!-- Section 2: All Apps Drawer -->
         <TextBlock Text="All Apps Drawer"
                    FontSize="{DynamicResource TypeBodyStrongFontSize}"
-                   FontWeight="{DynamicResource TypeBodyStrongFontWeight}"
+                   FontWeight="SemiBold"
                    Foreground="{DynamicResource TextPrimaryBrush}"
                    Margin="0,16,0,8" />
 
@@ -113,7 +113,7 @@
                 <StackPanel>
                     <TextBlock Text="Open on Hover"
                                FontSize="{DynamicResource TypeBodyFontSize}"
-                               FontWeight="{DynamicResource TypeBodyStrongFontWeight}"
+                               FontWeight="SemiBold"
                                Foreground="{DynamicResource TextPrimaryBrush}" />
                     <TextBlock Text="Open the All apps drawer when hovering over the search icon"
                                FontSize="{DynamicResource TypeCaptionFontSize}"
@@ -133,7 +133,7 @@
                 <StackPanel>
                     <TextBlock Text="Recent Apps"
                                FontSize="{DynamicResource TypeBodyFontSize}"
-                               FontWeight="{DynamicResource TypeBodyStrongFontWeight}"
+                               FontWeight="SemiBold"
                                Foreground="{DynamicResource TextPrimaryBrush}" />
                     <TextBlock Text="Show suggested and recent apps in the drawer"
                                FontSize="{DynamicResource TypeCaptionFontSize}"
@@ -153,7 +153,7 @@
                 <StackPanel>
                     <TextBlock Text="Recent Apps Layout"
                                FontSize="{DynamicResource TypeBodyFontSize}"
-                               FontWeight="{DynamicResource TypeBodyStrongFontWeight}"
+                               FontWeight="SemiBold"
                                Foreground="{DynamicResource TextPrimaryBrush}" />
                     <TextBlock Text="Choose grid cards or a compact list in the drawer"
                                FontSize="{DynamicResource TypeCaptionFontSize}"
@@ -175,7 +175,7 @@
                 <StackPanel>
                     <TextBlock Text="Drawer Density"
                                FontSize="{DynamicResource TypeBodyFontSize}"
-                               FontWeight="{DynamicResource TypeBodyStrongFontWeight}"
+                               FontWeight="SemiBold"
                                Foreground="{DynamicResource TextPrimaryBrush}" />
                     <TextBlock Text="Choose compact or relaxed item sizing in the drawer"
                                FontSize="{DynamicResource TypeCaptionFontSize}"

@@ -37,7 +37,7 @@
             <!-- Workspace Name Label -->
             <TextBlock Text="Workspace Name"
                        FontSize="{DynamicResource TypeCaptionFontSize}"
-                       FontWeight="{DynamicResource TypeCaptionFontWeight}"
+                       FontWeight="Normal"
                        Foreground="{DynamicResource TextMutedBrush}"
                        Margin="0,0,0,6" />
 
@@ -56,7 +56,7 @@
             <!-- Icon Palette Section -->
             <TextBlock Text="Choose Icon"
                        FontSize="{DynamicResource TypeCaptionFontSize}"
-                       FontWeight="{DynamicResource TypeCaptionFontWeight}"
+                       FontWeight="Normal"
                        Foreground="{DynamicResource TextMutedBrush}"
                        Margin="0,6,0,6" />
 

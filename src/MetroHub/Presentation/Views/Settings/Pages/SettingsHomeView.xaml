@@ -53,12 +53,12 @@
                                                 VerticalAlignment="Center">
                                         <TextBlock Text="{Binding Title}"
                                                    FontSize="{DynamicResource TypeHeaderFontSize}"
-                                                   FontWeight="{DynamicResource TypeHeaderFontWeight}"
+                                                   FontWeight="SemiBold"
                                                    Foreground="{DynamicResource TextPrimaryBrush}"
                                                    TextTrimming="CharacterEllipsis" />
                                         <TextBlock Text="{Binding Description}"
                                                    FontSize="{DynamicResource TypeCaptionFontSize}"
-                                                   FontWeight="{DynamicResource TypeCaptionFontWeight}"
+                                                   FontWeight="Normal"
                                                    Foreground="{DynamicResource TextSecondaryBrush}"
                                                    Margin="0,3,0,0"
                                                    TextWrapping="Wrap"
@@ -119,7 +119,7 @@
         <TextBlock Grid.Row="0"
                    Text="Settings"
                    FontSize="{DynamicResource TypeDisplayFontSize}"
-                   FontWeight="{DynamicResource TypeDisplayFontWeight}"
+                   FontWeight="SemiBold"
                    Foreground="{DynamicResource TextPrimaryBrush}"
                    Margin="38,36,38,18"
                    VerticalAlignment="Center" />

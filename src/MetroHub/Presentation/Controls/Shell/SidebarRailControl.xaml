@@ -213,7 +213,7 @@
                                                    VerticalAlignment="Center"
                                                    Margin="10,0,8,0"
                                                    FontSize="{DynamicResource TypeBodyFontSize}"
-                                                   FontWeight="{DynamicResource TypeBodyFontWeight}"
+                                                   FontWeight="Normal"
                                                    Foreground="{DynamicResource TextPrimaryBrush}" />
                                     </Grid>
                                 </DataTemplate>
@@ -540,7 +540,7 @@
                                 <Button.ContextMenu>
                                     <ContextMenu DataContext="{Binding Path=PlacementTarget.Tag, RelativeSource={RelativeSource Self}}"
                                                  Opened="OnShortcutContextMenuOpened">
-                                        <MenuItem Header="{Binding Title}" IsEnabled="False" FontWeight="{DynamicResource TypeBodyStrongFontWeight}" />
+                                        <MenuItem Header="{Binding Title}" IsEnabled="False" FontWeight="SemiBold" />
                                         <Separator />
 
                                         <!-- Folder Actions (Visible when IsFolder is True) -->
@@ -770,7 +770,7 @@
                                 <Border.ContextMenu>
                                     <ContextMenu DataContext="{Binding Path=PlacementTarget.Tag, RelativeSource={RelativeSource Self}}"
                                                  Opened="OnDividerContextMenuOpened">
-                                        <MenuItem Header="Divider" IsEnabled="False" FontWeight="{DynamicResource TypeBodyStrongFontWeight}" />
+                                        <MenuItem Header="Divider" IsEnabled="False" FontWeight="SemiBold" />
                                         <Separator />
                                         <MenuItem Header="Move Up" Click="OnMoveUpClick">
                                             <MenuItem.Icon>

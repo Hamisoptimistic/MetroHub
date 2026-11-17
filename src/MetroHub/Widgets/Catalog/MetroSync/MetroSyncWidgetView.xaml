@@ -43,7 +43,7 @@
                 <TextBlock Grid.Column="0"
                            Text="MetroSync"
                            FontSize="{DynamicResource TypeSubtitleFontSize}"
-                           FontWeight="{DynamicResource TypeSubtitleFontWeight}"
+                           FontWeight="SemiBold"
                            Foreground="{DynamicResource TextPrimaryBrush}"
                            VerticalAlignment="Center" />
 
@@ -203,7 +203,7 @@
                             <StackPanel Grid.Column="1" Margin="8,0,0,0">
                                 <TextBlock Text="Two-Way Sharing"
                                            FontSize="{DynamicResource TypeBodyStrongFontSize}"
-                                           FontWeight="{DynamicResource TypeBodyStrongFontWeight}"
+                                           FontWeight="SemiBold"
                                            Foreground="{DynamicResource TextPrimaryBrush}"
                                            Margin="0,0,0,4" />
                                 <TextBlock Text="Share files and messages between your desktop and phone through your Telegram."
@@ -236,7 +236,7 @@
                             <StackPanel Grid.Column="1" Margin="8,0,0,0">
                                 <TextBlock Text="Your Personal Bot"
                                            FontSize="{DynamicResource TypeBodyStrongFontSize}"
-                                           FontWeight="{DynamicResource TypeBodyStrongFontWeight}"
+                                           FontWeight="SemiBold"
                                            Foreground="{DynamicResource TextPrimaryBrush}"
                                            Margin="0,0,0,4" />
                                 <TextBlock Text="Powered by your own Telegram bot. Only you have access."
@@ -269,7 +269,7 @@
                             <StackPanel Grid.Column="1" Margin="8,0,0,0">
                                 <TextBlock Text="No Companion App Needed"
                                            FontSize="{DynamicResource TypeBodyStrongFontSize}"
-                                           FontWeight="{DynamicResource TypeBodyStrongFontWeight}"
+                                           FontWeight="SemiBold"
                                            Foreground="{DynamicResource TextPrimaryBrush}"
                                            Margin="0,0,0,4" />
                                 <TextBlock Text="Use the Telegram app you already have. Nothing extra to install on your phone."
@@ -369,7 +369,7 @@
                         <TextBlock x:Name="InputPlaceholder"
                                    Text="Write a message…"
                                    FontSize="{DynamicResource TypeBodyFontSize}"
-                                   FontWeight="{DynamicResource TypeBodyFontWeight}"
+                                   FontWeight="Normal"
                                    Foreground="{DynamicResource TextSubtleBrush}"
                                    Opacity="0.55"
                                    IsHitTestVisible="False"

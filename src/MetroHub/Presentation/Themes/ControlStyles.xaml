@@ -23,7 +23,7 @@
         <Setter Property="Foreground" Value="#F5FFFFFF" />
         <Setter Property="FontFamily" Value="{DynamicResource AppFontFamily}" />
         <Setter Property="FontSize" Value="{DynamicResource TypeBodyStrongFontSize}" />
-        <Setter Property="FontWeight" Value="{DynamicResource TypeBodyStrongFontWeight}" />
+        <Setter Property="FontWeight" Value="SemiBold" />
         <Setter Property="FocusVisualStyle" Value="{x:Null}" />
         <Setter Property="Cursor" Value="Hand" />
         <Setter Property="HorizontalContentAlignment" Value="Center" />
@@ -121,7 +121,7 @@
         <Setter Property="MinWidth" Value="100" />
         <Setter Property="Padding" Value="16,0" />
         <Setter Property="FontSize" Value="{DynamicResource TypeBodyStrongFontSize}" />
-        <Setter Property="FontWeight" Value="{DynamicResource TypeBodyStrongFontWeight}" />
+        <Setter Property="FontWeight" Value="SemiBold" />
         <Setter Property="Foreground" Value="{DynamicResource SystemAccentColorForegroundBrush}" />
         <Setter Property="BorderThickness" Value="0" />
         <Setter Property="FocusVisualStyle" Value="{x:Null}" />
@@ -281,7 +281,7 @@
         <Setter Property="OverridesDefaultStyle" Value="True" />
         <Setter Property="Height" Value="36" />
         <Setter Property="FontSize" Value="{DynamicResource TypeBodyFontSize}" />
-        <Setter Property="FontWeight" Value="{DynamicResource TypeBodyFontWeight}" />
+        <Setter Property="FontWeight" Value="Normal" />
         <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
         <Setter Property="CaretBrush" Value="{DynamicResource TextPrimaryBrush}" />
         <Setter Property="SelectionBrush" Value="#40FFFFFF" />
@@ -470,7 +470,7 @@
         <Setter Property="UseLayoutRounding" Value="True" />
         <Setter Property="FontFamily" Value="{DynamicResource AppFontFamily}" />
         <Setter Property="FontSize" Value="{DynamicResource TypeBodyFontSize}" />
-        <Setter Property="FontWeight" Value="{DynamicResource TypeBodyFontWeight}" />
+        <Setter Property="FontWeight" Value="Normal" />
         <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
         <Setter Property="MinHeight" Value="28" />
         <Setter Property="Cursor" Value="Hand" />
@@ -512,7 +512,7 @@
                             <Setter TargetName="ActiveIndicator" Property="Visibility" Value="Visible" />
                             <Setter TargetName="Border" Property="Background" Value="{DynamicResource MenuBarItemBackgroundSelected}" />
                             <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
-                            <Setter Property="FontWeight" Value="{DynamicResource TypeBodyStrongFontWeight}" />
+                            <Setter Property="FontWeight" Value="SemiBold" />
                         </Trigger>
                         <!-- Highlighted / Hover State: Identical to ContextMenu MenuBarItemBackgroundSelected -->
                         <Trigger Property="IsHighlighted" Value="True">
@@ -604,7 +604,7 @@
         <Setter Property="UseLayoutRounding" Value="True" />
         <Setter Property="FontFamily" Value="{DynamicResource AppFontFamily}" />
         <Setter Property="FontSize" Value="{DynamicResource TypeBodyStrongFontSize}" />
-        <Setter Property="FontWeight" Value="{DynamicResource TypeBodyStrongFontWeight}" />
+        <Setter Property="FontWeight" Value="SemiBold" />
         <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
         <Setter Property="Background" Value="#1CFFFFFF" />
         <Setter Property="BorderBrush" Value="#25FFFFFF" />

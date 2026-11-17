@@ -21,7 +21,7 @@
         Topmost="True"
         FontFamily="{DynamicResource AppFontFamily}"
         FontSize="{DynamicResource TypeBodyFontSize}"
-        FontWeight="{DynamicResource TypeBodyFontWeight}"
+        FontWeight="Normal"
         TextOptions.TextFormattingMode="Ideal"
         TextOptions.TextRenderingMode="ClearType"
         TextOptions.TextHintingMode="Fixed"
@@ -207,7 +207,7 @@
                                                                VerticalAlignment="Center"
                                                                Margin="10,0,8,0"
                                                                FontSize="{DynamicResource TypeBodyFontSize}"
-                                                               FontWeight="{DynamicResource TypeBodyFontWeight}"
+                                                               FontWeight="Normal"
                                                                Foreground="{DynamicResource TextPrimaryBrush}" />
                                                 </Grid>
                                             </DataTemplate>
@@ -525,7 +525,7 @@
                             <TextBlock x:Name="GroupDropBadgeText"
                                        Text="Add to Section"
                                        FontSize="{DynamicResource TypeCaptionFontSize}"
-                                       FontWeight="{DynamicResource TypeBodyStrongFontWeight}"
+                                       FontWeight="SemiBold"
                                        Foreground="{DynamicResource TextPrimaryBrush}"
                                        VerticalAlignment="Center" />
                         </StackPanel>

@@ -105,7 +105,7 @@
                            VerticalAlignment="Center"
                            FontSize="{DynamicResource TypeBodyStrongFontSize}"
                            FontFamily="{DynamicResource AppFontFamily}"
-                           FontWeight="{DynamicResource TypeBodyStrongFontWeight}"
+                           FontWeight="SemiBold"
                            Foreground="{DynamicResource TextSecondaryBrush}"
                            TextOptions.TextFormattingMode="Ideal"
                            TextOptions.TextRenderingMode="ClearType">

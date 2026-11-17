@@ -85,7 +85,7 @@
                     <!-- Idle State: 'No media playing' subtle text -->
                     <TextBlock Text="No media playing"
                                FontSize="{DynamicResource TypeCaptionFontSize}"
-                               FontWeight="{DynamicResource TypeCaptionFontWeight}"
+                               FontWeight="Normal"
                                Foreground="{DynamicResource TextSubtleBrush}"
                                FontFamily="{DynamicResource AppFontFamily}"
                                HorizontalAlignment="Center"
@@ -98,14 +98,14 @@
                                 Visibility="{Binding Media.HasMedia, Converter={StaticResource BoolToVis}}">
                         <TextBlock Text="{Binding Media.Title}"
                                    FontSize="{DynamicResource TypeBodyStrongFontSize}"
-                                   FontWeight="{DynamicResource TypeBodyStrongFontWeight}"
+                                   FontWeight="SemiBold"
                                    Foreground="{DynamicResource TextPrimaryBrush}"
                                    FontFamily="{DynamicResource AppDisplayFontFamily}"
                                    TextTrimming="CharacterEllipsis"
                                    TextWrapping="NoWrap" />
                         <TextBlock Text="{Binding Media.Artist}"
                                    FontSize="{DynamicResource TypeCaptionFontSize}"
-                                   FontWeight="{DynamicResource TypeCaptionFontWeight}"
+                                   FontWeight="Normal"
                                    Foreground="{DynamicResource TextSecondaryBrush}"
                                    TextTrimming="CharacterEllipsis"
                                    TextWrapping="NoWrap"
@@ -224,7 +224,7 @@
                         <!-- Volume % Number Shown While Dragging -->
                         <TextBlock Text="{Binding Volume.MasterVolumePercentText}"
                                    FontSize="{DynamicResource TypeBodyStrongFontSize}"
-                                   FontWeight="{DynamicResource TypeBodyStrongFontWeight}"
+                                   FontWeight="SemiBold"
                                    Foreground="{DynamicResource TextPrimaryBrush}"
                                    VerticalAlignment="Center"
                                    HorizontalAlignment="Center">
@@ -314,7 +314,7 @@
                         <!-- Brightness % Number Shown While Dragging -->
                         <TextBlock Text="{Binding Brightness.MasterBrightnessPercentText}"
                                    FontSize="{DynamicResource TypeBodyStrongFontSize}"
-                                   FontWeight="{DynamicResource TypeBodyStrongFontWeight}"
+                                   FontWeight="SemiBold"
                                    Foreground="{DynamicResource TextPrimaryBrush}"
                                    VerticalAlignment="Center"
                                    HorizontalAlignment="Center"

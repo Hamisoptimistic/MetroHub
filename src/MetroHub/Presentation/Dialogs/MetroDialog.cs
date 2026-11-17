@@ -478,7 +478,7 @@ public class MetroDialog : BorderlessFluentWindow
             Margin = new Thickness(0, 0, 8, 8)
         };
         messageBlock.SetResourceReference(TextBlock.FontSizeProperty, "TypeBodyStrongFontSize");
-        messageBlock.SetResourceReference(TextBlock.FontWeightProperty, "TypeHeaderFontWeight");
+        messageBlock.FontWeight = FontWeights.SemiBold;
         messageBlock.SetResourceReference(TextBlock.ForegroundProperty, "TextPrimaryBrush");
         bodyStack.Children.Add(messageBlock);
 
@@ -542,7 +542,7 @@ public class MetroDialog : BorderlessFluentWindow
             confirmButton.Cursor = Cursors.Hand;
             confirmButton.SetResourceReference(Control.FontFamilyProperty, "AppFontFamily");
             confirmButton.SetResourceReference(Control.FontSizeProperty, "TypeBodyStrongFontSize");
-            confirmButton.SetResourceReference(Control.FontWeightProperty, "TypeBodyStrongFontWeight");
+            confirmButton.FontWeight = FontWeights.SemiBold;
         }
         else
         {

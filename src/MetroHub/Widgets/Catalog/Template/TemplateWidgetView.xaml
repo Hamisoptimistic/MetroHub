@@ -49,7 +49,7 @@
                 <TextBlock Grid.Column="1"
                            Text="{Binding Label}"
                            FontSize="{DynamicResource TypeHeaderFontSize}"
-                           FontWeight="{DynamicResource TypeHeaderFontWeight}"
+                           FontWeight="SemiBold"
                            Foreground="{DynamicResource TextPrimaryBrush}"
                            VerticalAlignment="Center"
                            TextTrimming="CharacterEllipsis" />
@@ -80,7 +80,7 @@
                     <TextBlock Text="{Binding Counter, StringFormat='Clicks: {0}'}"
                                HorizontalAlignment="Center"
                                FontSize="{DynamicResource TypeSubtitleFontSize}"
-                               FontWeight="{DynamicResource TypeSubtitleFontWeight}"
+                               FontWeight="SemiBold"
                                Foreground="{DynamicResource TextPrimaryBrush}" />
                     <TextBlock Text="Click tile to interact"
                                HorizontalAlignment="Center"

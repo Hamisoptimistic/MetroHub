@@ -19,7 +19,7 @@
                 <StackPanel>
                     <TextBlock Text="Start with Windows"
                                FontSize="{DynamicResource TypeBodyFontSize}"
-                               FontWeight="{DynamicResource TypeBodyStrongFontWeight}"
+                               FontWeight="SemiBold"
                                Foreground="{DynamicResource TextPrimaryBrush}" />
                     <TextBlock Text="Launch MetroHub automatically when you sign in"
                                FontSize="{DynamicResource TypeCaptionFontSize}"
@@ -39,7 +39,7 @@
                 <StackPanel>
                     <TextBlock Text="Start Minimized"
                                FontSize="{DynamicResource TypeBodyFontSize}"
-                               FontWeight="{DynamicResource TypeBodyStrongFontWeight}"
+                               FontWeight="SemiBold"
                                Foreground="{DynamicResource TextPrimaryBrush}" />
                     <TextBlock Text="Launch quietly in the background on startup"
                                FontSize="{DynamicResource TypeCaptionFontSize}"
@@ -59,7 +59,7 @@
                 <StackPanel>
                     <TextBlock Text="System Tray Icon"
                                FontSize="{DynamicResource TypeBodyFontSize}"
-                               FontWeight="{DynamicResource TypeBodyStrongFontWeight}"
+                               FontWeight="SemiBold"
                                Foreground="{DynamicResource TextPrimaryBrush}" />
                     <TextBlock Text="Display the MetroHub icon in the notification area"
                                FontSize="{DynamicResource TypeCaptionFontSize}"
@@ -79,7 +79,7 @@
                 <StackPanel>
                     <TextBlock Text="Windows Hibernation"
                                FontSize="{DynamicResource TypeBodyFontSize}"
-                               FontWeight="{DynamicResource TypeBodyStrongFontWeight}"
+                               FontWeight="SemiBold"
                                Foreground="{DynamicResource TextPrimaryBrush}" />
                     <TextBlock Text="{Binding HibernateStatusDescription}"
                                FontSize="{DynamicResource TypeCaptionFontSize}"
@@ -106,7 +106,7 @@
                 <StackPanel>
                     <TextBlock Text="Display"
                                FontSize="{DynamicResource TypeBodyFontSize}"
-                               FontWeight="{DynamicResource TypeBodyStrongFontWeight}"
+                               FontWeight="SemiBold"
                                Foreground="{DynamicResource TextPrimaryBrush}" />
                     <TextBlock Text="Choose which monitor MetroHub opens on"
                                FontSize="{DynamicResource TypeCaptionFontSize}"

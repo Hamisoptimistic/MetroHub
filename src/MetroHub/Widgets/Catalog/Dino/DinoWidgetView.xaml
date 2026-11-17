@@ -200,7 +200,7 @@
                     <TextBlock Text="PRESS SPACE OR CLICK TO RESUME" 
                                FontFamily="{DynamicResource AppMonoFontFamily}" 
                                FontSize="{DynamicResource TypeCaptionFontSize}" 
-                               FontWeight="{DynamicResource TypeBodyStrongFontWeight}" 
+                               FontWeight="SemiBold" 
                                Foreground="#737373" 
                                HorizontalAlignment="Center" />
                 </StackPanel>

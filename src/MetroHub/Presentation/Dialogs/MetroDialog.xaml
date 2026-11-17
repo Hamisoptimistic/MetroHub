@@ -76,12 +76,12 @@
                                         <StackPanel VerticalAlignment="Center">
                                             <TextBlock Text="{TemplateBinding Title}"
                                                        FontSize="{DynamicResource TypeHeaderFontSize}"
-                                                       FontWeight="{DynamicResource TypeHeaderFontWeight}"
+                                                       FontWeight="SemiBold"
                                                        Foreground="{DynamicResource TextPrimaryBrush}"
                                                        TextTrimming="CharacterEllipsis" />
                                             <TextBlock Text="{TemplateBinding Subtitle}"
                                                        FontSize="{DynamicResource TypeCaptionFontSize}"
-                                                       FontWeight="{DynamicResource TypeCaptionFontWeight}"
+                                                       FontWeight="Normal"
                                                        Foreground="{DynamicResource TextSecondaryBrush}"
                                                        Margin="0,3,0,0"
                                                        TextTrimming="CharacterEllipsis"

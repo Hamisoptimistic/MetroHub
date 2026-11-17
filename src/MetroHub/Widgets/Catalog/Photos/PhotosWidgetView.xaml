@@ -59,7 +59,7 @@
                     <!-- Title -->
                     <TextBlock Text="Photo Stream"
                                FontSize="{DynamicResource TypeHeaderFontSize}"
-                               FontWeight="{DynamicResource TypeHeaderFontWeight}"
+                               FontWeight="SemiBold"
                                Foreground="{DynamicResource TextPrimaryBrush}"
                                HorizontalAlignment="Center"
                                Margin="0,0,0,2" />
@@ -67,7 +67,7 @@
                     <!-- Subtitle -->
                     <TextBlock Text="Select a folder to start your live photo stream."
                                FontSize="{DynamicResource TypeCaptionFontSize}"
-                               FontWeight="{DynamicResource TypeCaptionFontWeight}"
+                               FontWeight="Normal"
                                Foreground="{DynamicResource TextMutedBrush}"
                                HorizontalAlignment="Center"
                                TextAlignment="Center"
@@ -89,7 +89,7 @@
                                        Margin="0,0,8,0" />
                             <TextBlock Text="Choose Photos Folder"
                                        FontSize="{DynamicResource TypeBodyStrongFontSize}"
-                                       FontWeight="{DynamicResource TypeBodyStrongFontWeight}"
+                                       FontWeight="SemiBold"
                                        Foreground="{DynamicResource TextPrimaryBrush}"
                                        VerticalAlignment="Center" />
                         </StackPanel>
