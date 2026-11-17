@@ -9,7 +9,7 @@ Windows desktop live-tile launcher (WPF, `net10.0-windows10.0.19041.0`, SVMs via
 - **Never publish while the app is running.** Stop the process first to avoid file lock errors (MSB3026).
 - **Strict Subsystem Containment (No Domain Bleed):** Encapsulate feature logic inside its dedicated directory (e.g. `src/MetroHub/Presentation/Shaders/BackdropShaderDriver.cs`). Do not touch unrelated shell or canvas files.
 - **[IMP] Test Standards (Zero Change-Detectors):** Strictly follow `docs/TESTING_STANDARDS.md`. Test observable behavior at the cheapest layer with hardcoded expected values. Never assert internal mocks, private reflection, or call counts.
-- Reply concisely in simplified technical English. Use Unicode box-drawing text flowcharts only when strictly necessary (no Mermaid or SVG).
+- Reply concisely in simplified technical English. Mermaid diagrams are welcome when visual clarification helps.
 
 ## Build & Publish Workflow
 
