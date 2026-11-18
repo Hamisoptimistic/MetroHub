@@ -1,0 +1,17 @@
+<svg width="256" height="256" viewBox="0 0 256 256" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <!-- 135° Windows 11 Azure Gradient -->
+    <linearGradient id="win11Bookmark" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#258BFF" />
+      <stop offset="100%" stop-color="#0A4EA8" />
+    </linearGradient>
+  </defs>
+
+  <g transform="scale(10.666666666666666)">
+    <!-- Ribbon Body -->
+    <path fill-rule="evenodd" clip-rule="evenodd" d="M3.25 6C3.25 3.37665 5.37665 1.25 8 1.25H16C18.6234 1.25 20.75 3.37665 20.75 6V20.4648C20.75 21.7269 19.7269 22.75 18.4648 22.75C18.0137 22.75 17.5726 22.6165 17.1972 22.3662L12.6934 19.3636C12.2735 19.0837 11.7265 19.0837 11.3066 19.3636L6.80278 22.3662C6.42739 22.6165 5.98634 22.75 5.53518 22.75C4.27311 22.75 3.25 21.7269 3.25 20.4648V6Z" fill="url(#win11Bookmark)" />
+
+    <!-- Crisp White Accent Strip -->
+    <path fill-rule="evenodd" clip-rule="evenodd" d="M8.25 7.5C8.25 7.08579 8.58579 6.75 9 6.75H15C15.4142 6.75 15.75 7.08579 15.75 7.5C15.75 7.91421 15.4142 8.25 15 8.25H9C8.58579 8.25 8.25 7.91421 8.25 7.5Z" fill="#FFFFFF" />
+  </g>
+</svg>

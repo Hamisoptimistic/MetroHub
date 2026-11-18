@@ -1,0 +1,41 @@
+<svg width="256" height="256" viewBox="0 0 256 256" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <!-- Top-Left Wide Pane: Fluent Cyan-to-Blue Accent -->
+    <linearGradient id="activeCanvas" gradientUnits="userSpaceOnUse" x1="4" y1="4" x2="20.5" y2="17.25">
+      <stop offset="0%" stop-color="#36DFF1" />
+      <stop offset="100%" stop-color="#2764E7" />
+    </linearGradient>
+
+    <!-- Top-Right Narrow Pane: Light Cool Silver-Slate -->
+    <linearGradient id="slateLight" gradientUnits="userSpaceOnUse" x1="22" y1="4" x2="32" y2="17.25">
+      <stop offset="0%" stop-color="#B9C0C7" />
+      <stop offset="100%" stop-color="#889096" />
+    </linearGradient>
+
+    <!-- Bottom-Right Wide Pane: Mid Cool Slate -->
+    <linearGradient id="slateMid" gradientUnits="userSpaceOnUse" x1="15.5" y1="18.75" x2="32" y2="32">
+      <stop offset="0%" stop-color="#889096" />
+      <stop offset="100%" stop-color="#63686E" />
+    </linearGradient>
+
+    <!-- Bottom-Left Narrow Pane: Deep Cool Slate -->
+    <linearGradient id="slateDark" gradientUnits="userSpaceOnUse" x1="4" y1="18.75" x2="14" y2="32">
+      <stop offset="0%" stop-color="#55595E" />
+      <stop offset="100%" stop-color="#383B3D" />
+    </linearGradient>
+  </defs>
+
+  <g transform="scale(7.111111111111111)">
+    <!-- Top-Left Wide Pane (Active Focal Canvas) -->
+    <rect x="4" y="4" width="16.5" height="13.25" rx="0.5" fill="url(#activeCanvas)" />
+
+    <!-- Top-Right Narrow Pane -->
+    <rect x="22" y="4" width="10" height="13.25" rx="0.5" fill="url(#slateLight)" />
+
+    <!-- Bottom-Left Narrow Pane -->
+    <rect x="4" y="18.75" width="10" height="13.25" rx="0.5" fill="url(#slateDark)" />
+
+    <!-- Bottom-Right Wide Pane -->
+    <rect x="15.5" y="18.75" width="16.5" height="13.25" rx="0.5" fill="url(#slateMid)" />
+  </g>
+</svg>

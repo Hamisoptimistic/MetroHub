@@ -1,0 +1,158 @@
+<svg width="256" height="256" viewBox="0 0 256 256" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Keyboard Shortcut">
+  <defs>
+    <!-- Cool Slate Grey Chassis -->
+    <linearGradient id="slateChassis" x1="15%" y1="0%" x2="85%" y2="100%">
+      <stop offset="0%" stop-color="#7E868D" />
+      <stop offset="50%" stop-color="#777F86" />
+      <stop offset="100%" stop-color="#6F777E" />
+    </linearGradient>
+
+    <!-- Windows Key: Fluent Sky-Blue Gradient -->
+    <linearGradient id="winKeyTop" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#B6EFFF" />
+      <stop offset="60%" stop-color="#58AAFE" />
+      <stop offset="100%" stop-color="#4894FE" />
+    </linearGradient>
+    <linearGradient id="winKeySkirt" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#2B7DE9" />
+      <stop offset="100%" stop-color="#2052CB" />
+    </linearGradient>
+
+    <!-- Spacebar: Fluent Pink Gradient -->
+    <linearGradient id="spaceKeyTop" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#F97DBD" />
+      <stop offset="100%" stop-color="#D7257D" />
+    </linearGradient>
+    <linearGradient id="spaceKeySkirt" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#B81D69" />
+      <stop offset="100%" stop-color="#8A114D" />
+    </linearGradient>
+
+    <!-- Enter Key: Fluent Emerald-Teal Green Gradient -->
+    <linearGradient id="enterKeyTop" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#52D17C" />
+      <stop offset="100%" stop-color="#22918B" />
+    </linearGradient>
+    <linearGradient id="enterKeySkirt" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#1B7570" />
+      <stop offset="100%" stop-color="#135753" />
+    </linearGradient>
+
+    <!-- Bottom-Right Action Button Overlay (System & Azure) -->
+    <linearGradient id="actionKeyBase" x1="15%" y1="0%" x2="85%" y2="100%">
+      <stop offset="0%" stop-color="#115EA3" />
+      <stop offset="55%" stop-color="#0A4EA8" />
+      <stop offset="100%" stop-color="#063473" />
+    </linearGradient>
+    <linearGradient id="actionKeyTop" x1="15%" y1="0%" x2="85%" y2="100%">
+      <stop offset="0%" stop-color="#4CC2FF" />
+      <stop offset="48%" stop-color="#168BFF" />
+      <stop offset="100%" stop-color="#0A4EA8" />
+    </linearGradient>
+    <linearGradient id="actionKeySheen" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#FFFFFF" stop-opacity="0.35" />
+      <stop offset="40%" stop-color="#FFFFFF" stop-opacity="0" />
+      <stop offset="100%" stop-color="#0A4EA8" stop-opacity="0.18" />
+    </linearGradient>
+  </defs>
+
+  <g transform="scale(2)">
+    <!-- Bottom Chassis Lip (Deep Cool Slate) -->
+    <path d="M4.28 86.4l-.27 4.37c-.14 2.48 1.71 3.38 3.51 3.38h112.95c1.8 0 3.66-.65 3.53-3.53l-.27-4.22H4.28z" fill="#545C63" />
+
+    <!-- Main Keyboard Deck (Cool Slate Grey) -->
+    <path d="M120.47 90.79H7.53c-1.8 0-3.32-1.52-3.32-3.32l2.94-50.31c0-1.9 1.52-3.32 3.32-3.32h107.07c1.8 0 3.32 1.52 3.32 3.32l2.94 50.31c0 1.8-1.52 3.32-3.33 3.32z" fill="url(#slateChassis)" />
+
+    <!-- Standard Keycap 3D Shadows / Skirts (0.5 Corner Radius) -->
+    <g fill="#545C63">
+      <!-- Row 1 -->
+      <path d="M13.19 45.65 H19.93 A0.5 0.5 0 0 1 20.43 46.15 L20.28 49.12 A0.5 0.5 0 0 1 19.78 49.62 H13.04 A0.5 0.5 0 0 1 12.54 49.12 L12.69 46.15 A0.5 0.5 0 0 1 13.19 45.65 Z" />
+      <rect x="24.23" y="45.65" width="7.74" height="3.97" rx="0.5" />
+      <rect x="35.30" y="45.65" width="7.94" height="3.97" rx="0.5" />
+      <rect x="46.56" y="45.65" width="7.94" height="3.97" rx="0.5" />
+      <rect x="57.73" y="45.65" width="7.94" height="3.97" rx="0.5" />
+      <rect x="69.00" y="45.65" width="7.94" height="3.97" rx="0.5" />
+      <rect x="80.17" y="45.65" width="7.94" height="3.97" rx="0.5" />
+      <rect x="91.33" y="45.65" width="8.24" height="3.97" rx="0.5" />
+      <path d="M103.59 45.65 H114.61 A0.5 0.5 0 0 1 115.11 46.15 L115.22 49.12 A0.5 0.5 0 0 1 114.72 49.62 H103.59 A0.5 0.5 0 0 1 103.09 49.12 V46.15 A0.5 0.5 0 0 1 103.59 45.65 Z" />
+      <!-- Row 2 -->
+      <path d="M12.42 57.50 H24.12 A0.5 0.5 0 0 1 24.62 58.00 V60.87 A0.5 0.5 0 0 1 24.12 61.37 H12.25 A0.5 0.5 0 0 1 11.75 60.87 L11.92 58.00 A0.5 0.5 0 0 1 12.42 57.50 Z" />
+      <rect x="28.63" y="57.50" width="7.84" height="3.87" rx="0.5" />
+      <rect x="39.80" y="57.50" width="7.94" height="3.87" rx="0.5" />
+      <rect x="50.97" y="57.50" width="7.94" height="3.87" rx="0.5" />
+      <rect x="62.14" y="57.50" width="7.94" height="3.87" rx="0.5" />
+      <rect x="73.41" y="57.50" width="7.94" height="3.87" rx="0.5" />
+      <rect x="84.57" y="57.50" width="7.94" height="3.87" rx="0.5" />
+      <rect x="95.84" y="57.50" width="7.94" height="3.87" rx="0.5" />
+      <path d="M107.73 57.50 H115.41 A0.5 0.5 0 0 1 115.91 58.00 L116.06 60.87 A0.5 0.5 0 0 1 115.56 61.37 H107.73 A0.5 0.5 0 0 1 107.23 60.87 V58.00 A0.5 0.5 0 0 1 107.73 57.50 Z" />
+      <!-- Row 3 -->
+      <path d="M11.96 69.50 H27.73 A0.5 0.5 0 0 1 28.23 70.00 L28.08 72.88 A0.5 0.5 0 0 1 27.58 73.38 H11.82 A0.5 0.5 0 0 1 11.32 72.88 L11.46 70.00 A0.5 0.5 0 0 1 11.96 69.50 Z" />
+      <rect x="32.65" y="69.50" width="7.74" height="3.88" rx="0.5" />
+      <rect x="44.41" y="69.50" width="7.74" height="3.88" rx="0.5" />
+      <rect x="56.16" y="69.50" width="7.74" height="3.88" rx="0.5" />
+      <rect x="67.92" y="69.50" width="7.74" height="3.88" rx="0.5" />
+      <rect x="79.68" y="69.50" width="7.74" height="3.88" rx="0.5" />
+      <!-- Row 4 -->
+      <path d="M11.24 81.30 H19.66 A0.5 0.5 0 0 1 20.16 81.80 V84.73 A0.5 0.5 0 0 1 19.66 85.23 H11.02 A0.5 0.5 0 0 1 10.52 84.73 L10.74 81.80 A0.5 0.5 0 0 1 11.24 81.30 Z" />
+      <rect x="37.25" y="81.30" width="8.20" height="3.93" rx="0.5" />
+      <rect x="94.86" y="81.30" width="8.54" height="3.93" rx="0.5" />
+      <path d="M108.21 81.30 H116.59 A0.5 0.5 0 0 1 117.09 81.80 L117.24 84.73 A0.5 0.5 0 0 1 116.74 85.23 H108.21 A0.5 0.5 0 0 1 107.71 84.73 V81.80 A0.5 0.5 0 0 1 108.21 81.30 Z" />
+    </g>
+
+    <!-- Standard Keycap Tops (Cool Icy Off-White, 0.5 Corner Radius) -->
+    <g fill="#CDD5DB">
+      <!-- Row 1 -->
+      <path d="M13.56 40.33 H20.30 A0.5 0.5 0 0 1 20.80 40.83 L20.35 47.40 A0.5 0.5 0 0 1 19.85 47.90 H13.11 A0.5 0.5 0 0 1 12.61 47.40 L13.06 40.83 A0.5 0.5 0 0 1 13.56 40.33 Z" />
+      <rect x="24.23" y="40.33" width="7.74" height="7.57" rx="0.5" />
+      <rect x="35.30" y="40.33" width="7.94" height="7.57" rx="0.5" />
+      <rect x="46.56" y="40.33" width="7.94" height="7.57" rx="0.5" />
+      <rect x="57.73" y="40.33" width="7.94" height="7.57" rx="0.5" />
+      <rect x="69.00" y="40.33" width="7.94" height="7.57" rx="0.5" />
+      <rect x="80.17" y="40.33" width="7.94" height="7.57" rx="0.5" />
+      <rect x="91.33" y="40.33" width="8.24" height="7.57" rx="0.5" />
+      <path d="M103.59 40.33 H114.45 A0.5 0.5 0 0 1 114.95 40.83 L115.17 47.40 A0.5 0.5 0 0 1 114.67 47.90 H103.59 A0.5 0.5 0 0 1 103.09 47.40 V40.83 A0.5 0.5 0 0 1 103.59 40.33 Z" />
+      <!-- Row 2 -->
+      <path d="M12.67 52.21 H24.12 A0.5 0.5 0 0 1 24.62 52.71 V59.28 A0.5 0.5 0 0 1 24.12 59.78 H12.32 A0.5 0.5 0 0 1 11.82 59.28 L12.17 52.71 A0.5 0.5 0 0 1 12.67 52.21 Z" />
+      <rect x="28.63" y="52.21" width="7.84" height="7.57" rx="0.5" />
+      <rect x="39.80" y="52.21" width="7.94" height="7.57" rx="0.5" />
+      <rect x="50.97" y="52.21" width="7.94" height="7.57" rx="0.5" />
+      <rect x="62.14" y="52.21" width="7.94" height="7.57" rx="0.5" />
+      <rect x="73.41" y="52.21" width="7.94" height="7.57" rx="0.5" />
+      <rect x="84.57" y="52.21" width="7.94" height="7.57" rx="0.5" />
+      <rect x="95.84" y="52.21" width="7.94" height="7.57" rx="0.5" />
+      <path d="M107.73 52.21 H115.19 A0.5 0.5 0 0 1 115.69 52.71 L116.00 59.28 A0.5 0.5 0 0 1 115.50 59.78 H107.73 A0.5 0.5 0 0 1 107.23 59.28 V52.71 A0.5 0.5 0 0 1 107.73 52.21 Z" />
+      <!-- Row 3 -->
+      <path d="M12.12 64.13 H27.94 A0.5 0.5 0 0 1 28.44 64.63 L28.15 71.20 A0.5 0.5 0 0 1 27.65 71.70 H11.89 A0.5 0.5 0 0 1 11.39 71.20 L11.62 64.63 A0.5 0.5 0 0 1 12.12 64.13 Z" />
+      <rect x="32.65" y="64.13" width="7.74" height="7.57" rx="0.5" />
+      <rect x="44.41" y="64.13" width="7.74" height="7.57" rx="0.5" />
+      <rect x="56.16" y="64.13" width="7.74" height="7.57" rx="0.5" />
+      <rect x="67.92" y="64.13" width="7.74" height="7.57" rx="0.5" />
+      <rect x="79.68" y="64.13" width="7.74" height="7.57" rx="0.5" />
+      <!-- Row 4 -->
+      <path d="M11.54 75.96 H19.66 A0.5 0.5 0 0 1 20.16 76.46 V83.03 A0.5 0.5 0 0 1 19.66 83.53 H11.11 A0.5 0.5 0 0 1 10.61 83.03 L11.04 76.46 A0.5 0.5 0 0 1 11.54 75.96 Z" />
+      <rect x="37.25" y="75.96" width="8.20" height="7.57" rx="0.5" />
+      <rect x="94.86" y="75.96" width="8.54" height="7.57" rx="0.5" />
+      <path d="M108.21 75.96 H116.39 A0.5 0.5 0 0 1 116.89 76.46 L117.18 83.03 A0.5 0.5 0 0 1 116.68 83.53 H108.21 A0.5 0.5 0 0 1 107.71 83.03 V76.46 A0.5 0.5 0 0 1 108.21 75.96 Z" />
+    </g>
+
+    <!-- Colorful Key 1: Enter Key (Fluent Emerald-Teal Green, 0.5 Corner Radius) -->
+    <path d="M92.32 69.50 H116.01 A0.5 0.5 0 0 1 116.51 70.00 L116.68 72.98 A0.5 0.5 0 0 1 116.18 73.48 H92.45 A0.5 0.5 0 0 1 91.95 72.98 L91.82 70.00 A0.5 0.5 0 0 1 92.32 69.50 Z" fill="url(#enterKeySkirt)" />
+    <path d="M92.14 63.94 H115.77 A0.5 0.5 0 0 1 116.27 64.44 L116.61 71.29 A0.5 0.5 0 0 1 116.11 71.79 H92.39 A0.5 0.5 0 0 1 91.89 71.29 L91.64 64.44 A0.5 0.5 0 0 1 92.14 63.94 Z" fill="url(#enterKeyTop)" />
+
+    <!-- Colorful Key 2: Windows Key (Fluent Sky-Blue Gradient, 0.5 Corner Radius) -->
+    <rect x="24.85" y="81.30" width="8.20" height="3.93" rx="0.5" fill="url(#winKeySkirt)" />
+    <rect x="24.85" y="75.96" width="8.20" height="7.57" rx="0.5" fill="url(#winKeyTop)" />
+
+    <!-- Colorful Key 3: Shortened Spacebar (Fluent Pink Gradient, 0.5 Corner Radius) -->
+    <rect x="49.70" y="81.30" width="40.85" height="3.93" rx="0.5" fill="url(#spaceKeySkirt)" />
+    <rect x="49.70" y="75.96" width="40.85" height="7.57" rx="0.5" fill="url(#spaceKeyTop)" />
+
+    <!-- Bottom-Right Action Button Overlay (0.5 Corner Radius) -->
+    <rect x="94" y="77.8" width="30" height="30" rx="0.5" fill="url(#actionKeyBase)" />
+    <rect x="94" y="75" width="30" height="30" rx="0.5" fill="url(#actionKeyTop)" />
+    <rect x="94" y="75" width="30" height="30" rx="0.5" fill="url(#actionKeySheen)" />
+
+    <!-- Crisp White Shortcut Lightning Glyph -->
+    <polygon points="110.93,81 103,91.07 108.57,91.07 107.07,99 115,88.93 109.43,88.93" fill="#FFFFFF" stroke="#FFFFFF" stroke-width="0.95" stroke-linejoin="round" />
+  </g>
+</svg>

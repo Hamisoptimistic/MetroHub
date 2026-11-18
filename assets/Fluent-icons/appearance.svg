@@ -1,0 +1,70 @@
+<svg width="256" height="256" viewBox="0 0 256 256" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <!-- Archetype F: 4-Stop Warm Ambient Base -->
+    <linearGradient id="rollerBaseCharcoal" x1="15%" y1="0%" x2="85%" y2="100%">
+      <stop offset="0%" stop-color="#FFD34E" />
+      <stop offset="30%" stop-color="#FFB900" />
+      <stop offset="70%" stop-color="#FF8C00" />
+      <stop offset="100%" stop-color="#E65100" />
+    </linearGradient>
+
+    <!-- Specular Sheen & Volumetric Cylinder Edge -->
+    <linearGradient id="rollerSheenCharcoal" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#FFF8E1" stop-opacity="0.38" />
+      <stop offset="38%" stop-color="#FFFFFF" stop-opacity="0" />
+      <stop offset="72%" stop-color="#8E2400" stop-opacity="0" />
+      <stop offset="100%" stop-color="#8E2400" stop-opacity="0.22" />
+    </linearGradient>
+
+    <!-- Paint Teardrop Gradient -->
+    <linearGradient id="dropGradCharcoal" x1="20%" y1="0%" x2="80%" y2="100%">
+      <stop offset="0%" stop-color="#FFD34E" />
+      <stop offset="45%" stop-color="#FF9800" />
+      <stop offset="100%" stop-color="#E65100" />
+    </linearGradient>
+
+    <!-- Brushed Steel Arm Shaft -->
+    <linearGradient id="armMetalCharcoal" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#E1DFDD" />
+      <stop offset="55%" stop-color="#A19F9D" />
+      <stop offset="100%" stop-color="#797775" />
+    </linearGradient>
+
+    <!-- Metallic Ferrule Collar -->
+    <linearGradient id="ferruleMetalCharcoal" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#F3F2F1" />
+      <stop offset="55%" stop-color="#C8C6C4" />
+      <stop offset="100%" stop-color="#8A8886" />
+    </linearGradient>
+
+    <!-- Molded Charcoal Ergonomic Handle -->
+    <linearGradient id="handleCharcoal" x1="0%" y1="0%" x2="100%" y2="85%">
+      <stop offset="0%" stop-color="#605E5C" />
+      <stop offset="45%" stop-color="#3B3A39" />
+      <stop offset="100%" stop-color="#201F1E" />
+    </linearGradient>
+
+    <!-- Handle Rounded Clip Mask -->
+    <clipPath id="handleClipCharcoal">
+      <rect x="14" y="20.5" width="8" height="13" rx="3.5" />
+    </clipPath>
+  </defs>
+
+  <g transform="scale(7.111111111111111)">
+    <!-- Metallic Arm Shaft -->
+    <path d="M25.5 8.5H29.5A3 3 0 0 1 32.5 11.5V14A3 3 0 0 1 29.5 17H20.5A2.5 2.5 0 0 0 18 19.5V21.5" fill="none" stroke="url(#armMetalCharcoal)" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" />
+
+    <!-- Roller Cylinder Body -->
+    <rect x="3" y="3.5" width="23" height="10" rx="5" fill="url(#rollerBaseCharcoal)" />
+    <rect x="3" y="3.5" width="23" height="10" rx="5" fill="url(#rollerSheenCharcoal)" />
+
+    <!-- Teardrop Paint Bead -->
+    <path d="M7.5 15.5C8.4 17.1 10.7 19.3 10.7 21.3A3.2 3.2 0 1 1 4.3 21.3C4.3 19.3 6.6 17.1 7.5 15.5Z" fill="url(#dropGradCharcoal)" />
+
+    <!-- Ergonomic Grip with Chrome Ferrule -->
+    <g clip-path="url(#handleClipCharcoal)">
+      <rect x="14" y="20.5" width="8" height="13" fill="url(#handleCharcoal)" />
+      <rect x="14" y="20.5" width="8" height="3" fill="url(#ferruleMetalCharcoal)" />
+    </g>
+  </g>
+</svg>

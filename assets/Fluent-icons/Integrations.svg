@@ -1,0 +1,100 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="256" height="256" viewBox="0 0 256 256" fill="none">
+  <defs>
+    <!-- Charcoal -->
+    <linearGradient id="charcoalTop" x1="3.6" y1="11.8" x2="15.6" y2="17.8" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#6E6C6A" /><stop offset="100%" stop-color="#585654" />
+    </linearGradient>
+    <linearGradient id="charcoalLeft" x1="3.6" y1="15.4" x2="8.4" y2="21.3" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#52504E" /><stop offset="100%" stop-color="#413F3E" />
+    </linearGradient>
+    <linearGradient id="charcoalRight" x1="8.4" y1="17.8" x2="15.6" y2="17.7" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#413F3E" /><stop offset="100%" stop-color="#31302F" />
+    </linearGradient>
+    <linearGradient id="charcoalStudSide" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#595755" /><stop offset="100%" stop-color="#353433" />
+    </linearGradient>
+    <linearGradient id="charcoalStudTop" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#7A7876" /><stop offset="100%" stop-color="#62605E" />
+    </linearGradient>
+
+    <!-- Blue -->
+    <linearGradient id="blueTop" x1="6" y1="7.1" x2="18" y2="13.1" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#52CBFF" /><stop offset="100%" stop-color="#1AA6FF" />
+    </linearGradient>
+    <linearGradient id="blueLeft" x1="6" y1="10.7" x2="10.8" y2="16.6" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#0FAFFF" /><stop offset="100%" stop-color="#0078D4" />
+    </linearGradient>
+    <linearGradient id="blueRight" x1="10.8" y1="13.1" x2="18" y2="13" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#0074CE" /><stop offset="100%" stop-color="#005596" />
+    </linearGradient>
+    <linearGradient id="blueStudSide" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#199EFF" /><stop offset="100%" stop-color="#005CA3" />
+    </linearGradient>
+    <linearGradient id="blueStudTop" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#6ED4FF" /><stop offset="100%" stop-color="#2BB2FF" />
+    </linearGradient>
+
+    <!-- Pink -->
+    <linearGradient id="pinkTop" x1="8.4" y1="2.4" x2="20.4" y2="8.4" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#FFA6D3" /><stop offset="100%" stop-color="#F472B6" />
+    </linearGradient>
+    <linearGradient id="pinkLeft" x1="8.4" y1="6" x2="13.2" y2="11.9" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#F97DBD" /><stop offset="100%" stop-color="#DE3B8C" />
+    </linearGradient>
+    <linearGradient id="pinkRight" x1="13.2" y1="8.4" x2="20.4" y2="8.3" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#DA3687" /><stop offset="100%" stop-color="#B01963" />
+    </linearGradient>
+    <linearGradient id="pinkStudSide" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#F26EB0" /><stop offset="100%" stop-color="#B81D69" />
+    </linearGradient>
+    <linearGradient id="pinkStudTop" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#FFB8DC" /><stop offset="100%" stop-color="#F785BE" />
+    </linearGradient>
+  </defs>
+
+  <g transform="scale(10.666666666666666)">
+    <!-- 1. Bottom block (charcoal) -->
+    <g>
+      <polygon points="3.6,15.4 8.4,17.8 15.6,14.2 15.6,17.7 8.4,21.3 3.6,18.9" fill="url(#charcoalLeft)" />
+      <polygon points="3.6,15.4 8.4,17.8 8.4,21.3 3.6,18.9" fill="url(#charcoalLeft)" />
+      <polygon points="8.4,17.8 15.6,14.2 15.6,17.7 8.4,21.3" fill="url(#charcoalRight)" />
+      <polygon points="10.8,11.8 15.6,14.2 8.4,17.8 3.6,15.4" fill="url(#charcoalTop)" />
+      <path d="M5.14 14.9V15.4A0.86 0.43 0 0 0 6.86 15.4V14.9Z" fill="url(#charcoalStudSide)" />
+      <ellipse cx="6" cy="14.9" rx="0.86" ry="0.43" fill="url(#charcoalStudTop)" />
+      <path d="M7.54 16.1V16.6A0.86 0.43 0 0 0 9.26 16.6V16.1Z" fill="url(#charcoalStudSide)" />
+      <ellipse cx="8.4" cy="16.1" rx="0.86" ry="0.43" fill="url(#charcoalStudTop)" />
+    </g>
+
+    <!-- 2. Middle block (blue) -->
+    <g>
+      <polygon points="6,10.7 10.8,13.1 18,9.5 18,13 10.8,16.6 6,14.2" fill="url(#blueLeft)" />
+      <polygon points="6,10.7 10.8,13.1 10.8,16.6 6,14.2" fill="url(#blueLeft)" />
+      <polygon points="10.8,13.1 18,9.5 18,13 10.8,16.6" fill="url(#blueRight)" />
+      <polygon points="13.2,7.1 18,9.5 10.8,13.1 6,10.7" fill="url(#blueTop)" />
+      <path d="M7.54 10.2V10.7A0.86 0.43 0 0 0 9.26 10.7V10.2Z" fill="url(#blueStudSide)" />
+      <ellipse cx="8.4" cy="10.2" rx="0.86" ry="0.43" fill="url(#blueStudTop)" />
+      <path d="M9.94 11.4V11.9A0.86 0.43 0 0 0 11.66 11.9V11.4Z" fill="url(#blueStudSide)" />
+      <ellipse cx="10.8" cy="11.4" rx="0.86" ry="0.43" fill="url(#blueStudTop)" />
+    </g>
+
+    <!-- 3. Top block (pink) -->
+    <g>
+      <polygon points="8.4,6 13.2,8.4 20.4,4.8 20.4,8.3 13.2,11.9 8.4,9.5" fill="url(#pinkLeft)" />
+      <polygon points="8.4,6 13.2,8.4 13.2,11.9 8.4,9.5" fill="url(#pinkLeft)" />
+      <polygon points="13.2,8.4 20.4,4.8 20.4,8.3 13.2,11.9" fill="url(#pinkRight)" />
+      <polygon points="15.6,2.4 20.4,4.8 13.2,8.4 8.4,6" fill="url(#pinkTop)" />
+      <path d="M14.74 3.1V3.6A0.86 0.43 0 0 0 16.46 3.6V3.1Z" fill="url(#pinkStudSide)" />
+      <ellipse cx="15.6" cy="3.1" rx="0.86" ry="0.43" fill="url(#pinkStudTop)" />
+      <path d="M17.14 4.3V4.8A0.86 0.43 0 0 0 18.86 4.8V4.3Z" fill="url(#pinkStudSide)" />
+      <ellipse cx="18" cy="4.3" rx="0.86" ry="0.43" fill="url(#pinkStudTop)" />
+      <path d="M12.34 4.3V4.8A0.86 0.43 0 0 0 14.06 4.8V4.3Z" fill="url(#pinkStudSide)" />
+      <ellipse cx="13.2" cy="4.3" rx="0.86" ry="0.43" fill="url(#pinkStudTop)" />
+      <path d="M14.74 5.5V6A0.86 0.43 0 0 0 16.46 6V5.5Z" fill="url(#pinkStudSide)" />
+      <ellipse cx="15.6" cy="5.5" rx="0.86" ry="0.43" fill="url(#pinkStudTop)" />
+      <path d="M9.94 5.5V6A0.86 0.43 0 0 0 11.66 6V5.5Z" fill="url(#pinkStudSide)" />
+      <ellipse cx="10.8" cy="5.5" rx="0.86" ry="0.43" fill="url(#pinkStudTop)" />
+      <path d="M12.34 6.7V7.2A0.86 0.43 0 0 0 14.06 7.2V6.7Z" fill="url(#pinkStudSide)" />
+      <ellipse cx="13.2" cy="6.7" rx="0.86" ry="0.43" fill="url(#pinkStudTop)" />
+    </g>
+  </g>
+</svg>

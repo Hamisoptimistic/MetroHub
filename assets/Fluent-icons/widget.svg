@@ -1,0 +1,45 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="256" height="256" viewBox="0 0 256 256" fill="none">
+  <defs>
+    <!-- Left Tall Pane: Fluent Cyan-Blue -->
+    <linearGradient id="fluentCyanBlue" x1="2" y1="2" x2="11" y2="22" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#0FAFFF" />
+      <stop offset="50%" stop-color="#0086F0" />
+      <stop offset="100%" stop-color="#0067BF" />
+    </linearGradient>
+
+    <!-- Top-Right Focal Tile: Fluent Pink -->
+    <linearGradient id="fluentPink" x1="13" y1="2" x2="22" y2="10" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#F97DBD" />
+      <stop offset="50%" stop-color="#E94E9C" />
+      <stop offset="100%" stop-color="#D7257D" />
+    </linearGradient>
+
+    <!-- Bottom-Right Pane: Fluent Charcoal Grey -->
+    <linearGradient id="fluentCharcoal" x1="13" y1="12" x2="22" y2="22" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#605E5C" />
+      <stop offset="50%" stop-color="#4E4C4B" />
+      <stop offset="100%" stop-color="#3B3A39" />
+    </linearGradient>
+
+    <!-- Smooth Top-Edge Specular Sheen -->
+    <linearGradient id="fluentSheen" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#FFFFFF" stop-opacity="0.22" />
+      <stop offset="50%" stop-color="#FFFFFF" stop-opacity="0.06" />
+      <stop offset="100%" stop-color="#FFFFFF" stop-opacity="0" />
+    </linearGradient>
+  </defs>
+
+  <g transform="scale(10.666666666666666)">
+    <!-- Left Tall Pane -->
+    <rect x="2" y="2" width="9" height="20" rx="0.5" fill="url(#fluentCyanBlue)" />
+    <rect x="2" y="2" width="9" height="20" rx="0.5" fill="url(#fluentSheen)" />
+
+    <!-- Top-Right Focal Tile -->
+    <rect x="13" y="2" width="9" height="8" rx="0.5" fill="url(#fluentPink)" />
+    <rect x="13" y="2" width="9" height="8" rx="0.5" fill="url(#fluentSheen)" />
+
+    <!-- Bottom-Right Pane -->
+    <rect x="13" y="12" width="9" height="10" rx="0.5" fill="url(#fluentCharcoal)" />
+    <rect x="13" y="12" width="9" height="10" rx="0.5" fill="url(#fluentSheen)" />
+  </g>
+</svg>

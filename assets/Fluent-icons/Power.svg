@@ -1,0 +1,25 @@
+<svg width="256" height="256" viewBox="0 0 256 256" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <!-- Windows 11 Archetype A: Linear Gradient at 135° (Azure #258BFF to #0A4EA8) -->
+    <linearGradient id="generalChassis" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#258BFF" />
+      <stop offset="100%" stop-color="#0A4EA8" />
+    </linearGradient>
+
+    <!-- Circular Badge Clip -->
+    <clipPath id="circleClip">
+      <circle cx="128" cy="128" r="114" />
+    </clipPath>
+  </defs>
+
+  <!-- Base Circle at 135° -->
+  <g clip-path="url(#circleClip)">
+    <rect x="0" y="0" width="256" height="256" fill="url(#generalChassis)" />
+    <!-- Two-tone crescent shadow using deep saturated navy (#00264D), never pure black -->
+    <path d="M 128 14 A 114 114 0 0 1 242 128 A 114 114 0 0 1 128 242 A 114 114 0 0 0 128 14 Z" fill="#00264D" opacity="0.22" />
+  </g>
+
+  <!-- Centered White Power Glyph with stroke-linecap="round" -->
+  <line x1="128" y1="56" x2="128" y2="114" stroke="#FFFFFF" stroke-width="18" stroke-linecap="round" />
+  <path d="M 89 91 A 54 54 0 1 0 167 91" fill="none" stroke="#FFFFFF" stroke-width="18" stroke-linecap="round" />
+</svg>

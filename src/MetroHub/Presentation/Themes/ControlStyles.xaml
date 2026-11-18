@@ -157,7 +157,6 @@
 
     <!-- Universal Modal Window Close / Dismiss Button (32x32 vector "X") -->
     <Style x:Key="ModalDismissButtonStyle" TargetType="Button">
-        <Setter Property="Margin" Value="0,10,10,0" />
         <Setter Property="Background" Value="Transparent" />
         <Setter Property="BorderThickness" Value="0" />
         <Setter Property="Foreground" Value="{DynamicResource TextSecondaryBrush}" />

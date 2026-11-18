@@ -1,0 +1,54 @@
+<svg width="256" height="256" viewBox="0 0 256 256" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <!-- Windows 11 Signature Blue Gradient -->
+    <linearGradient id="win11Chassis" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#258BFF" />
+      <stop offset="100%" stop-color="#0A4EA8" />
+    </linearGradient>
+
+    <!-- Windows 11 Wi-Fi Glowing Cyan Gradient -->
+    <linearGradient id="win11Antenna" x1="0%" y1="100%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#00A4EF" />
+      <stop offset="100%" stop-color="#50E6FF" />
+    </linearGradient>
+
+    <!-- Chassis Clip Mask -->
+    <clipPath id="chassisClip">
+      <path d="M36 32c0 4-4 4-4 4H4s-4 0-4-4V14s0-4 4-4h28c4 0 4 4 4 4v18z" />
+    </clipPath>
+  </defs>
+
+  <g transform="scale(7.111111111111111)">
+    <!-- Antenna -->
+    <path fill="url(#win11Antenna)" d="M2.697 12.389a.999.999 0 1 0 1.414 1.414l9.192-9.192a.999.999 0 1 0-1.414-1.414l-9.192 9.192z" />
+    <path fill="#50E6FF" d="M15.561 3.061a.999.999 0 0 1-1.414 0l-.707-.707A.999.999 0 1 1 14.854.94l.707.707a1 1 0 0 1 0 1.414z" />
+
+    <!-- Chassis with Two-Tone Layering -->
+    <g clip-path="url(#chassisClip)">
+      <rect x="0" y="10" width="36" height="26" fill="url(#win11Chassis)" />
+      <rect x="21" y="10" width="15" height="26" fill="#000000" opacity="0.12" />
+    </g>
+
+    <!-- Speaker Holes -->
+    <g fill="#00264D">
+      <circle cx="5.5" cy="15.5" r="1.5" />
+      <circle cx="10.5" cy="15.5" r="1.5" />
+      <circle cx="15.5" cy="15.5" r="1.5" />
+      <circle cx="5.5" cy="20.5" r="1.5" />
+      <circle cx="10.5" cy="20.5" r="1.5" />
+      <circle cx="15.5" cy="20.5" r="1.5" />
+      <circle cx="5.5" cy="25.5" r="1.5" />
+      <circle cx="10.5" cy="25.5" r="1.5" />
+      <circle cx="15.5" cy="25.5" r="1.5" />
+      <circle cx="5.5" cy="30.5" r="1.5" />
+      <circle cx="10.5" cy="30.5" r="1.5" />
+      <circle cx="15.5" cy="30.5" r="1.5" />
+    </g>
+
+    <!-- Dials -->
+    <circle fill="#FFFFFF" cx="27.5" cy="18.5" r="5.5" />
+    <circle fill="#0A4EA8" cx="27.5" cy="18.5" r="3.5" />
+    <circle fill="#38D9F9" cx="27.5" cy="29.5" r="3.5" />
+    <circle fill="#00264D" cx="27.5" cy="29.5" r="1.5" />
+  </g>
+</svg>
