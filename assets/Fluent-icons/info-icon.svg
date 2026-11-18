@@ -1,0 +1,29 @@
+<svg width="256" height="256" viewBox="0 0 256 256" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <!-- 3-Stop Purple Fluent Gradient (Top-Left Light Source) -->
+    <linearGradient id="purplePrimary" x1="15%" y1="0%" x2="85%" y2="100%">
+      <stop offset="0%" stop-color="#C4A1E8" />
+      <stop offset="48%" stop-color="#8764B8" />
+      <stop offset="100%" stop-color="#5C2D91" />
+    </linearGradient>
+
+    <!-- Soft Top-Edge Specular Sheen -->
+    <linearGradient id="purpleSheen" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#FFFFFF" stop-opacity="0.35" />
+      <stop offset="40%" stop-color="#FFFFFF" stop-opacity="0" />
+      <stop offset="100%" stop-color="#5C2D91" stop-opacity="0.18" />
+    </linearGradient>
+  </defs>
+
+  <!-- Main Circle – Purple Gradient -->
+  <circle cx="128" cy="128" r="108" fill="url(#purplePrimary)" />
+
+  <!-- Specular Sheen Overlay -->
+  <circle cx="128" cy="128" r="108" fill="url(#purpleSheen)" />
+
+  <!-- White "i" Glyph — Dot -->
+  <circle cx="128" cy="76" r="14" fill="#FFFFFF" />
+
+  <!-- White "i" Glyph — Stem (rounded capsule) -->
+  <rect x="114" y="104" width="28" height="84" rx="14" fill="#FFFFFF" />
+</svg>

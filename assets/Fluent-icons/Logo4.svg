@@ -1,0 +1,23 @@
+<svg width="256" height="256" viewBox="0 0 256 256" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <!-- Pure 3-Stop Pink Tile Gradient (No White Overlay) -->
+    <linearGradient id="fluentPinkTile" x1="10%" y1="0%" x2="65%" y2="100%">
+      <stop offset="0%" stop-color="#F97DBD" />
+      <stop offset="45%" stop-color="#E74B99" />
+      <stop offset="100%" stop-color="#D7257D" />
+    </linearGradient>
+
+    <!-- Fluent White-to-Ice-Blue Glyph Gradient -->
+    <linearGradient id="fluentWhiteGlyph" x1="75" y1="75" x2="185" y2="185" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#FDFDFD" />
+      <stop offset="52%" stop-color="#E6F4FF" />
+      <stop offset="100%" stop-color="#B3E0FF" />
+    </linearGradient>
+  </defs>
+
+  <!-- Rounded Square Base Tile (Proportional 0.75 -> 5.33 Radius) -->
+  <rect x="21.33" y="21.33" width="213.33" height="213.33" rx="5.33" fill="url(#fluentPinkTile)" />
+
+  <!-- Geometric 'm' Glyph with Fluent White-to-Ice-Blue Gradient -->
+  <path fill="url(#fluentWhiteGlyph)" d="M61 181V75H87V95C92 83 101 78 112 78C123 78 131 84 135 95C140 84 149 78 161 78C179 78 195 93 195 116V181H169V116A14 14 0 0 0 141 116V181H115V116A14 14 0 0 0 87 116V181H61Z" />
+</svg>

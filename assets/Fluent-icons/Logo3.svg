@@ -1,0 +1,98 @@
+<svg width="256" height="256" viewBox="0 0 256 256" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <!-- Rear Tilted Accent Tile Gradient (Amber -> Coral -> Purple -> Azure) -->
+    <linearGradient id="auroraBackTile" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FFD34E" />
+      <stop offset="35%" stop-color="#FF8C00" />
+      <stop offset="70%" stop-color="#8764B8" />
+      <stop offset="100%" stop-color="#0A4EA8" />
+    </linearGradient>
+
+    <!-- Primary Foreground Anodized Charcoal Tile (Top-Left Light Source) -->
+    <linearGradient id="charcoalTile" x1="15%" y1="0%" x2="85%" y2="100%">
+      <stop offset="0%" stop-color="#605E5C" />
+      <stop offset="48%" stop-color="#3B3A39" />
+      <stop offset="100%" stop-color="#201F1E" />
+    </linearGradient>
+
+    <!-- Recessed Charcoal Inner Surface -->
+    <linearGradient id="charcoalInset" x1="10%" y1="0%" x2="90%" y2="100%">
+      <stop offset="0%" stop-color="#484644" />
+      <stop offset="50%" stop-color="#2D2C2B" />
+      <stop offset="100%" stop-color="#1B1A19" />
+    </linearGradient>
+
+    <!-- Silky Continuous 4-Stop Gradient for the "m" Glyph -->
+    <linearGradient id="smoothLetterFill" gradientUnits="userSpaceOnUse" x1="51" y1="85" x2="185" y2="191">
+      <stop offset="0%" stop-color="#FFD34E" />
+      <stop offset="36%" stop-color="#FF9F1C" />
+      <stop offset="72%" stop-color="#F25C78" />
+      <stop offset="100%" stop-color="#9B6EF3" />
+    </linearGradient>
+
+    <!-- Top-Edge Specular Sheen (0.35 -> 0 by 40% Height) -->
+    <linearGradient id="specularSheen" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#FFFFFF" stop-opacity="0.35" />
+      <stop offset="40%" stop-color="#FFFFFF" stop-opacity="0" />
+    </linearGradient>
+  </defs>
+
+  <!-- Layer 1: Floating Tilted Gradient Backplate -->
+  <g transform="rotate(7 144 110)">
+    <rect x="52" y="18" width="184" height="184" rx="0.5" fill="url(#auroraBackTile)" />
+    <rect x="52" y="18" width="184" height="184" rx="0.5" fill="url(#specularSheen)" />
+  </g>
+
+  <!-- Layer 2: Foreground Anodized Charcoal App Tile -->
+  <rect x="20" y="40" width="196" height="196" rx="0.5" fill="url(#charcoalTile)" />
+  <rect x="20" y="40" width="196" height="196" rx="0.5" fill="url(#specularSheen)" />
+
+  <!-- Layer 3: Sculpted Inner Recessed Panel -->
+  <rect x="28" y="48" width="180" height="180" rx="0.5" fill="url(#charcoalInset)" />
+
+  <!-- Layer 4: Sharp-Cornered Geometric "m" Glyph -->
+  <path fill="url(#smoothLetterFill)" d="
+    M 51 85
+    H 77
+    V 105
+    C 83 94, 92 89, 103 89
+    C 114 89, 121 95, 125 105
+    C 131 94, 140 89, 152 89
+    C 172 89, 185 104, 185 129
+    V 191
+    H 159
+    V 128
+    C 159 118, 153 112, 145 112
+    C 137 112, 131 118, 131 128
+    V 191
+    H 105
+    V 128
+    C 105 118, 99 112, 91 112
+    C 83 112, 77 118, 77 128
+    V 191
+    H 51
+    Z" />
+
+  <!-- Specular Top-Edge Highlight Across the Glyph -->
+  <path fill="url(#specularSheen)" d="
+    M 51 85
+    H 77
+    V 105
+    C 83 94, 92 89, 103 89
+    C 114 89, 121 95, 125 105
+    C 131 94, 140 89, 152 89
+    C 172 89, 185 104, 185 129
+    V 191
+    H 159
+    V 128
+    C 159 118, 153 112, 145 112
+    C 137 112, 131 118, 131 128
+    V 191
+    H 105
+    V 128
+    C 105 118, 99 112, 91 112
+    C 83 112, 77 118, 77 128
+    V 191
+    H 51
+    Z" />
+</svg>

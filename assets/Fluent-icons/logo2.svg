@@ -1,0 +1,31 @@
+<svg width="256" height="256" viewBox="0 0 256 256" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <!-- 3-Stop Brushed Titanium Tile Gradient -->
+    <linearGradient id="metrohubSilverTile" x1="12%" y1="0%" x2="88%" y2="100%">
+      <stop offset="0%" stop-color="#F3F2F1" />
+      <stop offset="48%" stop-color="#E1DFDD" />
+      <stop offset="100%" stop-color="#C8C6C4" />
+    </linearGradient>
+
+    <!-- Tightened Top-Edge Specular Sheen -->
+    <linearGradient id="metrohubSilverSheen" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#FFFFFF" stop-opacity="0.45" />
+      <stop offset="16%" stop-color="#FFFFFF" stop-opacity="0" />
+      <stop offset="100%" stop-color="#8A8886" stop-opacity="0.14" />
+    </linearGradient>
+
+    <!-- 3-Stop Fluent Azure Glyph Gradient -->
+    <linearGradient id="metrohubAzureGlyph" x1="75" y1="75" x2="185" y2="185" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#4CC2FF" />
+      <stop offset="48%" stop-color="#168BFF" />
+      <stop offset="100%" stop-color="#0A4EA8" />
+    </linearGradient>
+  </defs>
+
+  <!-- Rounded Square Base Tile (256x256 Native, rx=5.33) -->
+  <rect x="21.33" y="21.33" width="213.33" height="213.33" rx="5.33" fill="url(#metrohubSilverTile)" />
+  <rect x="21.33" y="21.33" width="213.33" height="213.33" rx="5.33" fill="url(#metrohubSilverSheen)" />
+
+  <!-- Geometric 'm' Glyph in Fluent Azure -->
+  <path fill="url(#metrohubAzureGlyph)" d="M61 181V75H87V95C92 83 101 78 112 78C123 78 131 84 135 95C140 84 149 78 161 78C179 78 195 93 195 116V181H169V116A14 14 0 0 0 141 116V181H115V116A14 14 0 0 0 87 116V181H61Z" />
+</svg>

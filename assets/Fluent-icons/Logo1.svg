@@ -1,0 +1,51 @@
+﻿<svg width="256" height="256" viewBox="0 0 256 256" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <!-- Rich Fluent Royal-to-Cobalt Gradient Sampled from radio-fluent.svg -->
+    <linearGradient id="radioFluentBlue" x1="12%" y1="0%" x2="88%" y2="100%">
+      <stop offset="0%" stop-color="#1A88F7" />
+      <stop offset="50%" stop-color="#0B69D4" />
+      <stop offset="100%" stop-color="#084B9E" />
+    </linearGradient>
+
+    <!-- Subtle Top-Edge Bevel Sheen -->
+    <linearGradient id="edgeBevel" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#FFFFFF" stop-opacity="0.16" />
+      <stop offset="28%" stop-color="#FFFFFF" stop-opacity="0" />
+    </linearGradient>
+
+    <!-- Crisp White Glyph Fill -->
+    <linearGradient id="glyphWhite" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#FFFFFF" />
+      <stop offset="100%" stop-color="#F3F2F1" />
+    </linearGradient>
+  </defs>
+
+  <!-- Main Fluent App Tile (Windows 11 Full-Height Standard: 244x244, rx=6.13) -->
+  <rect x="6" y="6" width="244" height="244" rx="6.13" fill="url(#radioFluentBlue)" />
+  <rect x="6" y="6" width="244" height="244" rx="6.13" fill="url(#edgeBevel)" />
+
+  <!-- Original Sharp-Cornered Geometric "m" Glyph (Scaled and Centered) -->
+  <g transform="translate(128, 128) scale(1.150943) translate(-128, -128)">
+    <path transform="translate(10, -10)" fill="url(#glyphWhite)" d="
+      M 51 85
+      H 77
+      V 105
+      C 83 94, 92 89, 103 89
+      C 114 89, 121 95, 125 105
+      C 131 94, 140 89, 152 89
+      C 172 89, 185 104, 185 129
+      V 191
+      H 159
+      V 128
+      C 159 118, 153 112, 145 112
+      C 137 112, 131 118, 131 128
+      V 191
+      H 105
+      V 128
+      C 105 118, 99 112, 91 112
+      C 83 112, 77 118, 77 128
+      V 191
+      H 51
+      Z" />
+  </g>
+</svg>

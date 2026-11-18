@@ -299,7 +299,7 @@
                         </StackPanel>
                     </ui:HyperlinkButton>
 
-                    <!-- Open With Button (no glyph, clean text only, placed in the middle) -->
+                    <!-- Open Button (no glyph, clean text only, placed in the middle) -->
                     <Button x:Name="OpenWithButton"
                             Height="32"
                             Padding="14,0"
@@ -308,7 +308,7 @@
                             Click="OnOpenWithClick"
                             TabIndex="2"
                             ToolTip="Open in external editor">
-                        <TextBlock Text="Open With" VerticalAlignment="Center" />
+                        <TextBlock Text="Open" VerticalAlignment="Center" />
                     </Button>
 
                     <!-- Copy Button (first from right, neutral border without orange system accent) -->

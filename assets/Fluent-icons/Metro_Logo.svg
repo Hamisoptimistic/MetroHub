@@ -1,0 +1,13 @@
+<svg width="256" height="256" viewBox="0 0 256 256" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <!-- Exact Logo1_3.svg 3-Stop Diagonal Azure Gradient -->
+    <linearGradient id="metrohubTrayExactBlue" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#2694F0" />
+      <stop offset="50%" stop-color="#0F6BD4" />
+      <stop offset="100%" stop-color="#0047A5" />
+    </linearGradient>
+  </defs>
+
+  <!-- Branded Azure Cutout Tile (rx=5.33) -->
+  <path fill="url(#metrohubTrayExactBlue)" fill-rule="evenodd" d="M26.66 21.33H229.33A5.33 5.33 0 0 1 234.66 26.66V229.33A5.33 5.33 0 0 1 229.33 234.66H26.66A5.33 5.33 0 0 1 21.33 229.33V26.66A5.33 5.33 0 0 1 26.66 21.33ZM61 181V75H87V95C92 83 101 78 112 78C123 78 131 84 135 95C140 84 149 78 161 78C179 78 195 93 195 116V181H169V116A14 14 0 0 0 141 116V181H115V116A14 14 0 0 0 87 116V181H61Z" />
+</svg>
