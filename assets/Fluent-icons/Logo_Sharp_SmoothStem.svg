@@ -1,0 +1,96 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <linearGradient id="bgLower" x1="0" y1="120" x2="420" y2="512" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#1A7BE8" />
+      <stop offset="50%" stop-color="#0C5CC7" />
+      <stop offset="100%" stop-color="#00368A" />
+    </linearGradient>
+
+    <linearGradient id="bgUpper" x1="80" y1="0" x2="512" y2="440" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#3BA4FF" />
+      <stop offset="50%" stop-color="#1E84F0" />
+      <stop offset="100%" stop-color="#0A59C4" />
+    </linearGradient>
+
+    <linearGradient id="ribbonGrad" x1="100" y1="60" x2="420" y2="460" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#FFFFFF" />
+      <stop offset="70%" stop-color="#F2F7FF" />
+      <stop offset="100%" stop-color="#D8E8FF" />
+    </linearGradient>
+
+    <filter id="ribbonShadow" x="-150" y="-150" width="812" height="812" filterUnits="userSpaceOnUse">
+      <feOffset in="SourceAlpha" dx="0" dy="3" result="off1" />
+      <feGaussianBlur in="off1" stdDeviation="3.5" result="blur1" />
+      <feFlood flood-color="#001742" flood-opacity="0.28" result="color1" />
+      <feComposite in="color1" in2="blur1" operator="in" result="shadow1" />
+
+      <feOffset in="SourceAlpha" dx="3" dy="14" result="off2" />
+      <feGaussianBlur in="off2" stdDeviation="12" result="blur2" />
+      <feFlood flood-color="#001238" flood-opacity="0.34" result="color2" />
+      <feComposite in="color2" in2="blur2" operator="in" result="shadow2" />
+
+      <feMerge>
+        <feMergeNode in="shadow2" />
+        <feMergeNode in="shadow1" />
+        <feMergeNode in="SourceGraphic" />
+      </feMerge>
+    </filter>
+
+    <clipPath id="tileClip">
+      <rect x="0" y="0" width="512" height="512" />
+    </clipPath>
+
+    <!-- G2 curvature-continuous bends, squircle arches, and stem knees -->
+    <path id="mCut" d="M -90.12 -129.72
+         L 109.88 70.28
+         C 127.59 88.00 142.95 103.35 151.47 123.93
+         C 155.17 132.85 157.26 141.98 158.45 151.50
+         A 88 88 0 0 1 256 169.55
+         A 88 88 0 0 1 380.23 169.77
+         C 408 197.55 408 234.74 408 275.65
+         L 408 332.96
+         C 408 345.49 408 356.35 412.26 366.64
+         C 416.53 376.93 424.20 384.61 433.06 393.46
+         L 633.06 593.46
+         L 593.46 633.06
+         L 402.12 441.72
+         C 384.41 424.00 369.05 408.65 360.53 388.07
+         C 352 367.48 352 345.77 352 320.71
+         L 352 256.75
+         C 352 237.89 352 220.75 340.63 209.37
+         A 32 32 0 0 0 295.37 209.37
+         C 284 220.75 284 237.89 284 256.75
+         L 284 364
+         L 243.22 323.22
+         C 237.84 317.84 233.18 313.18 230.59 306.93
+         C 228 300.68 228 294.09 228 286.48
+         L 228 256.75
+         C 228 237.89 228 220.75 216.63 209.37
+         A 32 32 0 0 0 171.37 209.37
+         C 160 220.75 160 237.89 160 256.75
+         L 160 364
+         L 119.22 323.22
+         C 113.84 317.84 109.18 313.18 106.59 306.93
+         C 104 300.68 104 294.09 104 286.48
+         L 104 179.04
+         C 104 166.51 104 155.65 99.74 145.36
+         C 95.47 135.07 87.80 127.39 78.94 118.54
+         L -121.06 -81.46
+         Z" />
+  </defs>
+
+  <g clip-path="url(#tileClip)">
+    <rect x="0" y="0" width="512" height="512" fill="url(#bgLower)" />
+
+    <path d="M 0 0 L 512 0 L 512 512 L 404.60 404.60
+             A 84 84 0 0 1 380 345.21
+             L 380 232
+             A 62 62 0 0 0 256 232
+             A 62 62 0 0 0 132 232
+             L 132 166.79
+             A 84 84 0 0 0 107.40 107.40
+             L 0 0 Z" fill="url(#bgUpper)" />
+
+    <use href="#mCut" fill="url(#ribbonGrad)" filter="url(#ribbonShadow)" />
+  </g>
+</svg>

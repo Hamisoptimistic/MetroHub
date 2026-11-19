@@ -1,0 +1,81 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <linearGradient id="bgLower" x1="0" y1="120" x2="420" y2="512" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#1A7BE8" />
+      <stop offset="50%" stop-color="#0C5CC7" />
+      <stop offset="100%" stop-color="#00368A" />
+    </linearGradient>
+
+    <linearGradient id="bgUpper" x1="80" y1="0" x2="512" y2="440" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#3BA4FF" />
+      <stop offset="50%" stop-color="#1E84F0" />
+      <stop offset="100%" stop-color="#0A59C4" />
+    </linearGradient>
+
+    <linearGradient id="ribbonGrad" x1="100" y1="60" x2="420" y2="460" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#FFFFFF" />
+      <stop offset="70%" stop-color="#F2F7FF" />
+      <stop offset="100%" stop-color="#D8E8FF" />
+    </linearGradient>
+
+    <filter id="ribbonShadow" x="-150" y="-150" width="812" height="812" filterUnits="userSpaceOnUse">
+      <!-- Tight contact shadow for crisp edge separation -->
+      <feOffset in="SourceAlpha" dx="0" dy="3" result="off1" />
+      <feGaussianBlur in="off1" stdDeviation="3.5" result="blur1" />
+      <feFlood flood-color="#001742" flood-opacity="0.28" result="color1" />
+      <feComposite in="color1" in2="blur1" operator="in" result="shadow1" />
+
+      <!-- Soft diffused cast shadow for depth and elevation -->
+      <feOffset in="SourceAlpha" dx="3" dy="14" result="off2" />
+      <feGaussianBlur in="off2" stdDeviation="12" result="blur2" />
+      <feFlood flood-color="#001238" flood-opacity="0.34" result="color2" />
+      <feComposite in="color2" in2="blur2" operator="in" result="shadow2" />
+
+      <feMerge>
+        <feMergeNode in="shadow2" />
+        <feMergeNode in="shadow1" />
+        <feMergeNode in="SourceGraphic" />
+      </feMerge>
+    </filter>
+
+    <clipPath id="tileClip">
+      <rect x="0" y="0" width="512" height="512" rx="0.5" ry="0.5" />
+    </clipPath>
+
+    <!-- 45-degree parallel stem terminals -->
+    <path id="mCut" d="M -66.36 -105.96
+         L 133.64 94.04
+         A 90 90 0 0 1 160 157.68
+         C 167.5 149.2 178 144 194 144
+         A 90 90 0 0 1 256 168.76
+         A 90 90 0 0 1 408 234
+         L 408 354.32
+         A 34 34 0 0 0 417.96 378.36
+         L 617.96 578.36
+         L 578.36 617.96
+         L 378.36 417.96
+         A 90 90 0 0 1 352 354.32
+         L 352 234
+         A 34 34 0 0 0 284 234
+         L 284 364
+         L 228 308
+         L 228 234
+         A 34 34 0 0 0 160 234
+         L 160 364
+         L 104 308
+         L 104 157.68
+         A 34 34 0 0 0 94.04 133.64
+         L -105.96 -66.36
+         Z" />
+  </defs>
+
+  <g clip-path="url(#tileClip)">
+    <path d="M 30 0 L 512 0 L 512 482 L 482 512 L 0 512 L 0 30 Z" fill="url(#bgLower)" />
+
+    <path d="M 30 0 L 512 0 L 512 482 L 497 497 L 398 398 L 380 354.32 L 380 234
+             A 62 62 0 0 0 256 234 A 62 62 0 0 0 132 234
+             L 132 157.68 L 114 114 L 15 15 Z" fill="url(#bgUpper)" />
+
+    <use href="#mCut" fill="url(#ribbonGrad)" filter="url(#ribbonShadow)" />
+  </g>
+</svg>

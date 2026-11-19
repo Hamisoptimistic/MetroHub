@@ -14,30 +14,21 @@
             <DrawingImage.Drawing>
                 <DrawingGroup>
                     <!-- Antenna Body -->
-                    <GeometryDrawing>
+                    <GeometryDrawing Geometry="M 2.697,12.389 a 0.999,0.999 0 1 0 1.414,1.414 l 9.192,-9.192 a 0.999,0.999 0 1 0 -1.414,-1.414 l -9.192,9.192 z">
                         <GeometryDrawing.Brush>
                             <LinearGradientBrush StartPoint="0,1" EndPoint="1,0">
                                 <GradientStop Color="#00A4EF" Offset="0" />
                                 <GradientStop Color="#50E6FF" Offset="1" />
                             </LinearGradientBrush>
                         </GeometryDrawing.Brush>
-                        <GeometryDrawing.Geometry>
-                            <PathGeometry Figures="M 2.697,12.389 a 0.999,0.999 0 1 0 1.414,1.414 l 9.192,-9.192 a 0.999,0.999 0 1 0 -1.414,-1.414 l -9.192,9.192 z" />
-                        </GeometryDrawing.Geometry>
                     </GeometryDrawing>
 
                     <!-- Antenna Tip -->
-                    <GeometryDrawing Brush="#50E6FF">
-                        <GeometryDrawing.Geometry>
-                            <PathGeometry Figures="M 15.561,3.061 a 0.999,0.999 0 0 1 -1.414,0 l -0.707,-0.707 A 0.999,0.999 0 1 1 14.854,0.94 l 0.707,0.707 a 1,1 0 0 1 0,1.414 z" />
-                        </GeometryDrawing.Geometry>
-                    </GeometryDrawing>
+                    <GeometryDrawing Brush="#50E6FF"
+                                     Geometry="M 15.561,3.061 a 0.999,0.999 0 0 1 -1.414,0 l -0.707,-0.707 A 0.999,0.999 0 1 1 14.854,0.94 l 0.707,0.707 a 1,1 0 0 1 0,1.414 z" />
 
                     <!-- Chassis with ClipGeometry -->
-                    <DrawingGroup>
-                        <DrawingGroup.ClipGeometry>
-                            <PathGeometry Figures="M 36,32 c 0,4 -4,4 -4,4 H 4 s -4,0 -4,-4 V 14 s 0,-4 4,-4 h 28 c 4,0 4,4 4,4 v 18 z" />
-                        </DrawingGroup.ClipGeometry>
+                    <DrawingGroup ClipGeometry="M 36,32 c 0,4 -4,4 -4,4 H 4 s -4,0 -4,-4 V 14 s 0,-4 4,-4 h 28 c 4,0 4,4 4,4 v 18 z">
                         <GeometryDrawing>
                             <GeometryDrawing.Brush>
                                 <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">

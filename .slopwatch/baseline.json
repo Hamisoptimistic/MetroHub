@@ -1,0 +1,1979 @@
+{
+  "version": 2,
+  "createdAt": "2026-11-18T22:27:16.231397+00:00",
+  "updatedAt": "2026-11-18T22:27:16.2342132+00:00",
+  "description": "Initial baseline created by 'slopwatch init' on 2026-11-18 22:27:16 UTC",
+  "entries": [
+    {
+      "hash": "a8f5d717aca387bb",
+      "ruleId": "SW003",
+      "filePath": ".agents/plugins/dotnet-test/skills/find-untested-sources/scripts/Find-UntestedSources.cs",
+      "lineNumber": 419,
+      "codeSnippet": "catch\n    {\n    }",
+      "message": "Empty catch block swallows exceptions without handling",
+      "baselinedAt": "2026-11-18T22:27:16.23321+00:00"
+    },
+    {
+      "hash": "cc58d9c59098d6b1",
+      "ruleId": "SW002",
+      "filePath": "src/MetroHub/App.xaml.cs",
+      "lineNumber": 14,
+      "codeSnippet": "System.Diagnostics.CodeAnalysis.SuppressMessage(\"Design\", \"CA1001:Types that own disposable fields should be disposable\", Justification = \"WPF Application lifecycle manages disposable fields via OnExit.\")",
+      "message": "SuppressMessage attribute suppressing Design:CA1001:Types that own disposable fields should be disposable",
+      "baselinedAt": "2026-11-18T22:27:16.2333526+00:00"
+    },
+    {
+      "hash": "a4ab1cbde8f996cb",
+      "ruleId": "SW003",
+      "filePath": "src/MetroHub/App.xaml.cs",
+      "lineNumber": 63,
+      "codeSnippet": "catch\n        {\n            // Crash logging must never throw\n        }",
+      "message": "Empty catch block swallows exceptions without handling",
+      "baselinedAt": "2026-11-18T22:27:16.2333581+00:00"
+    },
+    {
+      "hash": "836e7c3a5d904d16",
+      "ruleId": "SW005",
+      "filePath": "src/MetroHub/MetroHub.csproj",
+      "lineNumber": 25,
+      "codeSnippet": "<TreatWarningsAsErrors>false</TreatWarningsAsErrors>",
+      "message": "TreatWarningsAsErrors is disabled - warnings will not fail the build",
+      "baselinedAt": "2026-11-18T22:27:16.2333613+00:00"
+    },
+    {
+      "hash": "07370c14adc17e06",
+      "ruleId": "SW005",
+      "filePath": "src/MetroHub/MetroHub_25kojal0_wpftmp.csproj",
+      "lineNumber": 29,
+      "codeSnippet": "<TreatWarningsAsErrors>false</TreatWarningsAsErrors>",
+      "message": "TreatWarningsAsErrors is disabled - warnings will not fail the build",
+      "baselinedAt": "2026-11-18T22:27:16.2333797+00:00"
+    },
+    {
+      "hash": "cbb0f7c17aea4d3b",
+      "ruleId": "SW003",
+      "filePath": "src/MetroHub/Program.cs",
+      "lineNumber": 76,
+      "codeSnippet": "catch\n            {\n                // Crash logging must never throw\n            }",
+      "message": "Empty catch block swallows exceptions without handling",
+      "baselinedAt": "2026-11-18T22:27:16.2333835+00:00"
+    },
+    {
+      "hash": "65c9f76e31b49fcf",
+      "ruleId": "SW003",
+      "filePath": "src/MetroHub/Core/Common/Safe.cs",
+      "lineNumber": 38,
+      "codeSnippet": "catch { }",
+      "message": "Empty catch block swallows exceptions without handling",
+      "baselinedAt": "2026-11-18T22:27:16.2333884+00:00"
+    },
+    {
+      "hash": "a8e0c61156660f8e",
+      "ruleId": "SW003",
+      "filePath": "src/MetroHub/Core/Common/Safe.cs",
+      "lineNumber": 44,
+      "codeSnippet": "catch { }",
+      "message": "Empty catch block swallows exceptions without handling",
+      "baselinedAt": "2026-11-18T22:27:16.2333912+00:00"
+    },
+    {
+      "hash": "5dab426ee82542c2",
+      "ruleId": "SW003",
+      "filePath": "src/MetroHub/Core/Common/Safe.cs",
+      "lineNumber": 213,
+      "codeSnippet": "catch (OperationCanceledException) { }",
+      "message": "Empty catch block swallows exceptions without handling",
+      "baselinedAt": "2026-11-18T22:27:16.2333944+00:00"
+    },
+    {
+      "hash": "1dc9bf353bb39641",
+      "ruleId": "SW003",
+      "filePath": "src/MetroHub/Core/Display/MonitorBrightnessService.cs",
+      "lineNumber": 69,
+      "codeSnippet": "catch (OperationCanceledException) { }",
+      "message": "Empty catch block swallows exceptions without handling",
+      "baselinedAt": "2026-11-18T22:27:16.2333991+00:00"
+    },
+    {
+      "hash": "7e223b72bc54b9b9",
+      "ruleId": "SW003",
+      "filePath": "src/MetroHub/Core/Display/MonitorBrightnessService.cs",
+      "lineNumber": 325,
+      "codeSnippet": "catch (OperationCanceledException) { }",
+      "message": "Empty catch block swallows exceptions without handling",
+      "baselinedAt": "2026-11-18T22:27:16.2334021+00:00"
+    },
+    {
+      "hash": "66ba4b8790083c71",
+      "ruleId": "SW003",
+      "filePath": "src/MetroHub/Core/Display/NightLightService.cs",
+      "lineNumber": 392,
+      "codeSnippet": "catch (OperationCanceledException) { }",
+      "message": "Empty catch block swallows exceptions without handling",
+      "baselinedAt": "2026-11-18T22:27:16.2334067+00:00"
+    },
+    {
+      "hash": "6e9b137cae8cac5b",
+      "ruleId": "SW002",
+      "filePath": "src/MetroHub/Core/Interop/NativeMethods.cs",
+      "lineNumber": 15,
+      "codeSnippet": "SuppressMessage(\"Naming\", \"CA1707:Identifiers should not contain underscores\", Justification = \"Preserves Win32 SDK header names\")",
+      "message": "SuppressMessage attribute suppressing Naming:CA1707:Identifiers should not contain underscores",
+      "baselinedAt": "2026-11-18T22:27:16.2334097+00:00"
+    },
+    {
+      "hash": "7f3ea4db3f459f7e",
+      "ruleId": "SW002",
+      "filePath": "src/MetroHub/Core/Interop/NativeMethods.cs",
+      "lineNumber": 16,
+      "codeSnippet": "SuppressMessage(\"Naming\", \"CA1711:Identifiers should not have incorrect suffix\", Justification = \"Preserves Win32 SDK header names\")",
+      "message": "SuppressMessage attribute suppressing Naming:CA1711:Identifiers should not have incorrect suffix",
+      "baselinedAt": "2026-11-18T22:27:16.2334137+00:00"
+    },
+    {
+      "hash": "2770fe26b5981fd5",
+      "ruleId": "SW003",
+      "filePath": "src/MetroHub/Core/Network/NetworkHealthService.cs",
+      "lineNumber": 197,
+      "codeSnippet": "catch (OperationCanceledException)\n        {\n            // Timed out or cancelled normally\n        }",
+      "message": "Empty catch block swallows exceptions without handling",
+      "baselinedAt": "2026-11-18T22:27:16.2334179+00:00"
+    },
+    {
+      "hash": "b6c6708f8b6baca3",
+      "ruleId": "SW003",
+      "filePath": "src/MetroHub/Core/Network/NetworkHealthService.cs",
+      "lineNumber": 221,
+      "codeSnippet": "catch (OperationCanceledException)\n        {\n            // Timed out or cancelled normally\n        }",
+      "message": "Empty catch block swallows exceptions without handling",
+      "baselinedAt": "2026-11-18T22:27:16.2334207+00:00"
+    },
+    {
+      "hash": "a756bc0ecd449784",
+      "ruleId": "SW002",
+      "filePath": "src/MetroHub/Core/Network/Interop/IpHelperInterop.cs",
+      "lineNumber": 7,
+      "codeSnippet": "SuppressMessage(\"Naming\", \"CA1707:Identifiers should not contain underscores\", Justification = \"Preserves Win32 IpHelper header names\")",
+      "message": "SuppressMessage attribute suppressing Naming:CA1707:Identifiers should not contain underscores",
+      "baselinedAt": "2026-11-18T22:27:16.2334237+00:00"
+    },
+    {
+      "hash": "bb760524d108353e",
+      "ruleId": "SW002",
+      "filePath": "src/MetroHub/Core/Network/Interop/WlanNative.cs",
+      "lineNumber": 7,
+      "codeSnippet": "SuppressMessage(\"Naming\", \"CA1707:Identifiers should not contain underscores\", Justification = \"Windows Native API definitions\")",
+      "message": "SuppressMessage attribute suppressing Naming:CA1707:Identifiers should not contain underscores",
+      "baselinedAt": "2026-11-18T22:27:16.2334266+00:00"
+    },
+    {
+      "hash": "b7dcb2f9c4177d30",
+      "ruleId": "SW002",
+      "filePath": "src/MetroHub/Core/Network/Interop/WlanNative.cs",
+      "lineNumber": 8,
+      "codeSnippet": "SuppressMessage(\"Naming\", \"CA1712:Do not prefix enum values with type name\", Justification = \"Windows Native API definitions\")",
+      "message": "SuppressMessage attribute suppressing Naming:CA1712:Do not prefix enum values with type name",
+      "baselinedAt": "2026-11-18T22:27:16.2334302+00:00"
+    },
+    {
+      "hash": "2440094d78cdd424",
+      "ruleId": "SW002",
+      "filePath": "src/MetroHub/Core/Network/Interop/WlanNative.cs",
+      "lineNumber": 66,
+      "codeSnippet": "SuppressMessage(\"Design\", \"CA1069:Enums should not have duplicate values\", Justification = \"Preserves Windows SDK aliases\")",
+      "message": "SuppressMessage attribute suppressing Design:CA1069:Enums should not have duplicate values",
+      "baselinedAt": "2026-11-18T22:27:16.233433+00:00"
+    },
+    {
+      "hash": "cf73901342b39a02",
+      "ruleId": "SW002",
+      "filePath": "src/MetroHub/Core/Network/Interop/WlanNative.cs",
+      "lineNumber": 83,
+      "codeSnippet": "SuppressMessage(\"Design\", \"CA1069:Enums should not have duplicate values\", Justification = \"Preserves Windows SDK aliases\")",
+      "message": "SuppressMessage attribute suppressing Design:CA1069:Enums should not have duplicate values",
+      "baselinedAt": "2026-11-18T22:27:16.2334357+00:00"
+    },
+    {
+      "hash": "ad6a50b30035a708",
+      "ruleId": "SW002",
+      "filePath": "src/MetroHub/Core/Search/Native/NativeMethods.Search.cs",
+      "lineNumber": 55,
+      "codeSnippet": "SuppressMessage(\"Performance\", \"CA1838:Avoid using StringBuilder for P/Invokes\", Justification = \"Win32 WM_GETTEXT buffer requirement\")",
+      "message": "SuppressMessage attribute suppressing Performance:CA1838:Avoid using StringBuilder for P/Invokes",
+      "baselinedAt": "2026-11-18T22:27:16.2334401+00:00"
+    },
+    {
+      "hash": "9f4ad388052a7aaa",
+      "ruleId": "SW002",
+      "filePath": "src/MetroHub/Core/Search/Sources/PureMemorySources.cs",
+      "lineNumber": 1857,
+      "codeSnippet": "System.Diagnostics.CodeAnalysis.SuppressMessage(\"Security\", \"CA5351:Do Not Use Broken Cryptographic Algorithm MD5\", Justification = \"Dev utility search provider computing user-requested MD5 string hash.\")",
+      "message": "SuppressMessage attribute suppressing Security:CA5351:Do Not Use Broken Cryptographic Algorithm MD5",
+      "baselinedAt": "2026-11-18T22:27:16.2334433+00:00"
+    },
+    {
+      "hash": "320b848b637568bb",
+      "ruleId": "SW002",
+      "filePath": "src/MetroHub/Core/Search/Sources/PureMemorySources.cs",
+      "lineNumber": 1858,
+      "codeSnippet": "System.Diagnostics.CodeAnalysis.SuppressMessage(\"Security\", \"CA5350:Do Not Use Weak Cryptographic Algorithm SHA1\", Justification = \"Dev utility search provider computing user-requested SHA-1 string hash.\")",
+      "message": "SuppressMessage attribute suppressing Security:CA5350:Do Not Use Weak Cryptographic Algorithm SHA1",
+      "baselinedAt": "2026-11-18T22:27:16.2334469+00:00"
+    },
+    {
+      "hash": "a1c62ef1a319dbc5",
+      "ruleId": "SW002",
+      "filePath": "src/MetroHub/Core/Services/HotkeyService.cs",
+      "lineNumber": 10,
+      "codeSnippet": "System.Diagnostics.CodeAnalysis.SuppressMessage(\"Usage\", \"CA2213:DisposableFieldsShouldBeDisposed\", Justification = \"HwndSource is retrieved via FromHwnd; lifetime is owned by the WPF Window.\")",
+      "message": "SuppressMessage attribute suppressing Usage:CA2213:DisposableFieldsShouldBeDisposed",
+      "baselinedAt": "2026-11-18T22:27:16.233451+00:00"
+    },
+    {
+      "hash": "16d7dd308b6b5f31",
+      "ruleId": "SW002",
+      "filePath": "src/MetroHub/Core/Services/IconExtractorService.cs",
+      "lineNumber": 39,
+      "codeSnippet": "SuppressMessage(\"Naming\", \"CA1712:Do not prefix enum values with type name\", Justification = \"Preserves Windows Shell IShellItemImageFactory header enum names\")",
+      "message": "SuppressMessage attribute suppressing Naming:CA1712:Do not prefix enum values with type name",
+      "baselinedAt": "2026-11-18T22:27:16.233454+00:00"
+    },
+    {
+      "hash": "c496cb1d339cf897",
+      "ruleId": "SW002",
+      "filePath": "src/MetroHub/Core/Services/IconExtractorService.cs",
+      "lineNumber": 85,
+      "codeSnippet": "SuppressMessage(\"Globalization\", \"CA2101:Specify marshaling for P/Invoke string arguments\", Justification = \"Win32 SHGetFileInfo requires Auto charset for system image list compatibility\")",
+      "message": "SuppressMessage attribute suppressing Globalization:CA2101:Specify marshaling for P/Invoke string arguments",
+      "baselinedAt": "2026-11-18T22:27:16.233457+00:00"
+    },
+    {
+      "hash": "74523b6d47e3d73d",
+      "ruleId": "SW002",
+      "filePath": "src/MetroHub/Core/Services/IconExtractorService.cs",
+      "lineNumber": 194,
+      "codeSnippet": "SuppressMessage(\"Performance\", \"CA1838:Avoid using StringBuilder for P/Invokes\", Justification = \"Win32 AssocQueryString buffer requirement\")",
+      "message": "SuppressMessage attribute suppressing Performance:CA1838:Avoid using StringBuilder for P/Invokes",
+      "baselinedAt": "2026-11-18T22:27:16.2334612+00:00"
+    },
+    {
+      "hash": "8fd082afbc1bdc91",
+      "ruleId": "SW021",
+      "filePath": "src/MetroHub/Core/Services/IconExtractorService.cs",
+      "lineNumber": 1033,
+      "codeSnippet": "20:CompilationUnit#1of1/69:FileScopedNamespaceDeclaration namespace MetroHub . Core . Services ;/61:ClassDeclaration public static class IconExtractorService { }/84:MethodDeclaration public static string ResolveShortcutTarget ( string shortcutPath )/10:Block#1of1/17:TryStatement#1of1/10:Block#1of1/16:IfStatement#1of1/10:Block#1of1/30:LocalDeclarationStatement#1of1/24:VariableDeclaration#1of1/17:NullableType#1of1/19:IdentifierName#1of1: dynamic? shell = Activator.CreateInstance(shellType);",
+      "message": "Use of 'dynamic' bypasses compile-time type checking",
+      "baselinedAt": "2026-11-18T22:27:16.2334717+00:00"
+    },
+    {
+      "hash": "34971f7a595690e6",
+      "ruleId": "SW021",
+      "filePath": "src/MetroHub/Core/Services/IconExtractorService.cs",
+      "lineNumber": 1036,
+      "codeSnippet": "20:CompilationUnit#1of1/69:FileScopedNamespaceDeclaration namespace MetroHub . Core . Services ;/61:ClassDeclaration public static class IconExtractorService { }/84:MethodDeclaration public static string ResolveShortcutTarget ( string shortcutPath )/10:Block#1of1/17:TryStatement#1of1/10:Block#1of1/16:IfStatement#1of1/10:Block#1of1/16:IfStatement#1of1/10:Block#1of1/95:LocalDeclarationStatement#1of3@9A63BDA338B56D23319B1CF5DA7E570C85D42F783F7320FC8A309ECE56466B8C/24:VariableDeclaration#1of1/19:IdentifierName#1of1: dynamic shortcut = shell.CreateShortcut(shortcutPath);",
+      "message": "Use of 'dynamic' bypasses compile-time type checking",
+      "baselinedAt": "2026-11-18T22:27:16.2334767+00:00"
+    },
+    {
+      "hash": "ab9ead2e92ce5894",
+      "ruleId": "SW021",
+      "filePath": "src/MetroHub/Core/Services/IconExtractorService.cs",
+      "lineNumber": 1094,
+      "codeSnippet": "20:CompilationUnit#1of1/69:FileScopedNamespaceDeclaration namespace MetroHub . Core . Services ;/61:ClassDeclaration public static class IconExtractorService { }/78:MethodDeclaration public static string ResolveExecutableTarget ( string path )/10:Block#1of1/81:IfStatement#3of3@6BD4B9804F5E557486581FD3280CF40CF4DEB58415AA95C87BBE66BAB6F27A85/10:Block#1of1/17:TryStatement#1of1/10:Block#1of1/16:IfStatement#1of1/10:Block#1of1/30:LocalDeclarationStatement#1of1/24:VariableDeclaration#1of1/17:NullableType#1of1/19:IdentifierName#1of1: dynamic? shell = Activator.CreateInstance(shellType);",
+      "message": "Use of 'dynamic' bypasses compile-time type checking",
+      "baselinedAt": "2026-11-18T22:27:16.2334797+00:00"
+    },
+    {
+      "hash": "e2c6656d1e1bedd5",
+      "ruleId": "SW021",
+      "filePath": "src/MetroHub/Core/Services/IconExtractorService.cs",
+      "lineNumber": 1097,
+      "codeSnippet": "20:CompilationUnit#1of1/69:FileScopedNamespaceDeclaration namespace MetroHub . Core . Services ;/61:ClassDeclaration public static class IconExtractorService { }/78:MethodDeclaration public static string ResolveExecutableTarget ( string path )/10:Block#1of1/81:IfStatement#3of3@6BD4B9804F5E557486581FD3280CF40CF4DEB58415AA95C87BBE66BAB6F27A85/10:Block#1of1/17:TryStatement#1of1/10:Block#1of1/16:IfStatement#1of1/10:Block#1of1/16:IfStatement#1of1/10:Block#1of1/95:LocalDeclarationStatement#1of2@9F540F6E33B0ED4BD6A975355FF4A936F4FCFCB21CD913B0FE59946C128BB002/24:VariableDeclaration#1of1/19:IdentifierName#1of1: dynamic shortcut = shell.CreateShortcut(path);",
+      "message": "Use of 'dynamic' bypasses compile-time type checking",
+      "baselinedAt": "2026-11-18T22:27:16.2334829+00:00"
+    },
+    {
+      "hash": "c7812b50d07c1657",
+      "ruleId": "SW021",
+      "filePath": "src/MetroHub/Core/Services/InstalledAppsService.cs",
+      "lineNumber": 218,
+      "codeSnippet": "20:CompilationUnit#1of1/69:FileScopedNamespaceDeclaration namespace MetroHub . Core . Services ;/61:ClassDeclaration public static class InstalledAppsService { }/96:MethodDeclaration public static List < CatalogItemModel > GetInstalledApps ( bool forceRefresh )/10:Block#1of1/18:LockStatement#1of1/10:Block#1of1/82:TryStatement#2of2@59C431FD286EF65C061C6A5CB5ADEB0ED5168F681102DB1A243D85EF4FE30258/10:Block#1of1/16:IfStatement#1of1/10:Block#1of1/30:LocalDeclarationStatement#1of1/24:VariableDeclaration#1of1/17:NullableType#1of1/19:IdentifierName#1of1: dynamic? shell = Activator.CreateInstance(shellType);",
+      "message": "Use of 'dynamic' bypasses compile-time type checking",
+      "baselinedAt": "2026-11-18T22:27:16.2334872+00:00"
+    },
+    {
+      "hash": "2940c807d8b69317",
+      "ruleId": "SW021",
+      "filePath": "src/MetroHub/Core/Services/InstalledAppsService.cs",
+      "lineNumber": 221,
+      "codeSnippet": "20:CompilationUnit#1of1/69:FileScopedNamespaceDeclaration namespace MetroHub . Core . Services ;/61:ClassDeclaration public static class InstalledAppsService { }/96:MethodDeclaration public static List < CatalogItemModel > GetInstalledApps ( bool forceRefresh )/10:Block#1of1/18:LockStatement#1of1/10:Block#1of1/82:TryStatement#2of2@59C431FD286EF65C061C6A5CB5ADEB0ED5168F681102DB1A243D85EF4FE30258/10:Block#1of1/16:IfStatement#1of1/10:Block#1of1/16:IfStatement#1of1/10:Block#1of1/30:LocalDeclarationStatement#1of1/24:VariableDeclaration#1of1/19:IdentifierName#1of1: dynamic appsFolder = shell.NameSpace(\"shell:AppsFolder\");",
+      "message": "Use of 'dynamic' bypasses compile-time type checking",
+      "baselinedAt": "2026-11-18T22:27:16.2334903+00:00"
+    },
+    {
+      "hash": "dd325eacf87d9d00",
+      "ruleId": "SW021",
+      "filePath": "src/MetroHub/Core/Services/InstalledAppsService.cs",
+      "lineNumber": 224,
+      "codeSnippet": "20:CompilationUnit#1of1/69:FileScopedNamespaceDeclaration namespace MetroHub . Core . Services ;/61:ClassDeclaration public static class InstalledAppsService { }/96:MethodDeclaration public static List < CatalogItemModel > GetInstalledApps ( bool forceRefresh )/10:Block#1of1/18:LockStatement#1of1/10:Block#1of1/82:TryStatement#2of2@59C431FD286EF65C061C6A5CB5ADEB0ED5168F681102DB1A243D85EF4FE30258/10:Block#1of1/16:IfStatement#1of1/10:Block#1of1/16:IfStatement#1of1/10:Block#1of1/16:IfStatement#1of1/10:Block#1of1/95:LocalDeclarationStatement#1of2@D167DC3849F9F4DF3B9B40EA069B49136D68A2C4F5BE811FC3BFE2C1577A5556/24:VariableDeclaration#1of1/19:IdentifierName#1of1: dynamic items = appsFolder.Items();",
+      "message": "Use of 'dynamic' bypasses compile-time type checking",
+      "baselinedAt": "2026-11-18T22:27:16.2334932+00:00"
+    },
+    {
+      "hash": "101dfd4bbbe365f7",
+      "ruleId": "SW021",
+      "filePath": "src/MetroHub/Core/Services/InstalledAppsService.cs",
+      "lineNumber": 231,
+      "codeSnippet": "20:CompilationUnit#1of1/69:FileScopedNamespaceDeclaration namespace MetroHub . Core . Services ;/61:ClassDeclaration public static class InstalledAppsService { }/96:MethodDeclaration public static List < CatalogItemModel > GetInstalledApps ( bool forceRefresh )/10:Block#1of1/18:LockStatement#1of1/10:Block#1of1/82:TryStatement#2of2@59C431FD286EF65C061C6A5CB5ADEB0ED5168F681102DB1A243D85EF4FE30258/10:Block#1of1/16:IfStatement#1of1/10:Block#1of1/16:IfStatement#1of1/10:Block#1of1/16:IfStatement#1of1/10:Block#1of1/17:ForStatement#1of1/10:Block#1of1/17:TryStatement#1of1/10:Block#1of1/95:LocalDeclarationStatement#1of3@6C52910DA501D4F2A166C7AF0FEBC529B322FBC52C66D001919D90272CA8FF04/24:VariableDeclaration#1of1/19:IdentifierName#1of1: dynamic item = items.Item(i);",
+      "message": "Use of 'dynamic' bypasses compile-time type checking",
+      "baselinedAt": "2026-11-18T22:27:16.233497+00:00"
+    },
+    {
+      "hash": "0aacf5c4dbd11bee",
+      "ruleId": "SW002",
+      "filePath": "src/MetroHub/Core/Services/LocalCompanionService.cs",
+      "lineNumber": 357,
+      "codeSnippet": "System.Diagnostics.CodeAnalysis.SuppressMessage(\"Reliability\", \"CA2000:Dispose objects before losing scope\", Justification = \"HttpListener ownership is transferred to _listener field, which is disposed on shutdown in StopAsync.\")",
+      "message": "SuppressMessage attribute suppressing Reliability:CA2000:Dispose objects before losing scope",
+      "baselinedAt": "2026-11-18T22:27:16.2335003+00:00"
+    },
+    {
+      "hash": "395f29e34fc04c1a",
+      "ruleId": "SW003",
+      "filePath": "src/MetroHub/Core/Services/LoggingService.cs",
+      "lineNumber": 92,
+      "codeSnippet": "catch\n            {\n                // Shutdown flush must never throw\n            }",
+      "message": "Empty catch block swallows exceptions without handling",
+      "baselinedAt": "2026-11-18T22:27:16.2335039+00:00"
+    },
+    {
+      "hash": "4f5b8042bf30acf2",
+      "ruleId": "SW021",
+      "filePath": "src/MetroHub/Core/Services/ProcessLauncherService.cs",
+      "lineNumber": 179,
+      "codeSnippet": "20:CompilationUnit#1of1/69:FileScopedNamespaceDeclaration namespace MetroHub . Core . Services ;/63:ClassDeclaration public static class ProcessLauncherService { }/80:MethodDeclaration public static string ? ResolveWorkingDirectory ( string path )/10:Block#1of1/17:TryStatement#1of1/10:Block#1of1/81:IfStatement#2of4@37C6BBF17B77D933EEB64355CA98BC5FA1CAA4DAB27392E85A9D432069C20793/10:Block#1of1/16:IfStatement#1of1/10:Block#1of1/30:LocalDeclarationStatement#1of1/24:VariableDeclaration#1of1/17:NullableType#1of1/19:IdentifierName#1of1: dynamic? shell = Activator.CreateInstance(shellType);",
+      "message": "Use of 'dynamic' bypasses compile-time type checking",
+      "baselinedAt": "2026-11-18T22:27:16.2335077+00:00"
+    },
+    {
+      "hash": "9a6237232142fad5",
+      "ruleId": "SW021",
+      "filePath": "src/MetroHub/Core/Services/ProcessLauncherService.cs",
+      "lineNumber": 184,
+      "codeSnippet": "20:CompilationUnit#1of1/69:FileScopedNamespaceDeclaration namespace MetroHub . Core . Services ;/63:ClassDeclaration public static class ProcessLauncherService { }/80:MethodDeclaration public static string ? ResolveWorkingDirectory ( string path )/10:Block#1of1/17:TryStatement#1of1/10:Block#1of1/81:IfStatement#2of4@37C6BBF17B77D933EEB64355CA98BC5FA1CAA4DAB27392E85A9D432069C20793/10:Block#1of1/16:IfStatement#1of1/10:Block#1of1/16:IfStatement#1of1/10:Block#1of1/17:TryStatement#1of1/10:Block#1of1/95:LocalDeclarationStatement#1of3@C3B699CFF17758CFF3937EC8108632184DFE52344AE05A27DE5136D92543B588/24:VariableDeclaration#1of1/19:IdentifierName#1of1: dynamic shortcut = shell.CreateShortcut(path);",
+      "message": "Use of 'dynamic' bypasses compile-time type checking",
+      "baselinedAt": "2026-11-18T22:27:16.2335106+00:00"
+    },
+    {
+      "hash": "00912003cc0cc2d9",
+      "ruleId": "SW021",
+      "filePath": "src/MetroHub/Core/Services/RunningAppTrackerService.cs",
+      "lineNumber": 706,
+      "codeSnippet": "20:CompilationUnit#1of1/69:FileScopedNamespaceDeclaration namespace MetroHub . Core . Services ;/87:ClassDeclaration public sealed partial class RunningAppTrackerService : IDisposable { }/105:MethodDeclaration private static ResolvedTargetInfo ResolveTargetInfo ( string target , string tileArgs )/10:Block#1of1/81:IfStatement#3of5@D4B8111C1AF6C0EE2DAE5A58C117AB4320D24BBC707104C2EC1F7290CCD54A80/10:Block#1of1/17:TryStatement#1of1/10:Block#1of1/16:IfStatement#1of1/10:Block#1of1/30:LocalDeclarationStatement#1of1/24:VariableDeclaration#1of1/17:NullableType#1of1/19:IdentifierName#1of1: dynamic? shell = Activator.CreateInstance(shellType);",
+      "message": "Use of 'dynamic' bypasses compile-time type checking",
+      "baselinedAt": "2026-11-18T22:27:16.2335149+00:00"
+    },
+    {
+      "hash": "a486db8e04390b92",
+      "ruleId": "SW021",
+      "filePath": "src/MetroHub/Core/Services/RunningAppTrackerService.cs",
+      "lineNumber": 711,
+      "codeSnippet": "20:CompilationUnit#1of1/69:FileScopedNamespaceDeclaration namespace MetroHub . Core . Services ;/87:ClassDeclaration public sealed partial class RunningAppTrackerService : IDisposable { }/105:MethodDeclaration private static ResolvedTargetInfo ResolveTargetInfo ( string target , string tileArgs )/10:Block#1of1/81:IfStatement#3of5@D4B8111C1AF6C0EE2DAE5A58C117AB4320D24BBC707104C2EC1F7290CCD54A80/10:Block#1of1/17:TryStatement#1of1/10:Block#1of1/16:IfStatement#1of1/10:Block#1of1/16:IfStatement#1of1/10:Block#1of1/17:TryStatement#1of1/10:Block#1of1/95:LocalDeclarationStatement#1of3@5CA08D32A7536FA2A3D18D2EBD0292893089774960F206D01FC3BECB52F21B61/24:VariableDeclaration#1of1/19:IdentifierName#1of1: dynamic shortcut = shell.CreateShortcut(target);",
+      "message": "Use of 'dynamic' bypasses compile-time type checking",
+      "baselinedAt": "2026-11-18T22:27:16.233518+00:00"
+    },
+    {
+      "hash": "61b5363f44b94063",
+      "ruleId": "SW003",
+      "filePath": "src/MetroHub/Core/Services/ScrollTrace.cs",
+      "lineNumber": 30,
+      "codeSnippet": "catch\n        {\n            // Diagnostics must never fault the UI thread.\n        }",
+      "message": "Empty catch block swallows exceptions without handling",
+      "baselinedAt": "2026-11-18T22:27:16.2335219+00:00"
+    },
+    {
+      "hash": "d8b71742182b90d6",
+      "ruleId": "SW003",
+      "filePath": "src/MetroHub/Core/Services/ScrollTrace.cs",
+      "lineNumber": 46,
+      "codeSnippet": "catch\n        {\n            // Diagnostics must never fault the UI thread.\n        }",
+      "message": "Empty catch block swallows exceptions without handling",
+      "baselinedAt": "2026-11-18T22:27:16.2335247+00:00"
+    },
+    {
+      "hash": "51fced73d7bf73d4",
+      "ruleId": "SW003",
+      "filePath": "src/MetroHub/Core/Services/WebFaviconService.cs",
+      "lineNumber": 583,
+      "codeSnippet": "catch { }",
+      "message": "Empty catch block swallows exceptions without handling",
+      "baselinedAt": "2026-11-18T22:27:16.2335283+00:00"
+    },
+    {
+      "hash": "dadc64d12a542569",
+      "ruleId": "SW003",
+      "filePath": "src/MetroHub/Core/Services/WebFaviconService.cs",
+      "lineNumber": 764,
+      "codeSnippet": "catch { }",
+      "message": "Empty catch block swallows exceptions without handling",
+      "baselinedAt": "2026-11-18T22:27:16.2335318+00:00"
+    },
+    {
+      "hash": "891600c5d88e2ae7",
+      "ruleId": "SW003",
+      "filePath": "src/MetroHub/Core/Services/WebFaviconService.cs",
+      "lineNumber": 1120,
+      "codeSnippet": "catch (OperationCanceledException) when (!overallCts.IsCancellationRequested)\r\n        {\r\n            // Tier 1 timed out after 3s; gracefully fall through to Google S2 with remaining 5s\r\n        }",
+      "message": "Empty catch block swallows exceptions without handling",
+      "baselinedAt": "2026-11-18T22:27:16.2336588+00:00"
+    },
+    {
+      "hash": "ba57190e7bb29d44",
+      "ruleId": "SW003",
+      "filePath": "src/MetroHub/Core/Services/WebIconRasterizer.cs",
+      "lineNumber": 87,
+      "codeSnippet": "catch { }",
+      "message": "Empty catch block swallows exceptions without handling",
+      "baselinedAt": "2026-11-18T22:27:16.2336637+00:00"
+    },
+    {
+      "hash": "1f05d49c76e0c0fd",
+      "ruleId": "SW003",
+      "filePath": "src/MetroHub/Core/Services/WebIconRasterizer.cs",
+      "lineNumber": 194,
+      "codeSnippet": "catch { }",
+      "message": "Empty catch block swallows exceptions without handling",
+      "baselinedAt": "2026-11-18T22:27:16.2336679+00:00"
+    },
+    {
+      "hash": "dd4206f4e6063583",
+      "ruleId": "SW003",
+      "filePath": "src/MetroHub/Core/Services/WebIconRasterizer.cs",
+      "lineNumber": 268,
+      "codeSnippet": "catch { }",
+      "message": "Empty catch block swallows exceptions without handling",
+      "baselinedAt": "2026-11-18T22:27:16.2336707+00:00"
+    },
+    {
+      "hash": "8ef75c3cbb672ab2",
+      "ruleId": "SW003",
+      "filePath": "src/MetroHub/Core/Services/WebIconRasterizer.cs",
+      "lineNumber": 425,
+      "codeSnippet": "catch { }",
+      "message": "Empty catch block swallows exceptions without handling",
+      "baselinedAt": "2026-11-18T22:27:16.2336735+00:00"
+    },
+    {
+      "hash": "77949974d3218546",
+      "ruleId": "SW002",
+      "filePath": "src/MetroHub/Presentation/Controls/Behaviors/AutoHideScrollBehavior.cs",
+      "lineNumber": 103,
+      "codeSnippet": "System.Diagnostics.CodeAnalysis.SuppressMessage(\"Reliability\", \"CA2000:Dispose objects before losing scope\", Justification = \"ScrollStateHolder lifetime is managed by ScrollViewer via ScrollStateProperty\")",
+      "message": "SuppressMessage attribute suppressing Reliability:CA2000:Dispose objects before losing scope",
+      "baselinedAt": "2026-11-18T22:27:16.2336778+00:00"
+    },
+    {
+      "hash": "5c74f3e36144257e",
+      "ruleId": "SW002",
+      "filePath": "src/MetroHub/Presentation/Controls/Behaviors/SmoothPhysicsScrollBehavior.cs",
+      "lineNumber": 143,
+      "codeSnippet": "System.Diagnostics.CodeAnalysis.SuppressMessage(\"Reliability\", \"CA2000:Dispose objects before losing scope\", Justification = \"PhysicsScrollController lifetime is managed by ScrollViewer via ControllerProperty.\")",
+      "message": "SuppressMessage attribute suppressing Reliability:CA2000:Dispose objects before losing scope",
+      "baselinedAt": "2026-11-18T22:27:16.2336812+00:00"
+    },
+    {
+      "hash": "96309b72496693b3",
+      "ruleId": "SW002",
+      "filePath": "src/MetroHub/Presentation/Controls/Shell/AllAppsDrawerControl.xaml.cs",
+      "lineNumber": 279,
+      "codeSnippet": "System.Diagnostics.CodeAnalysis.SuppressMessage(\"Design\", \"CA1001:Types that own disposable fields should be disposable\", Justification = \"WPF UserControl lifecycle manages disposable fields via Unloaded event.\")",
+      "message": "SuppressMessage attribute suppressing Design:CA1001:Types that own disposable fields should be disposable",
+      "baselinedAt": "2026-11-18T22:27:16.2336846+00:00"
+    },
+    {
+      "hash": "be19f2d17e0dab91",
+      "ruleId": "SW002",
+      "filePath": "src/MetroHub/Presentation/Dialogs/WebLinkDialog.xaml.cs",
+      "lineNumber": 17,
+      "codeSnippet": "System.Diagnostics.CodeAnalysis.SuppressMessage(\"Design\", \"CA1001:Types that own disposable fields should be disposable\", Justification = \"WPF Window lifecycle manages disposable fields via OnClosed.\")",
+      "message": "SuppressMessage attribute suppressing Design:CA1001:Types that own disposable fields should be disposable",
+      "baselinedAt": "2026-11-18T22:27:16.2336887+00:00"
+    },
+    {
+      "hash": "9f2f9a0b94074a70",
+      "ruleId": "SW002",
+      "filePath": "src/MetroHub/Presentation/Views/MainWindow/MainWindow.Sidebar.cs",
+      "lineNumber": 474,
+      "codeSnippet": "System.Diagnostics.CodeAnalysis.SuppressMessage(\"Performance\", \"CA1822:Mark members as static\", Justification = \"WPF XAML event handler requires an instance method for BAML delegate binding.\")",
+      "message": "SuppressMessage attribute suppressing Performance:CA1822:Mark members as static",
+      "baselinedAt": "2026-11-18T22:27:16.2336918+00:00"
+    },
+    {
+      "hash": "f7e2236c05fb93ca",
+      "ruleId": "SW002",
+      "filePath": "src/MetroHub/Presentation/Views/MainWindow/MainWindow.xaml.cs",
+      "lineNumber": 39,
+      "codeSnippet": "System.Diagnostics.CodeAnalysis.SuppressMessage(\"Design\", \"CA1001:Types that own disposable fields should be disposable\", Justification = \"WPF Window lifecycle manages disposable fields via OnClosed and App teardown.\")",
+      "message": "SuppressMessage attribute suppressing Design:CA1001:Types that own disposable fields should be disposable",
+      "baselinedAt": "2026-11-18T22:27:16.233695+00:00"
+    },
+    {
+      "hash": "8f5d86c8b0f0c8e3",
+      "ruleId": "SW002",
+      "filePath": "src/MetroHub/Widgets/Abstractions/IWidgetViewModel.cs",
+      "lineNumber": 20,
+      "codeSnippet": "SuppressMessage(\"Naming\", \"CA1716:Identifiers should not match keywords\", Justification = \"Standard widget lifecycle contract\")",
+      "message": "SuppressMessage attribute suppressing Naming:CA1716:Identifiers should not match keywords",
+      "baselinedAt": "2026-11-18T22:27:16.2336991+00:00"
+    },
+    {
+      "hash": "9fb871274e145fdc",
+      "ruleId": "SW002",
+      "filePath": "src/MetroHub/Widgets/Abstractions/WidgetViewModelBase.cs",
+      "lineNumber": 78,
+      "codeSnippet": "SuppressMessage(\"Naming\", \"CA1716:Identifiers should not match keywords\", Justification = \"Standard widget lifecycle contract\")",
+      "message": "SuppressMessage attribute suppressing Naming:CA1716:Identifiers should not match keywords",
+      "baselinedAt": "2026-11-18T22:27:16.2337022+00:00"
+    },
+    {
+      "hash": "9842a4ca987ad7ec",
+      "ruleId": "SW002",
+      "filePath": "src/MetroHub/Widgets/Catalog/MetroSync/MetroSyncSetupDialog.xaml.cs",
+      "lineNumber": 22,
+      "codeSnippet": "SuppressMessage(\"Design\", \"CA1001:Types that own disposable fields should be disposable\", Justification = \"WPF Window lifecycle manages disposable fields via OnClosed.\")",
+      "message": "SuppressMessage attribute suppressing Design:CA1001:Types that own disposable fields should be disposable",
+      "baselinedAt": "2026-11-18T22:27:16.2337055+00:00"
+    },
+    {
+      "hash": "45126ae4ecadfefc",
+      "ruleId": "SW002",
+      "filePath": "src/MetroHub/Widgets/Catalog/MetroSync/Services/TelegramHttpTransport.cs",
+      "lineNumber": 39,
+      "codeSnippet": "System.Diagnostics.CodeAnalysis.SuppressMessage(\"Reliability\", \"CA2000:Dispose objects before losing scope\",\n        Justification = \"SocketsHttpHandler ownership transferred to HttpClient with disposeHandler: true.\")",
+      "message": "SuppressMessage attribute suppressing Reliability:CA2000:Dispose objects before losing scope",
+      "baselinedAt": "2026-11-18T22:27:16.2337098+00:00"
+    },
+    {
+      "hash": "2185ac52f4b031a2",
+      "ruleId": "SW002",
+      "filePath": "src/MetroHub/Widgets/Catalog/MetroSync/Services/TelegramHttpTransport.cs",
+      "lineNumber": 196,
+      "codeSnippet": "System.Diagnostics.CodeAnalysis.SuppressMessage(\"Reliability\", \"CA2000:Dispose objects before losing scope\",\n        Justification = \"Ownership of child HttpContent objects is transferred to MultipartFormDataContent which disposes them.\")",
+      "message": "SuppressMessage attribute suppressing Reliability:CA2000:Dispose objects before losing scope",
+      "baselinedAt": "2026-11-18T22:27:16.2337131+00:00"
+    },
+    {
+      "hash": "c1f5290cdf5aeb3a",
+      "ruleId": "SW002",
+      "filePath": "src/MetroHub/Widgets/Catalog/MetroSync/Services/TelegramHttpTransport.cs",
+      "lineNumber": 255,
+      "codeSnippet": "System.Diagnostics.CodeAnalysis.SuppressMessage(\"Reliability\", \"CA2000:Dispose objects before losing scope\",\n        Justification = \"Ownership of child HttpContent objects is transferred to MultipartFormDataContent which disposes them.\")",
+      "message": "SuppressMessage attribute suppressing Reliability:CA2000:Dispose objects before losing scope",
+      "baselinedAt": "2026-11-18T22:27:16.2337164+00:00"
+    },
+    {
+      "hash": "9851065d8b714061",
+      "ruleId": "SW002",
+      "filePath": "src/MetroHub/Widgets/Catalog/Network/NetworkWidgetViewModel.cs",
+      "lineNumber": 214,
+      "codeSnippet": "System.Diagnostics.CodeAnalysis.SuppressMessage(\"Usage\", \"CA2213:DisposableFieldsShouldBeDisposed\", Justification = \"Shared singleton instance; lifetime managed at application shutdown.\")",
+      "message": "SuppressMessage attribute suppressing Usage:CA2213:DisposableFieldsShouldBeDisposed",
+      "baselinedAt": "2026-11-18T22:27:16.2337209+00:00"
+    },
+    {
+      "hash": "a3813078c6c27578",
+      "ruleId": "SW002",
+      "filePath": "src/MetroHub/Widgets/Catalog/Network/NetworkWidgetViewModel.cs",
+      "lineNumber": 216,
+      "codeSnippet": "System.Diagnostics.CodeAnalysis.SuppressMessage(\"Usage\", \"CA2213:DisposableFieldsShouldBeDisposed\", Justification = \"Shared singleton instance; lifetime managed at application shutdown.\")",
+      "message": "SuppressMessage attribute suppressing Usage:CA2213:DisposableFieldsShouldBeDisposed",
+      "baselinedAt": "2026-11-18T22:27:16.2337239+00:00"
+    },
+    {
+      "hash": "6b5412f680f7558b",
+      "ruleId": "SW002",
+      "filePath": "src/MetroHub/Widgets/Catalog/Radio/RadioStationDialog.xaml.cs",
+      "lineNumber": 26,
+      "codeSnippet": "System.Diagnostics.CodeAnalysis.SuppressMessage(\"Design\", \"CA1001:Types that own disposable fields should be disposable\", Justification = \"WPF Window lifecycle manages disposable fields via OnDialogClosed.\")",
+      "message": "SuppressMessage attribute suppressing Design:CA1001:Types that own disposable fields should be disposable",
+      "baselinedAt": "2026-11-18T22:27:16.233729+00:00"
+    },
+    {
+      "hash": "4d9482ca9d1f3023",
+      "ruleId": "SW002",
+      "filePath": "src/MetroHub/Widgets/Catalog/Radio/Services/IRadioAudioService.cs",
+      "lineNumber": 38,
+      "codeSnippet": "SuppressMessage(\"Naming\", \"CA1716:Identifiers should not match keywords\", Justification = \"Standard audio playback API contract\")",
+      "message": "SuppressMessage attribute suppressing Naming:CA1716:Identifiers should not match keywords",
+      "baselinedAt": "2026-11-18T22:27:16.2337325+00:00"
+    },
+    {
+      "hash": "1e676a063ab43835",
+      "ruleId": "SW002",
+      "filePath": "src/MetroHub/Widgets/Catalog/Radio/Services/IRadioAudioService.cs",
+      "lineNumber": 45,
+      "codeSnippet": "SuppressMessage(\"Naming\", \"CA1716:Identifiers should not match keywords\", Justification = \"Standard audio playback API contract\")",
+      "message": "SuppressMessage attribute suppressing Naming:CA1716:Identifiers should not match keywords",
+      "baselinedAt": "2026-11-18T22:27:16.2337353+00:00"
+    },
+    {
+      "hash": "944cfc3c2ff641f5",
+      "ruleId": "SW002",
+      "filePath": "src/MetroHub/Widgets/Catalog/Radio/Services/StreamUrlProbeService.cs",
+      "lineNumber": 90,
+      "codeSnippet": "System.Diagnostics.CodeAnalysis.SuppressMessage(\"Reliability\", \"CA2000:Dispose objects before losing scope\", Justification = \"SocketsHttpHandler ownership transferred to HttpClient with disposeHandler: true.\")",
+      "message": "SuppressMessage attribute suppressing Reliability:CA2000:Dispose objects before losing scope",
+      "baselinedAt": "2026-11-18T22:27:16.2337397+00:00"
+    },
+    {
+      "hash": "99f2d0f7014cf29f",
+      "ruleId": "SW002",
+      "filePath": "src/MetroHub/Widgets/Catalog/Radio/Services/StreamUrlProbeService.cs",
+      "lineNumber": 91,
+      "codeSnippet": "System.Diagnostics.CodeAnalysis.SuppressMessage(\"Security\", \"CA5359:Do Not Disable Certificate Validation\", Justification = \"Community radio streams frequently use self-signed or legacy TLS certificates on streaming relays.\")",
+      "message": "SuppressMessage attribute suppressing Security:CA5359:Do Not Disable Certificate Validation",
+      "baselinedAt": "2026-11-18T22:27:16.233743+00:00"
+    },
+    {
+      "hash": "885bd3e226a5c9f6",
+      "ruleId": "SW002",
+      "filePath": "src/MetroHub/Widgets/Catalog/Weather/WeatherLocationDialog.xaml.cs",
+      "lineNumber": 24,
+      "codeSnippet": "System.Diagnostics.CodeAnalysis.SuppressMessage(\"Design\", \"CA1001:Types that own disposable fields should be disposable\", Justification = \"WPF Window lifecycle manages disposable fields via OnClosed.\")",
+      "message": "SuppressMessage attribute suppressing Design:CA1001:Types that own disposable fields should be disposable",
+      "baselinedAt": "2026-11-18T22:27:16.2337462+00:00"
+    },
+    {
+      "hash": "bde3d8189ddf0e18",
+      "ruleId": "SW002",
+      "filePath": "src/MetroHub/Widgets/Registry/WidgetDefinition.cs",
+      "lineNumber": 27,
+      "codeSnippet": "System.Diagnostics.CodeAnalysis.SuppressMessage(\"Reliability\", \"CA2000:Dispose objects before losing scope\", Justification = \"Factory method creates and transfers ownership of the disposable IWidgetViewModel to caller.\")",
+      "message": "SuppressMessage attribute suppressing Reliability:CA2000:Dispose objects before losing scope",
+      "baselinedAt": "2026-11-18T22:27:16.2337507+00:00"
+    },
+    {
+      "hash": "9538113a7d5be24a",
+      "ruleId": "SW005",
+      "filePath": "tests/MetroHub.Tests/MetroHub.Tests.csproj",
+      "lineNumber": 5,
+      "codeSnippet": "<NoWarn>$(NoWarn);NU1701;CA2000;CA1861;CA1852;CA1001;xUnit1031;xUnit2013;CS8600;CS8602</NoWarn>",
+      "message": "Adding warnings to NoWarn: NU1701;CA2000;CA1861;CA1852;CA1001;xUnit1031;xUnit2013;CS8600;CS8602",
+      "baselinedAt": "2026-11-18T22:27:16.2337534+00:00"
+    },
+    {
+      "hash": "7f653490c607ff58",
+      "ruleId": "SW003",
+      "filePath": "tests/MetroHub.Tests/Core/AppPathsTests.cs",
+      "lineNumber": 28,
+      "codeSnippet": "catch { }",
+      "message": "Empty catch block swallows exceptions without handling",
+      "baselinedAt": "2026-11-18T22:27:16.2337562+00:00"
+    },
+    {
+      "hash": "2168d74aecc5dbc5",
+      "ruleId": "SW003",
+      "filePath": "tests/MetroHub.Tests/Core/CanvasPasteServiceTests.cs",
+      "lineNumber": 37,
+      "codeSnippet": "catch { }",
+      "message": "Empty catch block swallows exceptions without handling",
+      "baselinedAt": "2026-11-18T22:27:16.2337592+00:00"
+    },
+    {
+      "hash": "201e5b5c98a8032b",
+      "ruleId": "SW003",
+      "filePath": "tests/MetroHub.Tests/Core/CanvasPasteServiceTests.cs",
+      "lineNumber": 48,
+      "codeSnippet": "catch { }",
+      "message": "Empty catch block swallows exceptions without handling",
+      "baselinedAt": "2026-11-18T22:27:16.2337624+00:00"
+    },
+    {
+      "hash": "f4dfee85b1ba3a6a",
+      "ruleId": "SW003",
+      "filePath": "tests/MetroHub.Tests/Core/CanvasPasteServiceTests.cs",
+      "lineNumber": 777,
+      "codeSnippet": "catch { }",
+      "message": "Empty catch block swallows exceptions without handling",
+      "baselinedAt": "2026-11-18T22:27:16.2337651+00:00"
+    },
+    {
+      "hash": "42f0e17b2b6869cc",
+      "ruleId": "SW003",
+      "filePath": "tests/MetroHub.Tests/Core/CanvasPasteServiceTests.cs",
+      "lineNumber": 778,
+      "codeSnippet": "catch { }",
+      "message": "Empty catch block swallows exceptions without handling",
+      "baselinedAt": "2026-11-18T22:27:16.2337678+00:00"
+    },
+    {
+      "hash": "9127bab15a79cd88",
+      "ruleId": "SW004",
+      "filePath": "tests/MetroHub.Tests/Core/CompanionServiceTests.cs",
+      "lineNumber": 312,
+      "codeSnippet": "Task.Delay(TimeSpan.FromSeconds(3), ct)",
+      "message": "Test uses Task.Delay(TimeSpan.FromSeconds(3)) which may indicate a timing-dependent test",
+      "baselinedAt": "2026-11-18T22:27:16.2337723+00:00"
+    },
+    {
+      "hash": "0d76e1701cf787a2",
+      "ruleId": "SW003",
+      "filePath": "tests/MetroHub.Tests/Core/EverythingSearchSourceTests.cs",
+      "lineNumber": 573,
+      "codeSnippet": "catch (OperationCanceledException) { }",
+      "message": "Empty catch block swallows exceptions without handling",
+      "baselinedAt": "2026-11-18T22:27:16.2337757+00:00"
+    },
+    {
+      "hash": "48ab8a36019f033f",
+      "ruleId": "SW004",
+      "filePath": "tests/MetroHub.Tests/Core/EverythingSearchSourceTests.cs",
+      "lineNumber": 284,
+      "codeSnippet": "Task.Delay(260)",
+      "message": "Test uses Task.Delay(260) which may indicate a timing-dependent test",
+      "baselinedAt": "2026-11-18T22:27:16.2337783+00:00"
+    },
+    {
+      "hash": "38227d16a9268d90",
+      "ruleId": "SW004",
+      "filePath": "tests/MetroHub.Tests/Core/EverythingSearchSourceTests.cs",
+      "lineNumber": 440,
+      "codeSnippet": "Thread.Sleep(5000)",
+      "message": "Test uses Thread.Sleep(5000) which may indicate a timing-dependent test",
+      "baselinedAt": "2026-11-18T22:27:16.233782+00:00"
+    },
+    {
+      "hash": "be12da5267359eea",
+      "ruleId": "SW004",
+      "filePath": "tests/MetroHub.Tests/Core/EverythingSearchSourceTests.cs",
+      "lineNumber": 526,
+      "codeSnippet": "Task.Delay(2000)",
+      "message": "Test uses Task.Delay(2000) which may indicate a timing-dependent test",
+      "baselinedAt": "2026-11-18T22:27:16.2337848+00:00"
+    },
+    {
+      "hash": "4572e5644225113d",
+      "ruleId": "SW004",
+      "filePath": "tests/MetroHub.Tests/Core/EverythingSearchSourceTests.cs",
+      "lineNumber": 552,
+      "codeSnippet": "Thread.Sleep(random.Next(5, 30))",
+      "message": "Test uses Thread.Sleep(random.Next(5, 30)) which may indicate a timing-dependent test",
+      "baselinedAt": "2026-11-18T22:27:16.2337885+00:00"
+    },
+    {
+      "hash": "b2826b3aa39f30b4",
+      "ruleId": "SW004",
+      "filePath": "tests/MetroHub.Tests/Core/EverythingSearchSourceTests.cs",
+      "lineNumber": 578,
+      "codeSnippet": "Task.Delay(3000)",
+      "message": "Test uses Task.Delay(3000) which may indicate a timing-dependent test",
+      "baselinedAt": "2026-11-18T22:27:16.2337911+00:00"
+    },
+    {
+      "hash": "f41bea278ec5efcc",
+      "ruleId": "SW003",
+      "filePath": "tests/MetroHub.Tests/Core/HttpHelperTests.cs",
+      "lineNumber": 125,
+      "codeSnippet": "catch { }",
+      "message": "Empty catch block swallows exceptions without handling",
+      "baselinedAt": "2026-11-18T22:27:16.2337942+00:00"
+    },
+    {
+      "hash": "71e145b1c13982d2",
+      "ruleId": "SW003",
+      "filePath": "tests/MetroHub.Tests/Core/HttpHelperTests.cs",
+      "lineNumber": 156,
+      "codeSnippet": "catch { }",
+      "message": "Empty catch block swallows exceptions without handling",
+      "baselinedAt": "2026-11-18T22:27:16.2337967+00:00"
+    },
+    {
+      "hash": "a7cff8379c0c0bdf",
+      "ruleId": "SW003",
+      "filePath": "tests/MetroHub.Tests/Core/HttpHelperTests.cs",
+      "lineNumber": 196,
+      "codeSnippet": "catch { }",
+      "message": "Empty catch block swallows exceptions without handling",
+      "baselinedAt": "2026-11-18T22:27:16.2338003+00:00"
+    },
+    {
+      "hash": "13653288ac0f8511",
+      "ruleId": "SW003",
+      "filePath": "tests/MetroHub.Tests/Core/HttpHelperTests.cs",
+      "lineNumber": 235,
+      "codeSnippet": "catch { }",
+      "message": "Empty catch block swallows exceptions without handling",
+      "baselinedAt": "2026-11-18T22:27:16.2338029+00:00"
+    },
+    {
+      "hash": "b63a1d226d5b8ced",
+      "ruleId": "SW003",
+      "filePath": "tests/MetroHub.Tests/Core/HttpHelperTests.cs",
+      "lineNumber": 268,
+      "codeSnippet": "catch { }",
+      "message": "Empty catch block swallows exceptions without handling",
+      "baselinedAt": "2026-11-18T22:27:16.2338053+00:00"
+    },
+    {
+      "hash": "b61493aa8e0f182d",
+      "ruleId": "SW003",
+      "filePath": "tests/MetroHub.Tests/Core/HttpHelperTests.cs",
+      "lineNumber": 428,
+      "codeSnippet": "catch { }",
+      "message": "Empty catch block swallows exceptions without handling",
+      "baselinedAt": "2026-11-18T22:27:16.2338098+00:00"
+    },
+    {
+      "hash": "bad45ef1b8586005",
+      "ruleId": "SW003",
+      "filePath": "tests/MetroHub.Tests/Core/HttpHelperTests.cs",
+      "lineNumber": 463,
+      "codeSnippet": "catch { }",
+      "message": "Empty catch block swallows exceptions without handling",
+      "baselinedAt": "2026-11-18T22:27:16.2338123+00:00"
+    },
+    {
+      "hash": "a49b90f3a0bc6f8d",
+      "ruleId": "SW003",
+      "filePath": "tests/MetroHub.Tests/Core/HttpHelperTests.cs",
+      "lineNumber": 509,
+      "codeSnippet": "catch { }",
+      "message": "Empty catch block swallows exceptions without handling",
+      "baselinedAt": "2026-11-18T22:27:16.2338155+00:00"
+    },
+    {
+      "hash": "4ac485db405b73cf",
+      "ruleId": "SW003",
+      "filePath": "tests/MetroHub.Tests/Core/PersistenceAndDecouplingTests.cs",
+      "lineNumber": 38,
+      "codeSnippet": "catch { }",
+      "message": "Empty catch block swallows exceptions without handling",
+      "baselinedAt": "2026-11-18T22:27:16.2338187+00:00"
+    },
+    {
+      "hash": "745072b956236894",
+      "ruleId": "SW003",
+      "filePath": "tests/MetroHub.Tests/Core/PersistenceAndDecouplingTests.cs",
+      "lineNumber": 49,
+      "codeSnippet": "catch { }",
+      "message": "Empty catch block swallows exceptions without handling",
+      "baselinedAt": "2026-11-18T22:27:16.2338213+00:00"
+    },
+    {
+      "hash": "b1f35183a21cfd96",
+      "ruleId": "SW003",
+      "filePath": "tests/MetroHub.Tests/Core/PowerToysPeekLauncherTests.cs",
+      "lineNumber": 36,
+      "codeSnippet": "catch\n        {\n            // Ignore temp file cleanup errors\n        }",
+      "message": "Empty catch block swallows exceptions without handling",
+      "baselinedAt": "2026-11-18T22:27:16.2338239+00:00"
+    },
+    {
+      "hash": "101c3a3a301ead06",
+      "ruleId": "SW004",
+      "filePath": "tests/MetroHub.Tests/Core/RadioAudioServiceTests.cs",
+      "lineNumber": 80,
+      "codeSnippet": "Task.Delay(1000)",
+      "message": "Test uses Task.Delay(1000) which may indicate a timing-dependent test",
+      "baselinedAt": "2026-11-18T22:27:16.2338278+00:00"
+    },
+    {
+      "hash": "03138dd18824b285",
+      "ruleId": "SW004",
+      "filePath": "tests/MetroHub.Tests/Core/RadioAudioServiceTests.cs",
+      "lineNumber": 113,
+      "codeSnippet": "Task.Delay(200)",
+      "message": "Test uses Task.Delay(200) which may indicate a timing-dependent test",
+      "baselinedAt": "2026-11-18T22:27:16.2338306+00:00"
+    },
+    {
+      "hash": "0fbb14e27b7a2be5",
+      "ruleId": "SW004",
+      "filePath": "tests/MetroHub.Tests/Core/RadioAudioServiceTests.cs",
+      "lineNumber": 145,
+      "codeSnippet": "Task.Delay(200)",
+      "message": "Test uses Task.Delay(200) which may indicate a timing-dependent test",
+      "baselinedAt": "2026-11-18T22:27:16.2338332+00:00"
+    },
+    {
+      "hash": "be567a3f962a2ad1",
+      "ruleId": "SW004",
+      "filePath": "tests/MetroHub.Tests/Core/RadioAudioServiceTests.cs",
+      "lineNumber": 185,
+      "codeSnippet": "Task.Delay(200)",
+      "message": "Test uses Task.Delay(200) which may indicate a timing-dependent test",
+      "baselinedAt": "2026-11-18T22:27:16.2338368+00:00"
+    },
+    {
+      "hash": "9cab68e1b3496c36",
+      "ruleId": "SW003",
+      "filePath": "tests/MetroHub.Tests/Core/RadioCatalogTests.cs",
+      "lineNumber": 234,
+      "codeSnippet": "catch { }",
+      "message": "Empty catch block swallows exceptions without handling",
+      "baselinedAt": "2026-11-18T22:27:16.2338396+00:00"
+    },
+    {
+      "hash": "3dedfcc0f4d6aeb7",
+      "ruleId": "SW003",
+      "filePath": "tests/MetroHub.Tests/Core/RadioCatalogTests.cs",
+      "lineNumber": 235,
+      "codeSnippet": "catch { }",
+      "message": "Empty catch block swallows exceptions without handling",
+      "baselinedAt": "2026-11-18T22:27:16.233842+00:00"
+    },
+    {
+      "hash": "6be56fe4e101084f",
+      "ruleId": "SW003",
+      "filePath": "tests/MetroHub.Tests/Core/RadioCatalogTests.cs",
+      "lineNumber": 236,
+      "codeSnippet": "catch { }",
+      "message": "Empty catch block swallows exceptions without handling",
+      "baselinedAt": "2026-11-18T22:27:16.2338443+00:00"
+    },
+    {
+      "hash": "69d4cc4b8ce9ba1a",
+      "ruleId": "SW004",
+      "filePath": "tests/MetroHub.Tests/Core/SearchOrchestratorTests.cs",
+      "lineNumber": 41,
+      "codeSnippet": "Task.Delay(150)",
+      "message": "Test uses Task.Delay(150) which may indicate a timing-dependent test",
+      "baselinedAt": "2026-11-18T22:27:16.2338483+00:00"
+    },
+    {
+      "hash": "e974315956f5a95a",
+      "ruleId": "SW004",
+      "filePath": "tests/MetroHub.Tests/Core/SearchOrchestratorTests.cs",
+      "lineNumber": 77,
+      "codeSnippet": "Task.Delay(500)",
+      "message": "Test uses Task.Delay(500) which may indicate a timing-dependent test",
+      "baselinedAt": "2026-11-18T22:27:16.2338512+00:00"
+    },
+    {
+      "hash": "f59b83e7aa736242",
+      "ruleId": "SW004",
+      "filePath": "tests/MetroHub.Tests/Core/SearchOrchestratorTests.cs",
+      "lineNumber": 103,
+      "codeSnippet": "Task.Delay(500)",
+      "message": "Test uses Task.Delay(500) which may indicate a timing-dependent test",
+      "baselinedAt": "2026-11-18T22:27:16.2338546+00:00"
+    },
+    {
+      "hash": "738e41f7cbf9122c",
+      "ruleId": "SW004",
+      "filePath": "tests/MetroHub.Tests/Core/SearchOrchestratorTests.cs",
+      "lineNumber": 126,
+      "codeSnippet": "Task.Delay(30)",
+      "message": "Test uses Task.Delay(30) which may indicate a timing-dependent test",
+      "baselinedAt": "2026-11-18T22:27:16.2338572+00:00"
+    },
+    {
+      "hash": "c5ba4a53832c48b2",
+      "ruleId": "SW004",
+      "filePath": "tests/MetroHub.Tests/Core/SearchOrchestratorTests.cs",
+      "lineNumber": 130,
+      "codeSnippet": "Task.Delay(350)",
+      "message": "Test uses Task.Delay(350) which may indicate a timing-dependent test",
+      "baselinedAt": "2026-11-18T22:27:16.2338597+00:00"
+    },
+    {
+      "hash": "677c67e174d6e751",
+      "ruleId": "SW004",
+      "filePath": "tests/MetroHub.Tests/Core/SearchOrchestratorTests.cs",
+      "lineNumber": 148,
+      "codeSnippet": "Task.Delay(_delayMs, cancellationToken)",
+      "message": "Test uses Task.Delay(_delayMs) which may indicate a timing-dependent test",
+      "baselinedAt": "2026-11-18T22:27:16.2338629+00:00"
+    },
+    {
+      "hash": "3ef9583bdc89a885",
+      "ruleId": "SW004",
+      "filePath": "tests/MetroHub.Tests/Core/SearchOrchestratorTests.cs",
+      "lineNumber": 230,
+      "codeSnippet": "Task.Delay(40)",
+      "message": "Test uses Task.Delay(40) which may indicate a timing-dependent test",
+      "baselinedAt": "2026-11-18T22:27:16.2338655+00:00"
+    },
+    {
+      "hash": "67b23b33eae4f5ea",
+      "ruleId": "SW004",
+      "filePath": "tests/MetroHub.Tests/Core/SearchOrchestratorTests.cs",
+      "lineNumber": 234,
+      "codeSnippet": "Task.Delay(20)",
+      "message": "Test uses Task.Delay(20) which may indicate a timing-dependent test",
+      "baselinedAt": "2026-11-18T22:27:16.2338682+00:00"
+    },
+    {
+      "hash": "9c18b683a871582b",
+      "ruleId": "SW004",
+      "filePath": "tests/MetroHub.Tests/Core/SearchOrchestratorTests.cs",
+      "lineNumber": 238,
+      "codeSnippet": "Task.Delay(40)",
+      "message": "Test uses Task.Delay(40) which may indicate a timing-dependent test",
+      "baselinedAt": "2026-11-18T22:27:16.2338708+00:00"
+    },
+    {
+      "hash": "8cfb1e075ef0a4a1",
+      "ruleId": "SW004",
+      "filePath": "tests/MetroHub.Tests/Core/SearchOrchestratorTests.cs",
+      "lineNumber": 244,
+      "codeSnippet": "Task.Delay(3000)",
+      "message": "Test uses Task.Delay(3000) which may indicate a timing-dependent test",
+      "baselinedAt": "2026-11-18T22:27:16.2338743+00:00"
+    },
+    {
+      "hash": "471ab1db687f5510",
+      "ruleId": "SW004",
+      "filePath": "tests/MetroHub.Tests/Core/SearchOrchestratorTests.cs",
+      "lineNumber": 285,
+      "codeSnippet": "Thread.Sleep(25)",
+      "message": "Test uses Thread.Sleep(25) which may indicate a timing-dependent test",
+      "baselinedAt": "2026-11-18T22:27:16.2338771+00:00"
+    },
+    {
+      "hash": "c98ba276653972e8",
+      "ruleId": "SW004",
+      "filePath": "tests/MetroHub.Tests/Core/SearchOrchestratorTests.cs",
+      "lineNumber": 307,
+      "codeSnippet": "Task.Delay(5)",
+      "message": "Test uses Task.Delay(5) which may indicate a timing-dependent test",
+      "baselinedAt": "2026-11-18T22:27:16.2338806+00:00"
+    },
+    {
+      "hash": "e963d938252cb86e",
+      "ruleId": "SW004",
+      "filePath": "tests/MetroHub.Tests/Core/SearchOrchestratorTests.cs",
+      "lineNumber": 313,
+      "codeSnippet": "Task.Delay(4000)",
+      "message": "Test uses Task.Delay(4000) which may indicate a timing-dependent test",
+      "baselinedAt": "2026-11-18T22:27:16.2338833+00:00"
+    },
+    {
+      "hash": "dc12cae121983ccd",
+      "ruleId": "SW004",
+      "filePath": "tests/MetroHub.Tests/Core/UniversalSearchHardeningTests.cs",
+      "lineNumber": 126,
+      "codeSnippet": "Task.Delay(1)",
+      "message": "Test uses Task.Delay(1) which may indicate a timing-dependent test",
+      "baselinedAt": "2026-11-18T22:27:16.2338865+00:00"
+    },
+    {
+      "hash": "f5c1731e348dfc97",
+      "ruleId": "SW004",
+      "filePath": "tests/MetroHub.Tests/Core/UniversalSearchHardeningTests.cs",
+      "lineNumber": 130,
+      "codeSnippet": "Task.Delay(2000)",
+      "message": "Test uses Task.Delay(2000) which may indicate a timing-dependent test",
+      "baselinedAt": "2026-11-18T22:27:16.2338899+00:00"
+    },
+    {
+      "hash": "7689bbd99c3d549e",
+      "ruleId": "SW003",
+      "filePath": "tests/MetroHub.Tests/Core/WebFaviconServiceTests.cs",
+      "lineNumber": 132,
+      "codeSnippet": "catch { }",
+      "message": "Empty catch block swallows exceptions without handling",
+      "baselinedAt": "2026-11-18T22:27:16.2338928+00:00"
+    },
+    {
+      "hash": "941655cfcdf2885c",
+      "ruleId": "SW003",
+      "filePath": "tests/MetroHub.Tests/Core/WebFaviconServiceTests.cs",
+      "lineNumber": 187,
+      "codeSnippet": "catch { }",
+      "message": "Empty catch block swallows exceptions without handling",
+      "baselinedAt": "2026-11-18T22:27:16.2338953+00:00"
+    },
+    {
+      "hash": "f3ebb6954e7ac52e",
+      "ruleId": "SW003",
+      "filePath": "tests/MetroHub.Tests/Core/WebFaviconServiceTests.cs",
+      "lineNumber": 217,
+      "codeSnippet": "catch { }",
+      "message": "Empty catch block swallows exceptions without handling",
+      "baselinedAt": "2026-11-18T22:27:16.2338985+00:00"
+    },
+    {
+      "hash": "5fa782bbe8636394",
+      "ruleId": "SW003",
+      "filePath": "tests/MetroHub.Tests/Core/WebFaviconServiceTests.cs",
+      "lineNumber": 246,
+      "codeSnippet": "catch { }",
+      "message": "Empty catch block swallows exceptions without handling",
+      "baselinedAt": "2026-11-18T22:27:16.233901+00:00"
+    },
+    {
+      "hash": "acb32d22a0693030",
+      "ruleId": "SW003",
+      "filePath": "tests/MetroHub.Tests/Core/WebFaviconServiceTests.cs",
+      "lineNumber": 275,
+      "codeSnippet": "catch { }",
+      "message": "Empty catch block swallows exceptions without handling",
+      "baselinedAt": "2026-11-18T22:27:16.2339035+00:00"
+    },
+    {
+      "hash": "e15e097c37a5a65c",
+      "ruleId": "SW003",
+      "filePath": "tests/MetroHub.Tests/Core/WebFaviconServiceTests.cs",
+      "lineNumber": 380,
+      "codeSnippet": "catch { }",
+      "message": "Empty catch block swallows exceptions without handling",
+      "baselinedAt": "2026-11-18T22:27:16.233906+00:00"
+    },
+    {
+      "hash": "1f6536b4ea6f9a0e",
+      "ruleId": "SW003",
+      "filePath": "tests/MetroHub.Tests/Core/WebFaviconServiceTests.cs",
+      "lineNumber": 436,
+      "codeSnippet": "catch { }",
+      "message": "Empty catch block swallows exceptions without handling",
+      "baselinedAt": "2026-11-18T22:27:16.2339093+00:00"
+    },
+    {
+      "hash": "068888c8def3e353",
+      "ruleId": "SW003",
+      "filePath": "tests/MetroHub.Tests/Core/WebFaviconServiceTests.cs",
+      "lineNumber": 485,
+      "codeSnippet": "catch { }",
+      "message": "Empty catch block swallows exceptions without handling",
+      "baselinedAt": "2026-11-18T22:27:16.2339119+00:00"
+    },
+    {
+      "hash": "8e5255c3885ae9b9",
+      "ruleId": "SW003",
+      "filePath": "tests/MetroHub.Tests/Core/WebFaviconServiceTests.cs",
+      "lineNumber": 506,
+      "codeSnippet": "catch { }",
+      "message": "Empty catch block swallows exceptions without handling",
+      "baselinedAt": "2026-11-18T22:27:16.2339143+00:00"
+    },
+    {
+      "hash": "4d2dc568e4977c35",
+      "ruleId": "SW003",
+      "filePath": "tests/MetroHub.Tests/Core/WebFaviconServiceTests.cs",
+      "lineNumber": 530,
+      "codeSnippet": "catch { }",
+      "message": "Empty catch block swallows exceptions without handling",
+      "baselinedAt": "2026-11-18T22:27:16.2339176+00:00"
+    },
+    {
+      "hash": "6f80366caa7468b1",
+      "ruleId": "SW003",
+      "filePath": "tests/MetroHub.Tests/Core/WebFaviconServiceTests.cs",
+      "lineNumber": 560,
+      "codeSnippet": "catch { }",
+      "message": "Empty catch block swallows exceptions without handling",
+      "baselinedAt": "2026-11-18T22:27:16.2339201+00:00"
+    },
+    {
+      "hash": "8f1c4b5514769285",
+      "ruleId": "SW003",
+      "filePath": "tests/MetroHub.Tests/Core/WebFaviconServiceTests.cs",
+      "lineNumber": 694,
+      "codeSnippet": "catch { }",
+      "message": "Empty catch block swallows exceptions without handling",
+      "baselinedAt": "2026-11-18T22:27:16.2339234+00:00"
+    },
+    {
+      "hash": "f2000287a6497767",
+      "ruleId": "SW003",
+      "filePath": "tests/MetroHub.Tests/Core/WebFaviconServiceTests.cs",
+      "lineNumber": 725,
+      "codeSnippet": "catch { }",
+      "message": "Empty catch block swallows exceptions without handling",
+      "baselinedAt": "2026-11-18T22:27:16.233926+00:00"
+    },
+    {
+      "hash": "4a3d57c63fa3fc0a",
+      "ruleId": "SW003",
+      "filePath": "tests/MetroHub.Tests/Core/WorkspaceAdversarialVerificationTests.cs",
+      "lineNumber": 36,
+      "codeSnippet": "catch { }",
+      "message": "Empty catch block swallows exceptions without handling",
+      "baselinedAt": "2026-11-18T22:27:16.2339288+00:00"
+    },
+    {
+      "hash": "8c34d2ad04eb002a",
+      "ruleId": "SW003",
+      "filePath": "tests/MetroHub.Tests/Core/WorkspaceAdversarialVerificationTests.cs",
+      "lineNumber": 47,
+      "codeSnippet": "catch { }",
+      "message": "Empty catch block swallows exceptions without handling",
+      "baselinedAt": "2026-11-18T22:27:16.2339314+00:00"
+    },
+    {
+      "hash": "b507ce7776e19f48",
+      "ruleId": "SW003",
+      "filePath": "tests/MetroHub.Tests/Core/WorkspaceManagerTests.cs",
+      "lineNumber": 35,
+      "codeSnippet": "catch { }",
+      "message": "Empty catch block swallows exceptions without handling",
+      "baselinedAt": "2026-11-18T22:27:16.2339351+00:00"
+    },
+    {
+      "hash": "8253ff8362b5d267",
+      "ruleId": "SW003",
+      "filePath": "tests/MetroHub.Tests/Core/WorkspaceManagerTests.cs",
+      "lineNumber": 46,
+      "codeSnippet": "catch { }",
+      "message": "Empty catch block swallows exceptions without handling",
+      "baselinedAt": "2026-11-18T22:27:16.2339375+00:00"
+    },
+    {
+      "hash": "7fb87b35decea3e1",
+      "ruleId": "SW003",
+      "filePath": "tests/MetroHub.Tests/Core/WorkspaceRecoveryAndPersistenceTests.cs",
+      "lineNumber": 35,
+      "codeSnippet": "catch { }",
+      "message": "Empty catch block swallows exceptions without handling",
+      "baselinedAt": "2026-11-18T22:27:16.2339404+00:00"
+    },
+    {
+      "hash": "8a39985dd5cdc42d",
+      "ruleId": "SW003",
+      "filePath": "tests/MetroHub.Tests/Core/WorkspaceRecoveryAndPersistenceTests.cs",
+      "lineNumber": 46,
+      "codeSnippet": "catch { }",
+      "message": "Empty catch block swallows exceptions without handling",
+      "baselinedAt": "2026-11-18T22:27:16.233944+00:00"
+    },
+    {
+      "hash": "9ad3b52f2bd182c4",
+      "ruleId": "SW003",
+      "filePath": "tests/MetroHub.Tests/Core/WorkspacesStorageTests.cs",
+      "lineNumber": 31,
+      "codeSnippet": "catch { }",
+      "message": "Empty catch block swallows exceptions without handling",
+      "baselinedAt": "2026-11-18T22:27:16.2339468+00:00"
+    },
+    {
+      "hash": "ae789e60eced0bbe",
+      "ruleId": "SW003",
+      "filePath": "tests/MetroHub.Tests/Core/WorkspacesStorageTests.cs",
+      "lineNumber": 42,
+      "codeSnippet": "catch { }",
+      "message": "Empty catch block swallows exceptions without handling",
+      "baselinedAt": "2026-11-18T22:27:16.2339493+00:00"
+    },
+    {
+      "hash": "31202c5800181eea",
+      "ruleId": "SW003",
+      "filePath": "tests/MetroHub.Tests/Infrastructure/WpfTestHost.cs",
+      "lineNumber": 25,
+      "codeSnippet": "catch { }",
+      "message": "Empty catch block swallows exceptions without handling",
+      "baselinedAt": "2026-11-18T22:27:16.2339522+00:00"
+    },
+    {
+      "hash": "96c7736d811a3894",
+      "ruleId": "SW003",
+      "filePath": "tests/MetroHub.Tests/Infrastructure/WpfTestHost.cs",
+      "lineNumber": 126,
+      "codeSnippet": "catch\r\n        {\r\n            // Temp cleanup is best effort.\r\n        }",
+      "message": "Empty catch block swallows exceptions without handling",
+      "baselinedAt": "2026-11-18T22:27:16.2339564+00:00"
+    },
+    {
+      "hash": "e34759fc4c476f15",
+      "ruleId": "SW003",
+      "filePath": "tests/MetroHub.Tests/Presentation/IconPathToBitmapConverterTests.cs",
+      "lineNumber": 68,
+      "codeSnippet": "catch { }",
+      "message": "Empty catch block swallows exceptions without handling",
+      "baselinedAt": "2026-11-18T22:27:16.2339601+00:00"
+    },
+    {
+      "hash": "dd594a6f88ecd976",
+      "ruleId": "SW003",
+      "filePath": "tests/MetroHub.Tests/Presentation/IconPathToBitmapConverterTests.cs",
+      "lineNumber": 94,
+      "codeSnippet": "catch { }",
+      "message": "Empty catch block swallows exceptions without handling",
+      "baselinedAt": "2026-11-18T22:27:16.2339629+00:00"
+    },
+    {
+      "hash": "e553ff624d416416",
+      "ruleId": "SW003",
+      "filePath": "tests/MetroHub.Tests/Presentation/IconPathToBitmapConverterTests.cs",
+      "lineNumber": 125,
+      "codeSnippet": "catch { }",
+      "message": "Empty catch block swallows exceptions without handling",
+      "baselinedAt": "2026-11-18T22:27:16.2339666+00:00"
+    },
+    {
+      "hash": "904f97ce9ebd5353",
+      "ruleId": "SW003",
+      "filePath": "tests/MetroHub.Tests/Presentation/IconPathToBitmapConverterTests.cs",
+      "lineNumber": 149,
+      "codeSnippet": "catch { }",
+      "message": "Empty catch block swallows exceptions without handling",
+      "baselinedAt": "2026-11-18T22:27:16.2339693+00:00"
+    },
+    {
+      "hash": "c5eb78c49cc95d82",
+      "ruleId": "SW003",
+      "filePath": "tests/MetroHub.Tests/Presentation/PowerToysPeekKeyboardRoutingTests.cs",
+      "lineNumber": 30,
+      "codeSnippet": "catch\n        {\n            // Ignore temp file cleanup error\n        }",
+      "message": "Empty catch block swallows exceptions without handling",
+      "baselinedAt": "2026-11-18T22:27:16.2339721+00:00"
+    },
+    {
+      "hash": "ea1f80102058d204",
+      "ruleId": "SW003",
+      "filePath": "tests/MetroHub.Tests/Presentation/WebLinkDialogTests.cs",
+      "lineNumber": 100,
+      "codeSnippet": "catch { }",
+      "message": "Empty catch block swallows exceptions without handling",
+      "baselinedAt": "2026-11-18T22:27:16.2339757+00:00"
+    },
+    {
+      "hash": "e465d9f8a54875d1",
+      "ruleId": "SW003",
+      "filePath": "tests/MetroHub.Tests/Presentation/WebLinkDialogTests.cs",
+      "lineNumber": 179,
+      "codeSnippet": "catch { }",
+      "message": "Empty catch block swallows exceptions without handling",
+      "baselinedAt": "2026-11-18T22:27:16.2339784+00:00"
+    },
+    {
+      "hash": "a20ff1cc472930b1",
+      "ruleId": "SW003",
+      "filePath": "tests/MetroHub.Tests/Widgets/CatalogItemModelTests.cs",
+      "lineNumber": 33,
+      "codeSnippet": "catch { }",
+      "message": "Empty catch block swallows exceptions without handling",
+      "baselinedAt": "2026-11-18T22:27:16.2339813+00:00"
+    },
+    {
+      "hash": "6d2f057ced478b55",
+      "ruleId": "SW003",
+      "filePath": "tests/MetroHub.Tests/Widgets/CatalogItemModelTests.cs",
+      "lineNumber": 44,
+      "codeSnippet": "catch { }",
+      "message": "Empty catch block swallows exceptions without handling",
+      "baselinedAt": "2026-11-18T22:27:16.2339849+00:00"
+    },
+    {
+      "hash": "72b9a3afb8bb4fda",
+      "ruleId": "SW004",
+      "filePath": "tests/MetroHub.Tests/Widgets/CatalogItemModelTests.cs",
+      "lineNumber": 131,
+      "codeSnippet": "Thread.Sleep(50)",
+      "message": "Test uses Thread.Sleep(50) which may indicate a timing-dependent test",
+      "baselinedAt": "2026-11-18T22:27:16.2339876+00:00"
+    },
+    {
+      "hash": "ce493875c3869260",
+      "ruleId": "SW004",
+      "filePath": "tests/MetroHub.Tests/Widgets/CatalogItemModelTests.cs",
+      "lineNumber": 199,
+      "codeSnippet": "Thread.Sleep(50)",
+      "message": "Test uses Thread.Sleep(50) which may indicate a timing-dependent test",
+      "baselinedAt": "2026-11-18T22:27:16.2339903+00:00"
+    },
+    {
+      "hash": "c8c4f76ea80bd01b",
+      "ruleId": "SW004",
+      "filePath": "tests/MetroHub.Tests/Widgets/CatalogItemModelTests.cs",
+      "lineNumber": 233,
+      "codeSnippet": "Thread.Sleep(50)",
+      "message": "Test uses Thread.Sleep(50) which may indicate a timing-dependent test",
+      "baselinedAt": "2026-11-18T22:27:16.2339935+00:00"
+    },
+    {
+      "hash": "effc3876ede4871e",
+      "ruleId": "SW004",
+      "filePath": "tests/MetroHub.Tests/Widgets/CatalogItemModelTests.cs",
+      "lineNumber": 312,
+      "codeSnippet": "Thread.Sleep(50)",
+      "message": "Test uses Thread.Sleep(50) which may indicate a timing-dependent test",
+      "baselinedAt": "2026-11-18T22:27:16.2339962+00:00"
+    },
+    {
+      "hash": "5e1ba323abb8501c",
+      "ruleId": "SW003",
+      "filePath": "tests/MetroHub.Tests/Widgets/ClockFontTests.cs",
+      "lineNumber": 32,
+      "codeSnippet": "catch { }",
+      "message": "Empty catch block swallows exceptions without handling",
+      "baselinedAt": "2026-11-18T22:27:16.2339992+00:00"
+    },
+    {
+      "hash": "3ac00f116af76cc8",
+      "ruleId": "SW003",
+      "filePath": "tests/MetroHub.Tests/Widgets/HabitPersistenceTests.cs",
+      "lineNumber": 210,
+      "codeSnippet": "catch { }",
+      "message": "Empty catch block swallows exceptions without handling",
+      "baselinedAt": "2026-11-18T22:27:16.2340029+00:00"
+    },
+    {
+      "hash": "9fe6751e7c6cd29a",
+      "ruleId": "SW003",
+      "filePath": "tests/MetroHub.Tests/Widgets/RadioWidgetTests.cs",
+      "lineNumber": 21,
+      "codeSnippet": "catch { }",
+      "message": "Empty catch block swallows exceptions without handling",
+      "baselinedAt": "2026-11-18T22:27:16.2340058+00:00"
+    },
+    {
+      "hash": "a4bf2496b5a211d8",
+      "ruleId": "SW003",
+      "filePath": "tests/MetroHub.Tests/Widgets/RadioWidgetTests.cs",
+      "lineNumber": 99,
+      "codeSnippet": "catch { }",
+      "message": "Empty catch block swallows exceptions without handling",
+      "baselinedAt": "2026-11-18T22:27:16.2340085+00:00"
+    },
+    {
+      "hash": "a1a75503c5fc3f6f",
+      "ruleId": "SW003",
+      "filePath": "tests/MetroHub.Tests/Widgets/RadioWidgetTests.cs",
+      "lineNumber": 100,
+      "codeSnippet": "catch { }",
+      "message": "Empty catch block swallows exceptions without handling",
+      "baselinedAt": "2026-11-18T22:27:16.2340121+00:00"
+    },
+    {
+      "hash": "f627559cea228699",
+      "ruleId": "SW003",
+      "filePath": "tests/MetroHub.Tests/Widgets/RadioWidgetTests.cs",
+      "lineNumber": 173,
+      "codeSnippet": "catch { }",
+      "message": "Empty catch block swallows exceptions without handling",
+      "baselinedAt": "2026-11-18T22:27:16.2340146+00:00"
+    },
+    {
+      "hash": "e77a09088cd49d14",
+      "ruleId": "SW003",
+      "filePath": "tests/MetroHub.Tests/Widgets/RadioWidgetTests.cs",
+      "lineNumber": 174,
+      "codeSnippet": "catch { }",
+      "message": "Empty catch block swallows exceptions without handling",
+      "baselinedAt": "2026-11-18T22:27:16.2340171+00:00"
+    },
+    {
+      "hash": "fb2816085c7e135a",
+      "ruleId": "SW003",
+      "filePath": "tests/MetroHub.Tests/Widgets/RadioWidgetTests.cs",
+      "lineNumber": 237,
+      "codeSnippet": "catch { }",
+      "message": "Empty catch block swallows exceptions without handling",
+      "baselinedAt": "2026-11-18T22:27:16.2340205+00:00"
+    },
+    {
+      "hash": "1ae1e53e38857579",
+      "ruleId": "SW003",
+      "filePath": "tests/MetroHub.Tests/Widgets/RadioWidgetTests.cs",
+      "lineNumber": 238,
+      "codeSnippet": "catch { }",
+      "message": "Empty catch block swallows exceptions without handling",
+      "baselinedAt": "2026-11-18T22:27:16.234023+00:00"
+    },
+    {
+      "hash": "6ab16fd266527232",
+      "ruleId": "SW003",
+      "filePath": "tests/MetroHub.Tests/Widgets/RadioWidgetTests.cs",
+      "lineNumber": 270,
+      "codeSnippet": "catch { }",
+      "message": "Empty catch block swallows exceptions without handling",
+      "baselinedAt": "2026-11-18T22:27:16.2340255+00:00"
+    },
+    {
+      "hash": "d90a128e8a7b77e6",
+      "ruleId": "SW003",
+      "filePath": "tests/MetroHub.Tests/Widgets/RadioWidgetTests.cs",
+      "lineNumber": 271,
+      "codeSnippet": "catch { }",
+      "message": "Empty catch block swallows exceptions without handling",
+      "baselinedAt": "2026-11-18T22:27:16.2340279+00:00"
+    },
+    {
+      "hash": "62b322e555290739",
+      "ruleId": "SW003",
+      "filePath": "tests/MetroHub.Tests/Widgets/RadioWidgetTests.cs",
+      "lineNumber": 330,
+      "codeSnippet": "catch { }",
+      "message": "Empty catch block swallows exceptions without handling",
+      "baselinedAt": "2026-11-18T22:27:16.2340315+00:00"
+    },
+    {
+      "hash": "9ff5ee3f43a1bf9a",
+      "ruleId": "SW003",
+      "filePath": "tests/MetroHub.Tests/Widgets/RadioWidgetTests.cs",
+      "lineNumber": 331,
+      "codeSnippet": "catch { }",
+      "message": "Empty catch block swallows exceptions without handling",
+      "baselinedAt": "2026-11-18T22:27:16.2340341+00:00"
+    },
+    {
+      "hash": "acf916fa95e6dbee",
+      "ruleId": "SW003",
+      "filePath": "tests/MetroHub.Tests/Widgets/RadioWidgetTests.cs",
+      "lineNumber": 367,
+      "codeSnippet": "catch { }",
+      "message": "Empty catch block swallows exceptions without handling",
+      "baselinedAt": "2026-11-18T22:27:16.234037+00:00"
+    },
+    {
+      "hash": "faeb4cd68d245117",
+      "ruleId": "SW003",
+      "filePath": "tests/MetroHub.Tests/Widgets/RadioWidgetTests.cs",
+      "lineNumber": 368,
+      "codeSnippet": "catch { }",
+      "message": "Empty catch block swallows exceptions without handling",
+      "baselinedAt": "2026-11-18T22:27:16.2340406+00:00"
+    },
+    {
+      "hash": "ce94c8b1beb2ec04",
+      "ruleId": "SW003",
+      "filePath": "tests/MetroHub.Tests/Widgets/RoverWidgetTests.cs",
+      "lineNumber": 18,
+      "codeSnippet": "catch { }",
+      "message": "Empty catch block swallows exceptions without handling",
+      "baselinedAt": "2026-11-18T22:27:16.2340433+00:00"
+    },
+    {
+      "hash": "a4f99f82ff51e9b8",
+      "ruleId": "SW004",
+      "filePath": "tests/MetroHub.Tests/Widgets/MetroSync/EngineReliabilityTests.cs",
+      "lineNumber": 100,
+      "codeSnippet": "Task.Delay(10)",
+      "message": "Test uses Task.Delay(10) which may indicate a timing-dependent test",
+      "baselinedAt": "2026-11-18T22:27:16.2340475+00:00"
+    },
+    {
+      "hash": "cb5bcb5198170aee",
+      "ruleId": "SW004",
+      "filePath": "tests/MetroHub.Tests/Widgets/MetroSync/EngineReliabilityTests.cs",
+      "lineNumber": 103,
+      "codeSnippet": "Task.Delay(TimeSpan.FromSeconds(10))",
+      "message": "Test uses Task.Delay(TimeSpan.FromSeconds(10)) which may indicate a timing-dependent test",
+      "baselinedAt": "2026-11-18T22:27:16.2340503+00:00"
+    },
+    {
+      "hash": "78214ad970add8fd",
+      "ruleId": "SW004",
+      "filePath": "tests/MetroHub.Tests/Widgets/MetroSync/EngineReliabilityTests.cs",
+      "lineNumber": 198,
+      "codeSnippet": "Task.Delay(50)",
+      "message": "Test uses Task.Delay(50) which may indicate a timing-dependent test",
+      "baselinedAt": "2026-11-18T22:27:16.2340531+00:00"
+    },
+    {
+      "hash": "adc60157c6618541",
+      "ruleId": "SW004",
+      "filePath": "tests/MetroHub.Tests/Widgets/MetroSync/EngineReliabilityTests.cs",
+      "lineNumber": 200,
+      "codeSnippet": "Task.Delay(50)",
+      "message": "Test uses Task.Delay(50) which may indicate a timing-dependent test",
+      "baselinedAt": "2026-11-18T22:27:16.2340567+00:00"
+    },
+    {
+      "hash": "80ccaef4d53af640",
+      "ruleId": "SW004",
+      "filePath": "tests/MetroHub.Tests/Widgets/MetroSync/EngineReliabilityTests.cs",
+      "lineNumber": 214,
+      "codeSnippet": "Task.Delay(200)",
+      "message": "Test uses Task.Delay(200) which may indicate a timing-dependent test",
+      "baselinedAt": "2026-11-18T22:27:16.2340595+00:00"
+    },
+    {
+      "hash": "751974fc866b992d",
+      "ruleId": "SW004",
+      "filePath": "tests/MetroHub.Tests/Widgets/MetroSync/EngineReliabilityTests.cs",
+      "lineNumber": 350,
+      "codeSnippet": "Task.Delay(1000)",
+      "message": "Test uses Task.Delay(1000) which may indicate a timing-dependent test",
+      "baselinedAt": "2026-11-18T22:27:16.2340623+00:00"
+    },
+    {
+      "hash": "0103d5935078ee03",
+      "ruleId": "SW004",
+      "filePath": "tests/MetroHub.Tests/Widgets/MetroSync/EngineReliabilityTests.cs",
+      "lineNumber": 384,
+      "codeSnippet": "Task.Delay(20)",
+      "message": "Test uses Task.Delay(20) which may indicate a timing-dependent test",
+      "baselinedAt": "2026-11-18T22:27:16.2340657+00:00"
+    },
+    {
+      "hash": "9e486b53329d0610",
+      "ruleId": "SW004",
+      "filePath": "tests/MetroHub.Tests/Widgets/MetroSync/MetroSyncPairingServiceTests.cs",
+      "lineNumber": 560,
+      "codeSnippet": "Thread.Sleep(30)",
+      "message": "Test uses Thread.Sleep(30) which may indicate a timing-dependent test",
+      "baselinedAt": "2026-11-18T22:27:16.2340689+00:00"
+    },
+    {
+      "hash": "30148c21220410b1",
+      "ruleId": "SW004",
+      "filePath": "tests/MetroHub.Tests/Widgets/MetroSync/MetroSyncWidgetViewModelTests.cs",
+      "lineNumber": 256,
+      "codeSnippet": "Task.Delay(Timeout.Infinite, ct).ContinueWith(_ => (IReadOnlyList<RawUpdate>)Array.Empty<RawUpdate>(), ct)",
+      "message": "Test uses Task.Delay(_ => (IReadOnlyList<RawUpdate>)Array.Empty<RawUpdate>()) which may indicate a timing-dependent test",
+      "baselinedAt": "2026-11-18T22:27:16.2340722+00:00"
+    },
+    {
+      "hash": "130342a1075e1f50",
+      "ruleId": "SW004",
+      "filePath": "tests/MetroHub.Tests/Widgets/MetroSync/MetroSyncWidgetViewModelTests.cs",
+      "lineNumber": 256,
+      "codeSnippet": "Task.Delay(Timeout.Infinite, ct)",
+      "message": "Test uses Task.Delay(Timeout.Infinite) which may indicate a timing-dependent test",
+      "baselinedAt": "2026-11-18T22:27:16.2340759+00:00"
+    },
+    {
+      "hash": "195ec9eb938f4493",
+      "ruleId": "SW004",
+      "filePath": "tests/MetroHub.Tests/Widgets/MetroSync/MetroSyncWidgetViewModelTests.cs",
+      "lineNumber": 960,
+      "codeSnippet": "Task.Delay(20)",
+      "message": "Test uses Task.Delay(20) which may indicate a timing-dependent test",
+      "baselinedAt": "2026-11-18T22:27:16.2340786+00:00"
+    },
+    {
+      "hash": "da17530265006456",
+      "ruleId": "SW003",
+      "filePath": "tests/MetroHub.Tests/Widgets/MetroSync/TestKit/FakeTelegramServer.cs",
+      "lineNumber": 236,
+      "codeSnippet": "catch\r\n        {\r\n            // Ignored if body cannot be parsed\r\n        }",
+      "message": "Empty catch block swallows exceptions without handling",
+      "baselinedAt": "2026-11-18T22:27:16.2340829+00:00"
+    },
+    {
+      "hash": "a039fbf3f9ba7ce5",
+      "ruleId": "SW003",
+      "filePath": "tests/MetroHub.Tests/Widgets/MetroSync/TestKit/FakeTelegramServer.cs",
+      "lineNumber": 417,
+      "codeSnippet": "catch (OperationCanceledException) { /* client went away */ }",
+      "message": "Empty catch block swallows exceptions without handling",
+      "baselinedAt": "2026-11-18T22:27:16.2340858+00:00"
+    },
+    {
+      "hash": "7787201f759c49a0",
+      "ruleId": "SW004",
+      "filePath": "tests/MetroHub.Tests/Widgets/MetroSync/TestKit/FakeTelegramServer.cs",
+      "lineNumber": 193,
+      "codeSnippet": "Task.Delay(d.By, ctx.RequestAborted).ConfigureAwait(false)",
+      "message": "Test uses Task.Delay(false) which may indicate a timing-dependent test",
+      "baselinedAt": "2026-11-18T22:27:16.2340889+00:00"
+    },
+    {
+      "hash": "55a2975a0bcdc30d",
+      "ruleId": "SW004",
+      "filePath": "tests/MetroHub.Tests/Widgets/MetroSync/TestKit/FakeTelegramServer.cs",
+      "lineNumber": 193,
+      "codeSnippet": "Task.Delay(d.By, ctx.RequestAborted)",
+      "message": "Test uses Task.Delay(d.By) which may indicate a timing-dependent test",
+      "baselinedAt": "2026-11-18T22:27:16.2340927+00:00"
+    },
+    {
+      "hash": "ab5d7cb35372fd11",
+      "ruleId": "SW004",
+      "filePath": "tests/MetroHub.Tests/Widgets/MetroSync/TestKit/FakeTelegramServer.cs",
+      "lineNumber": 416,
+      "codeSnippet": "Task.WhenAny(wait, Task.Delay(remaining, ctx.RequestAborted)).ConfigureAwait(false)",
+      "message": "Test uses Task.Delay(false) which may indicate a timing-dependent test",
+      "baselinedAt": "2026-11-18T22:27:16.2340954+00:00"
+    },
+    {
+      "hash": "7cccd998877daa3a",
+      "ruleId": "SW004",
+      "filePath": "tests/MetroHub.Tests/Widgets/MetroSync/TestKit/FakeTelegramServer.cs",
+      "lineNumber": 416,
+      "codeSnippet": "Task.Delay(remaining, ctx.RequestAborted)",
+      "message": "Test uses Task.Delay(remaining) which may indicate a timing-dependent test",
+      "baselinedAt": "2026-11-18T22:27:16.2340985+00:00"
+    },
+    {
+      "hash": "73cbb91f1c509c06",
+      "ruleId": "SW004",
+      "filePath": "tests/MetroHub.Tests/Widgets/MetroSync/TestKit/ResourceProbe.cs",
+      "lineNumber": 47,
+      "codeSnippet": "Task.Delay(window).ConfigureAwait(false)",
+      "message": "Test uses Task.Delay(false) which may indicate a timing-dependent test",
+      "baselinedAt": "2026-11-18T22:27:16.2341028+00:00"
+    },
+    {
+      "hash": "8ea6447d79808445",
+      "ruleId": "SW004",
+      "filePath": "tests/MetroHub.Tests/Widgets/MetroSync/TestKit/ResourceProbe.cs",
+      "lineNumber": 47,
+      "codeSnippet": "Task.Delay(window)",
+      "message": "Test uses Task.Delay(window) which may indicate a timing-dependent test",
+      "baselinedAt": "2026-11-18T22:27:16.2341056+00:00"
+    },
+    {
+      "hash": "709b755f4e517d4e",
+      "ruleId": "SW004",
+      "filePath": "tests/MetroHub.Tests/Widgets/MetroSync/TestKit/ResourceProbe.cs",
+      "lineNumber": 69,
+      "codeSnippet": "Task.Delay(50).ConfigureAwait(false)",
+      "message": "Test uses Task.Delay(false) which may indicate a timing-dependent test",
+      "baselinedAt": "2026-11-18T22:27:16.2341083+00:00"
+    },
+    {
+      "hash": "f5eac5dcee73f06b",
+      "ruleId": "SW004",
+      "filePath": "tests/MetroHub.Tests/Widgets/MetroSync/TestKit/ResourceProbe.cs",
+      "lineNumber": 69,
+      "codeSnippet": "Task.Delay(50)",
+      "message": "Test uses Task.Delay(50) which may indicate a timing-dependent test",
+      "baselinedAt": "2026-11-18T22:27:16.2341119+00:00"
+    },
+    {
+      "hash": "36d2204dd50a65dd",
+      "ruleId": "SW004",
+      "filePath": "tests/MetroHub.Tests/Widgets/MetroSync/TestKit/ResourceProbe.cs",
+      "lineNumber": 111,
+      "codeSnippet": "Task.Delay(10).ConfigureAwait(false)",
+      "message": "Test uses Task.Delay(false) which may indicate a timing-dependent test",
+      "baselinedAt": "2026-11-18T22:27:16.2341145+00:00"
+    },
+    {
+      "hash": "998dca1da403f706",
+      "ruleId": "SW004",
+      "filePath": "tests/MetroHub.Tests/Widgets/MetroSync/TestKit/ResourceProbe.cs",
+      "lineNumber": 111,
+      "codeSnippet": "Task.Delay(10)",
+      "message": "Test uses Task.Delay(10) which may indicate a timing-dependent test",
+      "baselinedAt": "2026-11-18T22:27:16.2341179+00:00"
+    },
+    {
+      "hash": "23ccaad4dd073783",
+      "ruleId": "SW004",
+      "filePath": "tests/MetroHub.Tests/Widgets/MetroSync/TestKit/TestDoubles.cs",
+      "lineNumber": 112,
+      "codeSnippet": "Task.Delay(Timeout.Infinite, ct).ConfigureAwait(false)",
+      "message": "Test uses Task.Delay(false) which may indicate a timing-dependent test",
+      "baselinedAt": "2026-11-18T22:27:16.2341209+00:00"
+    },
+    {
+      "hash": "2f37d8ecb1372249",
+      "ruleId": "SW004",
+      "filePath": "tests/MetroHub.Tests/Widgets/MetroSync/TestKit/TestDoubles.cs",
+      "lineNumber": 112,
+      "codeSnippet": "Task.Delay(Timeout.Infinite, ct)",
+      "message": "Test uses Task.Delay(Timeout.Infinite) which may indicate a timing-dependent test",
+      "baselinedAt": "2026-11-18T22:27:16.2341236+00:00"
+    },
+    {
+      "hash": "586ac92c74822db9",
+      "ruleId": "SW003",
+      "filePath": "tools/pocket-conduit/src/MetroHub.Conduit/ConduitEngine.cs",
+      "lineNumber": 168,
+      "codeSnippet": "catch (OperationCanceledException) when (ct.IsCancellationRequested)\n        {\n            // normal shutdown (cancellation raised from a delay inside a catch block)\n        }",
+      "message": "Empty catch block swallows exceptions without handling",
+      "baselinedAt": "2026-11-18T22:27:16.2341275+00:00"
+    },
+    {
+      "hash": "a1fada0e96b65ced",
+      "ruleId": "SW003",
+      "filePath": "tools/pocket-conduit/src/MetroHub.Conduit/ConduitEngine.cs",
+      "lineNumber": 195,
+      "codeSnippet": "catch { /* a faulty subscriber must never kill the loop */ }",
+      "message": "Empty catch block swallows exceptions without handling",
+      "baselinedAt": "2026-11-18T22:27:16.23413+00:00"
+    },
+    {
+      "hash": "52d062f415524be5",
+      "ruleId": "SW003",
+      "filePath": "tools/pocket-conduit/src/MetroHub.Conduit/ConduitEngine.cs",
+      "lineNumber": 207,
+      "codeSnippet": "catch (ObjectDisposedException) { }",
+      "message": "Empty catch block swallows exceptions without handling",
+      "baselinedAt": "2026-11-18T22:27:16.2341325+00:00"
+    },
+    {
+      "hash": "0346e360348615c1",
+      "ruleId": "SW003",
+      "filePath": "tools/pocket-conduit/src/MetroHub.Conduit/ConduitEngine.cs",
+      "lineNumber": 214,
+      "codeSnippet": "catch { /* loop faulted or was cancelled: observed here so nothing goes unobserved */ }",
+      "message": "Empty catch block swallows exceptions without handling",
+      "baselinedAt": "2026-11-18T22:27:16.2341376+00:00"
+    },
+    {
+      "hash": "0217917b77812835",
+      "ruleId": "SW003",
+      "filePath": "tools/pocket-conduit/tests/MetroHub.Conduit.TestKit/FakeTelegramServer.cs",
+      "lineNumber": 232,
+      "codeSnippet": "catch (OperationCanceledException) { /* client went away */ }",
+      "message": "Empty catch block swallows exceptions without handling",
+      "baselinedAt": "2026-11-18T22:27:16.2341411+00:00"
+    },
+    {
+      "hash": "51e74688dd581a4d",
+      "ruleId": "SW004",
+      "filePath": "tools/pocket-conduit/tests/MetroHub.Conduit.TestKit/FakeTelegramServer.cs",
+      "lineNumber": 179,
+      "codeSnippet": "Task.Delay(d.By, ctx.RequestAborted).ConfigureAwait(false)",
+      "message": "Test uses Task.Delay(false) which may indicate a timing-dependent test",
+      "baselinedAt": "2026-11-18T22:27:16.2341522+00:00"
+    },
+    {
+      "hash": "3e3fbc95af7a5d9b",
+      "ruleId": "SW004",
+      "filePath": "tools/pocket-conduit/tests/MetroHub.Conduit.TestKit/FakeTelegramServer.cs",
+      "lineNumber": 179,
+      "codeSnippet": "Task.Delay(d.By, ctx.RequestAborted)",
+      "message": "Test uses Task.Delay(d.By) which may indicate a timing-dependent test",
+      "baselinedAt": "2026-11-18T22:27:16.234156+00:00"
+    },
+    {
+      "hash": "f9dcdc152237734a",
+      "ruleId": "SW004",
+      "filePath": "tools/pocket-conduit/tests/MetroHub.Conduit.TestKit/FakeTelegramServer.cs",
+      "lineNumber": 231,
+      "codeSnippet": "Task.WhenAny(wait, Task.Delay(remaining, ctx.RequestAborted)).ConfigureAwait(false)",
+      "message": "Test uses Task.Delay(false) which may indicate a timing-dependent test",
+      "baselinedAt": "2026-11-18T22:27:16.2341589+00:00"
+    },
+    {
+      "hash": "eb22007b4ce15873",
+      "ruleId": "SW004",
+      "filePath": "tools/pocket-conduit/tests/MetroHub.Conduit.TestKit/FakeTelegramServer.cs",
+      "lineNumber": 231,
+      "codeSnippet": "Task.Delay(remaining, ctx.RequestAborted)",
+      "message": "Test uses Task.Delay(remaining) which may indicate a timing-dependent test",
+      "baselinedAt": "2026-11-18T22:27:16.2341623+00:00"
+    },
+    {
+      "hash": "df7b9d03d37da13d",
+      "ruleId": "SW004",
+      "filePath": "tools/pocket-conduit/tests/MetroHub.Conduit.TestKit/ResourceProbe.cs",
+      "lineNumber": 47,
+      "codeSnippet": "Task.Delay(window).ConfigureAwait(false)",
+      "message": "Test uses Task.Delay(false) which may indicate a timing-dependent test",
+      "baselinedAt": "2026-11-18T22:27:16.2341664+00:00"
+    },
+    {
+      "hash": "fe3d2aab3957f7c4",
+      "ruleId": "SW004",
+      "filePath": "tools/pocket-conduit/tests/MetroHub.Conduit.TestKit/ResourceProbe.cs",
+      "lineNumber": 47,
+      "codeSnippet": "Task.Delay(window)",
+      "message": "Test uses Task.Delay(window) which may indicate a timing-dependent test",
+      "baselinedAt": "2026-11-18T22:27:16.2341694+00:00"
+    },
+    {
+      "hash": "4b65ba3cee97ca82",
+      "ruleId": "SW004",
+      "filePath": "tools/pocket-conduit/tests/MetroHub.Conduit.TestKit/ResourceProbe.cs",
+      "lineNumber": 69,
+      "codeSnippet": "Task.Delay(50).ConfigureAwait(false)",
+      "message": "Test uses Task.Delay(false) which may indicate a timing-dependent test",
+      "baselinedAt": "2026-11-18T22:27:16.2341733+00:00"
+    },
+    {
+      "hash": "e311f614ca1d8ea0",
+      "ruleId": "SW004",
+      "filePath": "tools/pocket-conduit/tests/MetroHub.Conduit.TestKit/ResourceProbe.cs",
+      "lineNumber": 69,
+      "codeSnippet": "Task.Delay(50)",
+      "message": "Test uses Task.Delay(50) which may indicate a timing-dependent test",
+      "baselinedAt": "2026-11-18T22:27:16.2341763+00:00"
+    },
+    {
+      "hash": "d2e7256efd70f455",
+      "ruleId": "SW004",
+      "filePath": "tools/pocket-conduit/tests/MetroHub.Conduit.TestKit/ResourceProbe.cs",
+      "lineNumber": 111,
+      "codeSnippet": "Task.Delay(10).ConfigureAwait(false)",
+      "message": "Test uses Task.Delay(false) which may indicate a timing-dependent test",
+      "baselinedAt": "2026-11-18T22:27:16.2341791+00:00"
+    },
+    {
+      "hash": "d46bb0ac1a431b61",
+      "ruleId": "SW004",
+      "filePath": "tools/pocket-conduit/tests/MetroHub.Conduit.TestKit/ResourceProbe.cs",
+      "lineNumber": 111,
+      "codeSnippet": "Task.Delay(10)",
+      "message": "Test uses Task.Delay(10) which may indicate a timing-dependent test",
+      "baselinedAt": "2026-11-18T22:27:16.2341827+00:00"
+    },
+    {
+      "hash": "ac0c53ba06a95734",
+      "ruleId": "SW004",
+      "filePath": "tools/pocket-conduit/tests/MetroHub.Conduit.TestKit/TestDoubles.cs",
+      "lineNumber": 75,
+      "codeSnippet": "Task.Delay(Timeout.Infinite, ct).ConfigureAwait(false)",
+      "message": "Test uses Task.Delay(false) which may indicate a timing-dependent test",
+      "baselinedAt": "2026-11-18T22:27:16.2341859+00:00"
+    },
+    {
+      "hash": "72611cd04680bf60",
+      "ruleId": "SW004",
+      "filePath": "tools/pocket-conduit/tests/MetroHub.Conduit.TestKit/TestDoubles.cs",
+      "lineNumber": 75,
+      "codeSnippet": "Task.Delay(Timeout.Infinite, ct)",
+      "message": "Test uses Task.Delay(Timeout.Infinite) which may indicate a timing-dependent test",
+      "baselinedAt": "2026-11-18T22:27:16.2341889+00:00"
+    },
+    {
+      "hash": "ac46d09b285988f3",
+      "ruleId": "SW004",
+      "filePath": "tools/pocket-conduit/tests/MetroHub.Conduit.Tests/EngineReliabilityTests.cs",
+      "lineNumber": 99,
+      "codeSnippet": "Task.Delay(10)",
+      "message": "Test uses Task.Delay(10) which may indicate a timing-dependent test",
+      "baselinedAt": "2026-11-18T22:27:16.2341933+00:00"
+    },
+    {
+      "hash": "e5d0c852de2ea43f",
+      "ruleId": "SW004",
+      "filePath": "tools/pocket-conduit/tests/MetroHub.Conduit.Tests/EngineReliabilityTests.cs",
+      "lineNumber": 102,
+      "codeSnippet": "Task.Delay(TimeSpan.FromSeconds(10))",
+      "message": "Test uses Task.Delay(TimeSpan.FromSeconds(10)) which may indicate a timing-dependent test",
+      "baselinedAt": "2026-11-18T22:27:16.2341964+00:00"
+    },
+    {
+      "hash": "31e869dc14f550eb",
+      "ruleId": "SW004",
+      "filePath": "tools/pocket-conduit/tests/MetroHub.Conduit.Tests/EngineReliabilityTests.cs",
+      "lineNumber": 197,
+      "codeSnippet": "Task.Delay(50)",
+      "message": "Test uses Task.Delay(50) which may indicate a timing-dependent test",
+      "baselinedAt": "2026-11-18T22:27:16.2342008+00:00"
+    },
+    {
+      "hash": "0a7e7b133780a179",
+      "ruleId": "SW004",
+      "filePath": "tools/pocket-conduit/tests/MetroHub.Conduit.Tests/EngineReliabilityTests.cs",
+      "lineNumber": 199,
+      "codeSnippet": "Task.Delay(50)",
+      "message": "Test uses Task.Delay(50) which may indicate a timing-dependent test",
+      "baselinedAt": "2026-11-18T22:27:16.2342037+00:00"
+    },
+    {
+      "hash": "b40c5bb6c1ddaeec",
+      "ruleId": "SW004",
+      "filePath": "tools/pocket-conduit/tests/MetroHub.Conduit.Tests/EngineReliabilityTests.cs",
+      "lineNumber": 213,
+      "codeSnippet": "Task.Delay(200)",
+      "message": "Test uses Task.Delay(200) which may indicate a timing-dependent test",
+      "baselinedAt": "2026-11-18T22:27:16.2342065+00:00"
+    },
+    {
+      "hash": "0d67ff02667b33cb",
+      "ruleId": "SW004",
+      "filePath": "tools/pocket-conduit/tests/MetroHub.Conduit.Tests/EngineReliabilityTests.cs",
+      "lineNumber": 250,
+      "codeSnippet": "Task.Delay(1000)",
+      "message": "Test uses Task.Delay(1000) which may indicate a timing-dependent test",
+      "baselinedAt": "2026-11-18T22:27:16.2342102+00:00"
+    },
+    {
+      "hash": "52e42e96a0218f34",
+      "ruleId": "SW004",
+      "filePath": "tools/pocket-conduit/tests/MetroHub.Conduit.Tests/EngineReliabilityTests.cs",
+      "lineNumber": 284,
+      "codeSnippet": "Task.Delay(20)",
+      "message": "Test uses Task.Delay(20) which may indicate a timing-dependent test",
+      "baselinedAt": "2026-11-18T22:27:16.2342131+00:00"
+    }
+  ]
+}

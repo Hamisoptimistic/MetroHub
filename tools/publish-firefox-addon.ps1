@@ -64,7 +64,7 @@ $manifest = Get-Content $manifestPath -Raw | ConvertFrom-Json
 if ($Version -and $Version -ne $manifest.version) {
     Write-Host "[*] Bumping Firefox manifest version from $($manifest.version) to $Version..." -ForegroundColor Cyan
     $manifestContent = Get-Content $manifestPath -Raw
-    $manifestContent = $manifestContent -replace '("version":\s*")[^"]+(")', "`$1$Version`$2"
+    $manifestContent = $manifestContent -replace '("version":\s*")[^"]+(")', ('$1' + $Version + '$2')
     Set-Content -Path $manifestPath -Value $manifestContent -NoNewline
     $manifest = Get-Content $manifestPath -Raw | ConvertFrom-Json
 }
@@ -83,7 +83,7 @@ $metadata = @{
         }
     }
 }
-$metadata | ConvertTo-Json -Depth 5 | Set-Content -Path $metadataPath -Encoding utf8
+[System.IO.File]::WriteAllText($metadataPath, ($metadata | ConvertTo-Json -Depth 5), [System.Text.UTF8Encoding]::new($false))
 
 if (-not (Test-Path $artifactsDir)) {
     New-Item -ItemType Directory -Path $artifactsDir -Force | Out-Null
