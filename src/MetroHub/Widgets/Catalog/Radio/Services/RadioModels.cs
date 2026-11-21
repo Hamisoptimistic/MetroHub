@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Text.Json.Serialization;
+using CommunityToolkit.Mvvm.ComponentModel;
 
 namespace MetroHub.Widgets.Catalog.Radio.Services;
 
@@ -79,7 +80,7 @@ public sealed record RadioCatalog
 /// <summary>
 /// Display projection of an online radio station search result.
 /// </summary>
-public sealed class RadioSearchResultItem
+public sealed partial class RadioSearchResultItem : ObservableObject
 {
     public required string Name { get; init; }
     public required string Subtitle { get; init; }
@@ -90,4 +91,10 @@ public sealed class RadioSearchResultItem
     public string? Codec { get; init; }
     public string? CountryCode { get; init; }
     public string? Tags { get; init; }
+
+    [ObservableProperty]
+    private bool _isPlaying;
+
+    [ObservableProperty]
+    private bool _isBuffering;
 }

@@ -28,6 +28,7 @@ namespace MetroHub.Presentation.Controls;
 [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1001:Types that own disposable fields should be disposable", Justification = "WPF Window lifecycle manages disposable fields via OnDialogClosed.")]
 public sealed partial class RadioStationDialog : MetroDialog
 {
+    private readonly RadioStreamPreviewController _previewController = new();
     private RadioStation? _radioStationResult;
     private CancellationTokenSource? _radioSearchCts;
     private CancellationTokenSource? _radioProbeCts;
@@ -59,10 +60,33 @@ public sealed partial class RadioStationDialog : MetroDialog
         PreviewKeyDown += OnDialogPreviewKeyDown;
         PreviewMouseDown += OnDialogPreviewMouseDown;
         RowIconPickerPopup.Closed += (s, e) => RowIconPickerPopup.Tag = null;
+
+        _previewController.PreviewError += (s, msg) =>
+        {
+            Dispatcher.InvokeAsync(() =>
+            {
+                RadioSearchStatusMessage.Text = msg;
+                RadioSearchStatusMessage.Foreground = ThemeTokens.StatusErrorBrush;
+                RadioSearchStatusMessage.Visibility = Visibility.Visible;
+                if (RadioSearchSelectionPanel.Visibility == Visibility.Visible)
+                {
+                    RadioSearchEditorStatusMessage.Text = msg;
+                    RadioSearchEditorStatusMessage.Foreground = ThemeTokens.StatusErrorBrush;
+                    RadioSearchEditorStatusMessage.Visibility = Visibility.Visible;
+                }
+                UpdateView2PreviewState();
+            }).FireAndForget("RadioStationDialog.PreviewError");
+        };
     }
 
     private void OnDialogClosed(object? sender, EventArgs e)
     {
+        if (_selectedRadioSearchResult != null)
+        {
+            _selectedRadioSearchResult.PropertyChanged -= OnSelectedSearchResultPropertyChanged;
+            _selectedRadioSearchResult = null;
+        }
+        _previewController.Dispose();
         RadioCatalogService.Instance.CatalogChanged -= OnCatalogChanged;
         CancelPendingSearch();
         CancelPendingProbe();
@@ -73,6 +97,7 @@ public sealed partial class RadioStationDialog : MetroDialog
     {
         if (!IsVisible)
         {
+            _previewController.Stop();
             CancelPendingSearch();
             CancelPendingProbe();
         }
@@ -169,6 +194,7 @@ public sealed partial class RadioStationDialog : MetroDialog
 
     private void OnRadioTabSelectionChanged(object sender, SelectionChangedEventArgs e)
     {
+        _previewController.Stop();
         if (RadioModeTabSelector == null || RadioSearchPanel == null || RadioDirectPanel == null || RadioCategoriesPanel == null || DialogFooterPanel == null) return;
 
         if (RadioModeTabSelector.SelectedIndex == 0)
@@ -310,6 +336,7 @@ public sealed partial class RadioStationDialog : MetroDialog
 
     private void OnRadioSearchInputTextChanged(object sender, TextChangedEventArgs e)
     {
+        _previewController.Stop();
         string query = RadioSearchInput.Text;
         RadioSearchWatermark.Visibility = string.IsNullOrEmpty(query) ? Visibility.Visible : Visibility.Collapsed;
         RadioSearchStatusMessage.Visibility = Visibility.Collapsed;
@@ -368,7 +395,7 @@ public sealed partial class RadioStationDialog : MetroDialog
                             if (!string.IsNullOrWhiteSpace(topTags)) parts.Add(topTags);
                         }
 
-                        string subtitle = parts.Count > 0 ? string.Join(" • ", parts) : "Online Radio";
+                        string subtitle = parts.Count > 0 ? string.Join(" / ", parts) : "Online Radio";
                         string bitrate = s.Bitrate > 0 ? $"{s.Bitrate} kbps" : (!string.IsNullOrWhiteSpace(s.Codec) ? s.Codec.ToUpperInvariant() : "Stream");
 
                         RadioSearchResults.Add(new RadioSearchResultItem
@@ -415,9 +442,68 @@ public sealed partial class RadioStationDialog : MetroDialog
         }
     }
 
+    private void OnSearchResultPlayPauseClick(object sender, RoutedEventArgs e)
+    {
+        e.Handled = true;
+        if (sender is FrameworkElement { DataContext: RadioSearchResultItem item })
+        {
+            _previewController.TogglePlayPause(item);
+        }
+    }
+
+    private void OnSelectedStationCardPlayPauseClick(object sender, RoutedEventArgs e)
+    {
+        e.Handled = true;
+        if (_selectedRadioSearchResult != null)
+        {
+            _previewController.TogglePlayPause(_selectedRadioSearchResult);
+            UpdateView2PreviewState();
+        }
+    }
+
+    private void UpdateView2PreviewState()
+    {
+        if (RadioSelectedStationPlayIcon == null || RadioSelectedStationBufferingRing == null || RadioSelectedStationPauseIcon == null)
+            return;
+
+        if (_selectedRadioSearchResult is { IsBuffering: true })
+        {
+            RadioSelectedStationPlayIcon.Visibility = Visibility.Collapsed;
+            RadioSelectedStationPauseIcon.Visibility = Visibility.Collapsed;
+            RadioSelectedStationBufferingRing.Visibility = Visibility.Visible;
+        }
+        else if (_selectedRadioSearchResult is { IsPlaying: true })
+        {
+            RadioSelectedStationPlayIcon.Visibility = Visibility.Collapsed;
+            RadioSelectedStationPauseIcon.Visibility = Visibility.Visible;
+            RadioSelectedStationBufferingRing.Visibility = Visibility.Collapsed;
+        }
+        else
+        {
+            RadioSelectedStationPlayIcon.Visibility = Visibility.Visible;
+            RadioSelectedStationPauseIcon.Visibility = Visibility.Collapsed;
+            RadioSelectedStationBufferingRing.Visibility = Visibility.Collapsed;
+        }
+    }
+
+    private void OnSelectedSearchResultPropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
+    {
+        if (e.PropertyName is nameof(RadioSearchResultItem.IsPlaying) or nameof(RadioSearchResultItem.IsBuffering))
+        {
+            Dispatcher.InvokeAsync(UpdateView2PreviewState).FireAndForget("RadioStationDialog.UpdateView2PreviewState");
+        }
+    }
+
     internal void SelectRadioSearchResult(RadioSearchResultItem item)
     {
+        if (_selectedRadioSearchResult != null)
+        {
+            _selectedRadioSearchResult.PropertyChanged -= OnSelectedSearchResultPropertyChanged;
+        }
         _selectedRadioSearchResult = item;
+        _selectedRadioSearchResult.PropertyChanged += OnSelectedSearchResultPropertyChanged;
+        UpdateView2PreviewState();
+
         RadioSearchBrowseView.Visibility = Visibility.Collapsed;
         RadioSearchSelectionPanel.Visibility = Visibility.Visible;
 
@@ -435,7 +521,7 @@ public sealed partial class RadioStationDialog : MetroDialog
 
         if (hasKbps && hasCodec)
         {
-            formatText = $"{item.BitrateDisplay} • {item.Codec!.Trim().ToUpperInvariant()}";
+            formatText = $"{item.BitrateDisplay} / {item.Codec!.Trim().ToUpperInvariant()}";
         }
         else if (hasKbps)
         {
@@ -466,10 +552,16 @@ public sealed partial class RadioStationDialog : MetroDialog
 
     private void ReturnToSearchResults()
     {
+        if (_selectedRadioSearchResult != null)
+        {
+            _selectedRadioSearchResult.PropertyChanged -= OnSelectedSearchResultPropertyChanged;
+            _selectedRadioSearchResult = null;
+        }
+        UpdateView2PreviewState();
+
         RadioSearchSelectionPanel.Visibility = Visibility.Collapsed;
         RadioSearchBrowseView.Visibility = Visibility.Visible;
         RadioSearchResultsList.SelectedItem = null;
-        _selectedRadioSearchResult = null;
         PrimaryActionButton.IsEnabled = false;
         RadioSearchInput.Focus();
         RadioSearchInput.SelectAll();
@@ -746,6 +838,7 @@ public sealed partial class RadioStationDialog : MetroDialog
             {
                 await RadioCatalogService.Instance.AddCustomStationAsync(stationToAdd, categoryId);
                 _radioStationResult = stationToAdd;
+                _previewController.Stop();
                 DialogResult = true;
                 Close();
             }

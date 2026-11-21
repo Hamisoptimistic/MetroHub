@@ -140,16 +140,16 @@
         <Style x:Key="SuggestionListBoxItemStyle" TargetType="ListBoxItem">
             <Setter Property="OverridesDefaultStyle" Value="True" />
             <Setter Property="FocusVisualStyle" Value="{x:Null}" />
-            <Setter Property="Padding" Value="10,6,10,6" />
+            <Setter Property="Padding" Value="0" />
+            <Setter Property="HorizontalContentAlignment" Value="Stretch" />
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="ListBoxItem">
                         <Border x:Name="ItemBorder"
                                 Background="Transparent"
-                                CornerRadius="{DynamicResource ControlCornerRadius}"
-                                Margin="2,1,2,1"
+                                Margin="0"
                                 Padding="{TemplateBinding Padding}">
-                            <ContentPresenter />
+                            <ContentPresenter HorizontalAlignment="Stretch" />
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
@@ -165,36 +165,100 @@
         </Style>
 
         <DataTemplate x:Key="RadioSearchResultItemTemplate">
-            <Grid Margin="0,3">
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="*" />
-                    <ColumnDefinition Width="Auto" />
-                </Grid.ColumnDefinitions>
-                <StackPanel Grid.Column="0" VerticalAlignment="Center">
-                    <TextBlock Text="{Binding Name}"
-                               FontSize="{DynamicResource TypeBodyFontSize}"
-                               FontWeight="SemiBold"
-                               Foreground="{DynamicResource TextPrimaryBrush}"
-                               TextTrimming="CharacterEllipsis" />
-                    <TextBlock Text="{Binding Subtitle}"
+            <Border BorderThickness="0,0,0,1"
+                    BorderBrush="{DynamicResource SurfaceBorderSubtleBrush}"
+                    Background="Transparent">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="42" />
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+
+                    <!-- Inline Play / Buffering / Pause Button (Spans full height/width of left cell up to divider) -->
+                    <Button Grid.Column="0"
+                            Style="{DynamicResource SubtleButtonStyle}"
+                            Focusable="False"
+                            Click="OnSearchResultPlayPauseClick"
+                            ToolTip="Preview station"
+                            HorizontalAlignment="Stretch"
+                            VerticalAlignment="Stretch"
+                            Padding="0"
+                            Margin="0">
+                        <Button.Resources>
+                            <CornerRadius x:Key="ControlCornerRadius">0</CornerRadius>
+                        </Button.Resources>
+                        <Grid>
+                            <ui:SymbolIcon x:Name="PlayIcon"
+                                           Symbol="Play24"
+                                           FontSize="14"
+                                           Foreground="{DynamicResource TextPrimaryBrush}"
+                                           HorizontalAlignment="Center"
+                                           VerticalAlignment="Center"
+                                           Visibility="Visible" />
+                            <ui:ProgressRing x:Name="BufferingRing"
+                                             Width="14"
+                                             Height="14"
+                                             IsIndeterminate="True"
+                                             HorizontalAlignment="Center"
+                                             VerticalAlignment="Center"
+                                             Visibility="Collapsed" />
+                            <ui:SymbolIcon x:Name="PauseIcon"
+                                           Symbol="Pause24"
+                                           FontSize="14"
+                                           Foreground="{DynamicResource TextPrimaryBrush}"
+                                           HorizontalAlignment="Center"
+                                           VerticalAlignment="Center"
+                                           Visibility="Collapsed" />
+                        </Grid>
+                    </Button>
+
+                    <!-- Vertical Divider (1px subtle line separating play button from station info) -->
+                    <Rectangle Grid.Column="1"
+                               Width="1"
+                               Fill="{DynamicResource SurfaceBorderSubtleBrush}"
+                               SnapsToDevicePixels="True" />
+
+                    <!-- Station Identity -->
+                    <StackPanel Grid.Column="2"
+                                VerticalAlignment="Center"
+                                Margin="12,6,10,6">
+                        <TextBlock Text="{Binding Name}"
+                                   FontSize="{DynamicResource TypeBodyFontSize}"
+                                   FontWeight="SemiBold"
+                                   Foreground="{DynamicResource TextPrimaryBrush}"
+                                   TextTrimming="CharacterEllipsis" />
+                        <TextBlock Text="{Binding Subtitle}"
+                                   FontSize="{DynamicResource TypeCaptionFontSize}"
+                                   FontWeight="Normal"
+                                   Foreground="{DynamicResource TextSecondaryBrush}"
+                                   Margin="0,2,0,0"
+                                   TextTrimming="CharacterEllipsis" />
+                    </StackPanel>
+
+                    <!-- Right-Aligned Bitrate Display -->
+                    <TextBlock Grid.Column="3"
+                               Text="{Binding BitrateDisplay}"
                                FontSize="{DynamicResource TypeCaptionFontSize}"
                                FontWeight="Normal"
                                Foreground="{DynamicResource TextSecondaryBrush}"
-                               Margin="0,2,0,0"
-                               TextTrimming="CharacterEllipsis" />
-                </StackPanel>
-                <Border Grid.Column="1"
-                        Background="{DynamicResource SurfaceBorderSubtleBrush}"
-                        CornerRadius="{DynamicResource ControlCornerRadius}"
-                        Padding="6,2"
-                        VerticalAlignment="Center"
-                        Margin="8,0,0,0">
-                    <TextBlock Text="{Binding BitrateDisplay}"
-                               FontSize="{DynamicResource TypeCaptionFontSize}"
-                               FontWeight="Normal"
-                               Foreground="{DynamicResource TextSecondaryBrush}" />
-                </Border>
-            </Grid>
+                               VerticalAlignment="Center"
+                               Margin="0,6,12,6" />
+                </Grid>
+            </Border>
+
+            <DataTemplate.Triggers>
+                <DataTrigger Binding="{Binding IsPlaying}" Value="True">
+                    <Setter TargetName="PlayIcon" Property="Visibility" Value="Collapsed" />
+                    <Setter TargetName="PauseIcon" Property="Visibility" Value="Visible" />
+                </DataTrigger>
+                <DataTrigger Binding="{Binding IsBuffering}" Value="True">
+                    <Setter TargetName="PlayIcon" Property="Visibility" Value="Collapsed" />
+                    <Setter TargetName="PauseIcon" Property="Visibility" Value="Collapsed" />
+                    <Setter TargetName="BufferingRing" Property="Visibility" Value="Visible" />
+                </DataTrigger>
+            </DataTemplate.Triggers>
         </DataTemplate>
 
         <conv:EqualityConverter x:Key="EqualityConverter" />
@@ -418,12 +482,13 @@
                                         BorderBrush="{DynamicResource SurfaceBorderBrush}"
                                         BorderThickness="1"
                                         CornerRadius="{DynamicResource ControlCornerRadius}"
+                                        ClipToBounds="True"
                                         Margin="0,8,0,0">
                                     <Grid>
                                         <ListBox x:Name="RadioSearchResultsList"
                                                  Background="Transparent"
                                                  BorderThickness="0"
-                                                 Padding="2"
+                                                 Padding="0"
                                                  ScrollViewer.HorizontalScrollBarVisibility="Disabled"
                                                  ScrollViewer.VerticalScrollBarVisibility="Auto"
                                                  controls:AutoHideScrollBehavior.IsEnabled="True"
@@ -508,21 +573,47 @@
                                                     <ColumnDefinition Width="*" />
                                                 </Grid.ColumnDefinitions>
 
-                                                <!-- Circular Icon Container -->
-                                                <Border Grid.Column="0"
+                                                <!-- Circular Preview Button -->
+                                                <Button x:Name="RadioSelectedStationPreviewButton"
+                                                        Grid.Column="0"
                                                         Width="40"
                                                         Height="40"
-                                                        CornerRadius="20"
+                                                        Padding="0"
+                                                        Style="{DynamicResource SubtleButtonStyle}"
                                                         Background="{DynamicResource SurfaceGlassSubtleBrush}"
                                                         BorderBrush="{DynamicResource SurfaceBorderSubtleBrush}"
                                                         BorderThickness="1"
+                                                        Focusable="False"
+                                                        Click="OnSelectedStationCardPlayPauseClick"
+                                                        ToolTip="Preview station"
                                                         VerticalAlignment="Center">
-                                                    <ui:SymbolIcon Symbol="HeadphonesSoundWave24"
-                                                                   FontSize="20"
-                                                                   Foreground="{DynamicResource TextPrimaryBrush}"
-                                                                   HorizontalAlignment="Center"
-                                                                   VerticalAlignment="Center" />
-                                                </Border>
+                                                    <Button.Resources>
+                                                        <CornerRadius x:Key="ControlCornerRadius">20</CornerRadius>
+                                                    </Button.Resources>
+                                                    <Grid HorizontalAlignment="Center" VerticalAlignment="Center">
+                                                        <ui:SymbolIcon x:Name="RadioSelectedStationPlayIcon"
+                                                                       Symbol="Play24"
+                                                                       FontSize="18"
+                                                                       Foreground="{DynamicResource TextPrimaryBrush}"
+                                                                       HorizontalAlignment="Center"
+                                                                       VerticalAlignment="Center"
+                                                                       Visibility="Visible" />
+                                                        <ui:ProgressRing x:Name="RadioSelectedStationBufferingRing"
+                                                                         Width="18"
+                                                                         Height="18"
+                                                                         IsIndeterminate="True"
+                                                                         HorizontalAlignment="Center"
+                                                                         VerticalAlignment="Center"
+                                                                         Visibility="Collapsed" />
+                                                        <ui:SymbolIcon x:Name="RadioSelectedStationPauseIcon"
+                                                                       Symbol="Pause24"
+                                                                       FontSize="18"
+                                                                       Foreground="{DynamicResource TextPrimaryBrush}"
+                                                                       HorizontalAlignment="Center"
+                                                                       VerticalAlignment="Center"
+                                                                       Visibility="Collapsed" />
+                                                    </Grid>
+                                                </Button>
 
                                                 <!-- Station Name & URL -->
                                                 <StackPanel Grid.Column="1"

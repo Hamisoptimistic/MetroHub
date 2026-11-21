@@ -134,7 +134,7 @@ public class RadioStationDialogTests
             Assert.Equal("SomaFM - Groove Salad [128k MP3]", dlg.RadioSelectedStationOriginalName.Text);
             Assert.Equal("https://ice1.somafm.com/groovesalad-128-mp3", dlg.RadioSelectedStationStreamUrl.Text);
             Assert.Equal("US", dlg.RadioSelectedStationCountryText.Text);
-            Assert.Equal("128 kbps • MP3", dlg.RadioSelectedStationFormatText.Text);
+            Assert.Equal("128 kbps / MP3", dlg.RadioSelectedStationFormatText.Text);
             Assert.Equal("SomaFM - Groove Salad", dlg.RadioSearchNameInput.Text);
 
             var itemGlobalFallback = new RadioSearchResultItem
@@ -154,6 +154,109 @@ public class RadioStationDialogTests
 
             Assert.Equal("Global", dlg.RadioSelectedStationCountryText.Text);
             Assert.Equal("Audio Stream", dlg.RadioSelectedStationFormatText.Text);
+
+            dlg.Close();
+        });
+    }
+
+    [Fact]
+    public void RadioSearchResultItem_NotifiesPropertyChangedForPlaybackState()
+    {
+        var item = new RadioSearchResultItem
+        {
+            Name = "Test Station",
+            Subtitle = "US / Pop",
+            BitrateDisplay = "128 kbps",
+            ResolvedStreamUrl = "https://example.com/test",
+            StationUuid = "test-uuid",
+            BitrateKbps = 128
+        };
+
+        var changedProperties = new System.Collections.Generic.List<string>();
+        item.PropertyChanged += (_, e) =>
+        {
+            if (e.PropertyName != null) changedProperties.Add(e.PropertyName);
+        };
+
+        item.IsBuffering = true;
+        item.IsPlaying = true;
+        item.IsBuffering = false;
+
+        Assert.Contains(nameof(RadioSearchResultItem.IsBuffering), changedProperties);
+        Assert.Contains(nameof(RadioSearchResultItem.IsPlaying), changedProperties);
+        Assert.True(item.IsPlaying);
+        Assert.False(item.IsBuffering);
+    }
+
+    [Fact]
+    public void RadioStreamPreviewController_DisposesCleanly()
+    {
+        WpfTestHost.RunSta(() =>
+        {
+            using var controller = new RadioStreamPreviewController();
+            Assert.False(controller.IsPlaying);
+            Assert.False(controller.IsBuffering);
+            Assert.Null(controller.ActiveItem);
+
+            controller.Stop();
+        });
+    }
+
+    [Fact]
+    public void RadioStationDialog_SearchResultTemplate_RendersButtonAndDivider()
+    {
+        WpfTestHost.RunSta(() =>
+        {
+            var dlg = new RadioStationDialog();
+            dlg.Setup("ambient");
+            var item = new RadioSearchResultItem
+            {
+                StationUuid = "test-uuid-99",
+                Name = "SomaFM Groove Salad",
+                Subtitle = "Downtempo • Electronic",
+                BitrateDisplay = "128 kbps",
+                ResolvedStreamUrl = "https://ice1.somafm.com/groovesalad-128-mp3",
+                BitrateKbps = 128
+            };
+            dlg.RadioSearchResults.Add(item);
+
+            dlg.Measure(new System.Windows.Size(680, 480));
+            dlg.Arrange(new System.Windows.Rect(0, 0, 680, 480));
+            dlg.UpdateLayout();
+
+            var template = (System.Windows.DataTemplate)dlg.Resources["RadioSearchResultItemTemplate"];
+            Assert.NotNull(template);
+
+            var rootBorder = (Border)template.LoadContent();
+            Assert.NotNull(rootBorder);
+            rootBorder.DataContext = item;
+
+            rootBorder.Measure(new System.Windows.Size(500, 100));
+            rootBorder.Arrange(new System.Windows.Rect(0, 0, 500, 100));
+            rootBorder.UpdateLayout();
+
+            var grid = rootBorder.Child as Grid;
+            Assert.NotNull(grid);
+            Assert.Equal(4, grid.ColumnDefinitions.Count);
+            Assert.Equal(new System.Windows.GridLength(42), grid.ColumnDefinitions[0].Width);
+            Assert.Equal(System.Windows.GridLength.Auto, grid.ColumnDefinitions[1].Width);
+            Assert.Equal(new System.Windows.GridLength(1, System.Windows.GridUnitType.Star), grid.ColumnDefinitions[2].Width);
+            Assert.Equal(System.Windows.GridLength.Auto, grid.ColumnDefinitions[3].Width);
+
+            var btn = grid.Children[0] as Button;
+            Assert.NotNull(btn);
+            Assert.Equal(0, Grid.GetColumn(btn));
+            Assert.Equal(System.Windows.HorizontalAlignment.Stretch, btn.HorizontalAlignment);
+            Assert.Equal(System.Windows.VerticalAlignment.Stretch, btn.VerticalAlignment);
+            Assert.Equal(42.0, btn.ActualWidth);
+            Assert.True(btn.ActualHeight > 0);
+
+            var rect = grid.Children[1] as System.Windows.Shapes.Rectangle;
+            Assert.NotNull(rect);
+            Assert.Equal(1, Grid.GetColumn(rect));
+            Assert.Equal(1.0, rect.Width);
+            Assert.Equal(1.0, rect.ActualWidth);
+            Assert.Equal(btn.ActualHeight, rect.ActualHeight);
 
             dlg.Close();
         });
