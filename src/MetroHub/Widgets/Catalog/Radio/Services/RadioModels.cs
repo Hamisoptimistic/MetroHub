@@ -57,6 +57,9 @@ public sealed record RadioCategory
     [JsonPropertyName("iconSymbol")]
     public string IconSymbol { get; init; } = "HeadphonesSoundWave24";
 
+    [JsonPropertyName("sortOrder")]
+    public int SortOrder { get; init; } = 0;
+
     [JsonPropertyName("stations")]
     public List<RadioStation> Stations { get; init; } = new();
 }

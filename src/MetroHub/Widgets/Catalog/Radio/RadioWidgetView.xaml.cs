@@ -1,8 +1,14 @@
 using System;
+using System.Collections.Generic;
 using System.ComponentModel;
+using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Controls.Primitives;
 using System.Windows.Media.Animation;
+using System.Windows.Threading;
+using MetroHub.Core.Services;
+using MetroHub.Widgets.Catalog.Radio.Services;
 
 namespace MetroHub.Widgets.Catalog.Radio;
 
@@ -17,6 +23,7 @@ public sealed partial class RadioWidgetView : UserControl
 
     private string? _previousCategory;
     private RadioWidgetViewModel? _currentViewModel;
+    private bool _isRebuildingCategories;
 
     public RadioWidgetView()
     {
@@ -29,6 +36,10 @@ public sealed partial class RadioWidgetView : UserControl
     private void OnLoaded(object sender, RoutedEventArgs e)
     {
         HookViewModel(DataContext as RadioWidgetViewModel);
+        if (CategoryTiles != null && CategoryTiles.Items.Count == 0)
+        {
+            RebuildCategories();
+        }
     }
 
     private void OnUnloaded(object sender, RoutedEventArgs e)
@@ -46,9 +57,12 @@ public sealed partial class RadioWidgetView : UserControl
     {
         if (vm == null || ReferenceEquals(_currentViewModel, vm)) return;
 
+        UnhookViewModel();
         _currentViewModel = vm;
         _previousCategory = vm.SelectedCategoryId;
         _currentViewModel.PropertyChanged += OnViewModelPropertyChanged;
+        _currentViewModel.CatalogService.CatalogChanged += OnCatalogChanged;
+        RebuildCategories();
     }
 
     private void UnhookViewModel()
@@ -56,7 +70,21 @@ public sealed partial class RadioWidgetView : UserControl
         if (_currentViewModel != null)
         {
             _currentViewModel.PropertyChanged -= OnViewModelPropertyChanged;
+            _currentViewModel.CatalogService.CatalogChanged -= OnCatalogChanged;
             _currentViewModel = null;
+        }
+    }
+
+    private void OnCatalogChanged(object? sender, EventArgs e)
+    {
+        if (Dispatcher.CheckAccess())
+        {
+            RebuildCategories();
+        }
+        else
+        {
+            Dispatcher.InvokeAsync(RebuildCategories, DispatcherPriority.Normal)
+                .FireAndForget("RadioWidgetView.OnCatalogChanged");
         }
     }
 
@@ -64,6 +92,8 @@ public sealed partial class RadioWidgetView : UserControl
     {
         if (e.PropertyName == nameof(RadioWidgetViewModel.SelectedCategoryId))
         {
+            if (_isRebuildingCategories) return;
+
             if (_currentViewModel != null)
             {
                 string? newCategory = _currentViewModel.SelectedCategoryId;
@@ -71,13 +101,93 @@ public sealed partial class RadioWidgetView : UserControl
                 {
                     AnimateCategoryFade();
                     _previousCategory = newCategory;
+                    ScrollActiveCategoryIntoView(newCategory);
                 }
+            }
+        }
+    }
+
+    private void RebuildCategories()
+    {
+        if (CategoryTiles == null) return;
+
+        var catalog = _currentViewModel?.CatalogService.GetCatalog() ?? RadioCatalogService.Instance.GetCatalog();
+        var categories = catalog?.Categories ?? (IReadOnlyList<RadioCategory>)Array.Empty<RadioCategory>();
+        int count = categories.Count;
+
+        string targetId = _currentViewModel?.SelectedCategoryId 
+            ?? (CategoryTiles.SelectedValue as string) 
+            ?? (count > 0 ? categories[0].Id : "ambient");
+
+        _isRebuildingCategories = true;
+        try
+        {
+            CategoryTiles.Items.Clear();
+
+            WidgetTile? activeTile = null;
+
+            for (int i = 0; i < count; i++)
+            {
+                var category = categories[i];
+                var tile = new WidgetTile
+                {
+                    Value = category.Id,
+                    Header = category.DisplayName,
+                    Symbol = RadioSymbols.ParseSymbol(category.IconSymbol),
+                    ToolTip = category.DisplayName
+                };
+                tile.SetResourceReference(WidgetTile.IndicatorBrushProperty, "TextPrimaryBrush");
+
+                if (string.Equals(category.Id, targetId, StringComparison.OrdinalIgnoreCase))
+                {
+                    activeTile = tile;
+                }
+
+                CategoryTiles.Items.Add(tile);
+            }
+
+            CategoryTiles.Width = count <= 4 ? 504.0 : count * 126.0;
+
+            CategoryTiles.SetCurrentValue(Selector.SelectedValueProperty, null);
+            CategoryTiles.SetCurrentValue(Selector.SelectedValueProperty, targetId);
+
+            if (count > 4 && activeTile != null)
+            {
+                activeTile.BringIntoView();
+            }
+
+            Dispatcher.InvokeAsync(() =>
+            {
+                CategoryTiles.UpdateLayout();
+                if (count > 4 && activeTile != null)
+                {
+                    activeTile.BringIntoView();
+                }
+            }, DispatcherPriority.Loaded).FireAndForget("RadioWidgetView.AlignIndicator");
+        }
+        finally
+        {
+            _isRebuildingCategories = false;
+        }
+    }
+
+    private void ScrollActiveCategoryIntoView(string? categoryId)
+    {
+        if (CategoryTiles == null || CategoryTiles.Items.Count <= 4 || string.IsNullOrWhiteSpace(categoryId)) return;
+
+        foreach (var item in CategoryTiles.Items)
+        {
+            if (item is WidgetTile tile && string.Equals(tile.Value as string, categoryId, StringComparison.OrdinalIgnoreCase))
+            {
+                tile.BringIntoView();
+                break;
             }
         }
     }
 
     private void AnimateCategoryFade()
     {
+        if (_isRebuildingCategories) return;
         if (StationItemsControl == null) return;
 
         // Reset scroll position to top on category change

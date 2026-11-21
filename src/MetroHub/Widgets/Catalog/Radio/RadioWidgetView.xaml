@@ -171,33 +171,19 @@
 
             <!-- ========================================================================= -->
             <!-- ROW 0: TOP CATEGORY TABS (76px)                                           -->
-            <!-- [ Ambient ] | [ Nature ] | [ Lo-Fi / Chill ] | [ Coding ]                 -->
+            <!-- Horizontally scrollable category tile strip (126px per column)            -->
             <!-- ========================================================================= -->
-            <widgets:WidgetTiles Grid.Row="0"
-                                 SelectedValue="{Binding SelectedCategoryId, Mode=TwoWay}"
-                                 Height="76"
-                                 HorizontalAlignment="Stretch">
-                <widgets:WidgetTile Value="ambient"
-                                    Symbol="WeatherMoon24"
-                                    Header="Ambient"
-                                    IndicatorBrush="{DynamicResource TextPrimaryBrush}"
-                                    ToolTip="Deep Ambient, Space &amp; Drone Soundscapes" />
-                <widgets:WidgetTile Value="nature"
-                                    Symbol="LeafTwo24"
-                                    Header="Nature"
-                                    IndicatorBrush="{DynamicResource TextPrimaryBrush}"
-                                    ToolTip="Rain, Forests, Oceans &amp; Environmental Sounds" />
-                <widgets:WidgetTile Value="lofi"
-                                    Symbol="Headphones24"
-                                    Header="Lo-Fi / Chill"
-                                    IndicatorBrush="{DynamicResource TextPrimaryBrush}"
-                                    ToolTip="Lo-Fi Hip Hop, Chillout &amp; Study Beats" />
-                <widgets:WidgetTile Value="coding"
-                                    Symbol="Code24"
-                                    Header="Coding"
-                                    IndicatorBrush="{DynamicResource TextPrimaryBrush}"
-                                    ToolTip="Synthwave, Darksynth &amp; Deep Focus Electronic" />
-            </widgets:WidgetTiles>
+            <ScrollViewer Grid.Row="0"
+                          x:Name="CategoryScrollViewer"
+                          VerticalScrollBarVisibility="Disabled"
+                          HorizontalScrollBarVisibility="Hidden"
+                          CanContentScroll="False"
+                          controls:HorizontalScrollBehavior.IsEnabled="True">
+                <widgets:WidgetTiles x:Name="CategoryTiles"
+                                     SelectedValue="{Binding SelectedCategoryId, Mode=TwoWay}"
+                                     Height="76"
+                                     HorizontalAlignment="Left" />
+            </ScrollViewer>
 
             <!-- ========================================================================= -->
             <!-- ROW 1: SEAMLESS 4-COLUMN STATION GRID (234px)                             -->

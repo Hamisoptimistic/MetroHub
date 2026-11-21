@@ -10,6 +10,7 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
+using MetroHub.Widgets.Catalog.Radio;
 using MetroHub.Widgets.Catalog.Radio.Services;
 using MetroHub.Core.Services;
 using MetroHub.Presentation.Dialogs;
@@ -17,6 +18,7 @@ using MetroHub.Presentation.Themes;
 using System.Windows.Interop;
 using System.Windows.Shell;
 using Wpf.Ui.Controls;
+using TextBox = System.Windows.Controls.TextBox;
 
 namespace MetroHub.Presentation.Controls;
 
@@ -40,6 +42,7 @@ public sealed partial class RadioStationDialog : MetroDialog
 
     internal ObservableCollection<RadioSearchResultItem> RadioSearchResults { get; } = new();
     internal ObservableCollection<RadioCategory> RadioCategories { get; } = new();
+    public RadioCategoryManagementViewModel CategoryViewModel { get; } = new();
 
     public RadioStation? RadioStationResult => _radioStationResult;
 
@@ -49,9 +52,11 @@ public sealed partial class RadioStationDialog : MetroDialog
         Background = Brushes.Transparent;
         RadioSearchResultsList.ItemsSource = RadioSearchResults;
         RadioCategoryComboBox.ItemsSource = RadioCategories;
+        RadioCategoriesPanel.DataContext = CategoryViewModel;
         RadioCatalogService.Instance.CatalogChanged += OnCatalogChanged;
         Closed += OnDialogClosed;
         IsVisibleChanged += OnWindowIsVisibleChanged;
+        PreviewKeyDown += OnDialogPreviewKeyDown;
     }
 
     private void OnDialogClosed(object? sender, EventArgs e)
@@ -59,6 +64,7 @@ public sealed partial class RadioStationDialog : MetroDialog
         RadioCatalogService.Instance.CatalogChanged -= OnCatalogChanged;
         CancelPendingSearch();
         CancelPendingProbe();
+        CategoryViewModel.Dispose();
     }
 
     private void OnWindowIsVisibleChanged(object sender, DependencyPropertyChangedEventArgs e)
@@ -128,12 +134,16 @@ public sealed partial class RadioStationDialog : MetroDialog
         Title = "Add Radio Station";
         PrimaryActionButton.Content = "Add Station";
         PrimaryActionButton.IsEnabled = false;
+        PrimaryActionButton.IsDefault = true;
+        DialogFooterPanel.Visibility = Visibility.Visible;
 
         LoadCategories();
+        CategoryViewModel.RefreshCategories();
 
         RadioModeTabSelector.SelectedIndex = 0;
         RadioSearchPanel.Visibility = Visibility.Visible;
         RadioDirectPanel.Visibility = Visibility.Collapsed;
+        RadioCategoriesPanel.Visibility = Visibility.Collapsed;
 
         RadioSearchInput.Text = string.Empty;
         RadioSearchWatermark.Visibility = Visibility.Visible;
@@ -157,12 +167,20 @@ public sealed partial class RadioStationDialog : MetroDialog
 
     private void OnRadioTabSelectionChanged(object sender, SelectionChangedEventArgs e)
     {
-        if (RadioModeTabSelector == null || RadioSearchPanel == null || RadioDirectPanel == null) return;
+        if (RadioModeTabSelector == null || RadioSearchPanel == null || RadioDirectPanel == null || RadioCategoriesPanel == null || DialogFooterPanel == null) return;
 
         if (RadioModeTabSelector.SelectedIndex == 0)
         {
+            Title = "Add Radio Station";
+            DialogFooterPanel.Visibility = Visibility.Visible;
+            PrimaryActionButton.IsDefault = true;
+
             RadioSearchPanel.Visibility = Visibility.Visible;
             RadioDirectPanel.Visibility = Visibility.Collapsed;
+            RadioCategoriesPanel.Visibility = Visibility.Collapsed;
+
+            SyncCategoryComboBox();
+
             if (RadioSearchSelectionPanel.Visibility == Visibility.Visible)
             {
                 UpdateSearchButtonState();
@@ -174,12 +192,67 @@ public sealed partial class RadioStationDialog : MetroDialog
                 RadioSearchInput.Focus();
             }
         }
-        else
+        else if (RadioModeTabSelector.SelectedIndex == 1)
         {
+            Title = "Add Radio Station";
+            DialogFooterPanel.Visibility = Visibility.Visible;
+            PrimaryActionButton.IsDefault = true;
+
             RadioSearchPanel.Visibility = Visibility.Collapsed;
             RadioDirectPanel.Visibility = Visibility.Visible;
+            RadioCategoriesPanel.Visibility = Visibility.Collapsed;
+
+            SyncCategoryComboBox();
+
             UpdateDirectButtonState();
             RadioDirectUrlInput.Focus();
+        }
+        else if (RadioModeTabSelector.SelectedIndex == 2)
+        {
+            Title = "Manage Categories";
+            DialogFooterPanel.Visibility = Visibility.Collapsed;
+            PrimaryActionButton.IsDefault = false;
+
+            RadioSearchPanel.Visibility = Visibility.Collapsed;
+            RadioDirectPanel.Visibility = Visibility.Collapsed;
+            RadioCategoriesPanel.Visibility = Visibility.Visible;
+
+            CategoryViewModel.RefreshCategories();
+            NewCategoryNameTextBox.Focus();
+        }
+    }
+
+    private void SyncCategoryComboBox()
+    {
+        string currentSelectedId = GetSelectedCategoryId();
+        LoadCategories();
+        var match = RadioCategories.FirstOrDefault(c => string.Equals(c.Id, currentSelectedId, StringComparison.OrdinalIgnoreCase))
+                    ?? RadioCategories.FirstOrDefault();
+        if (match != null)
+        {
+            RadioCategoryComboBox.SelectedItem = match;
+        }
+    }
+
+    private void OnDialogPreviewKeyDown(object sender, KeyEventArgs e)
+    {
+        if (e.Key == Key.Escape)
+        {
+            var renamingItem = CategoryViewModel.Categories.FirstOrDefault(c => c.IsRenaming);
+            if (renamingItem != null)
+            {
+                CategoryViewModel.CancelRenameCommand.Execute(renamingItem);
+                e.Handled = true;
+                return;
+            }
+
+            var pendingDeleteItem = CategoryViewModel.Categories.FirstOrDefault(c => c.IsPendingDelete);
+            if (pendingDeleteItem != null)
+            {
+                CategoryViewModel.CancelDeleteCommand.Execute(pendingDeleteItem);
+                e.Handled = true;
+                return;
+            }
         }
     }
 
@@ -759,4 +832,267 @@ public sealed partial class RadioStationDialog : MetroDialog
         DialogResult = false;
         Close();
     }
+
+    #region Categories Management & Drag-Drop Reordering
+
+    private void OnNewCategoryTextBoxKeyDown(object sender, KeyEventArgs e)
+    {
+        if (e.Key == Key.Enter)
+        {
+            CategoryViewModel.AddCategoryCommand.Execute(null);
+            e.Handled = true;
+        }
+    }
+
+    private void OnRowCategoryIconButtonClick(object sender, RoutedEventArgs e)
+    {
+        if (sender is FrameworkElement button && button.DataContext is RadioCategoryItemViewModel item)
+        {
+            RowIconPickerPopup.PlacementTarget = button;
+            RowIconPickerPopup.Tag = item;
+            RowIconPickerPopup.IsOpen = true;
+        }
+    }
+
+    private void OnRowIconPickerItemClick(object sender, RoutedEventArgs e)
+    {
+        if (sender is FrameworkElement elem && elem.DataContext is RadioSymbolItem symbolItem && RowIconPickerPopup.Tag is RadioCategoryItemViewModel targetItem)
+        {
+            CategoryViewModel.UpdateRowIconAsync(targetItem, symbolItem).FireAndForget("RadioStationDialog.UpdateRowIcon");
+            RowIconPickerPopup.IsOpen = false;
+            RowIconPickerPopup.Tag = null;
+        }
+    }
+
+    private void OnCategoryNameTextBlockMouseDown(object sender, MouseButtonEventArgs e)
+    {
+        if (e.ClickCount == 2 && sender is FrameworkElement elem && elem.DataContext is RadioCategoryItemViewModel item)
+        {
+            CategoryViewModel.BeginRenameCommand.Execute(item);
+            e.Handled = true;
+        }
+    }
+
+    private void OnInlineRenameTextBoxLoaded(object sender, RoutedEventArgs e)
+    {
+        if (sender is TextBox tb)
+        {
+            tb.Focus();
+            tb.SelectAll();
+        }
+    }
+
+    private void OnInlineRenameTextBoxIsVisibleChanged(object sender, DependencyPropertyChangedEventArgs e)
+    {
+        if (sender is TextBox tb && tb.IsVisible)
+        {
+            Dispatcher.InvokeAsync(() =>
+            {
+                tb.Focus();
+                tb.SelectAll();
+            }, System.Windows.Threading.DispatcherPriority.Input).FireAndForget("RadioStationDialog.FocusRename");
+        }
+    }
+
+    private void OnInlineRenameTextBoxKeyDown(object sender, KeyEventArgs e)
+    {
+        if (sender is TextBox tb && tb.DataContext is RadioCategoryItemViewModel item)
+        {
+            if (e.Key == Key.Enter)
+            {
+                CategoryViewModel.CommitRenameCommand.Execute(item);
+                e.Handled = true;
+            }
+            else if (e.Key == Key.Escape)
+            {
+                CategoryViewModel.CancelRenameCommand.Execute(item);
+                e.Handled = true;
+            }
+        }
+    }
+
+    private void OnInlineRenameTextBoxLostFocus(object sender, RoutedEventArgs e)
+    {
+        if (sender is TextBox tb && tb.DataContext is RadioCategoryItemViewModel item && item.IsRenaming)
+        {
+            CategoryViewModel.CommitRenameCommand.Execute(item);
+        }
+    }
+
+    private Point _dragStartPoint;
+    private FrameworkElement? _draggedElement;
+    private RadioCategoryItemViewModel? _draggedItem;
+
+    private void OnRowPreviewMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+    {
+        if (IsInteractiveElement(e.OriginalSource as DependencyObject))
+        {
+            _draggedElement = null;
+            _draggedItem = null;
+            return;
+        }
+
+        if (sender is FrameworkElement row && row.DataContext is RadioCategoryItemViewModel item)
+        {
+            if (item.IsPendingDelete || item.IsRenaming)
+            {
+                _draggedElement = null;
+                _draggedItem = null;
+                return;
+            }
+
+            _dragStartPoint = e.GetPosition(null);
+            _draggedElement = row;
+            _draggedItem = item;
+        }
+    }
+
+    private void OnRowPreviewMouseMove(object sender, MouseEventArgs e)
+    {
+        if (e.LeftButton != MouseButtonState.Pressed || _draggedElement == null || _draggedItem == null)
+        {
+            return;
+        }
+
+        Point currentPos = e.GetPosition(null);
+        Vector diff = currentPos - _dragStartPoint;
+
+        if (Math.Abs(diff.Y) >= SystemParameters.MinimumVerticalDragDistance ||
+            Math.Abs(diff.X) >= SystemParameters.MinimumHorizontalDragDistance)
+        {
+            var element = _draggedElement;
+            var item = _draggedItem;
+            element.Opacity = 0.35;
+
+            try
+            {
+                DragDrop.DoDragDrop(element, item, DragDropEffects.Move);
+            }
+            finally
+            {
+                element.Opacity = 1.0;
+                _draggedElement = null;
+                _draggedItem = null;
+                ClearDropIndicators(element);
+            }
+        }
+    }
+
+    private void OnRowPreviewMouseLeftButtonUp(object sender, MouseButtonEventArgs e)
+    {
+        _draggedElement = null;
+        _draggedItem = null;
+    }
+
+    private void OnRowDragOver(object sender, DragEventArgs e)
+    {
+        if (sender is FrameworkElement targetRow &&
+            targetRow.DataContext is RadioCategoryItemViewModel targetItem &&
+            e.Data.GetData(typeof(RadioCategoryItemViewModel)) is RadioCategoryItemViewModel droppedItem &&
+            droppedItem != targetItem)
+        {
+            Point pt = e.GetPosition(targetRow);
+            bool dropAbove = pt.Y < (targetRow.ActualHeight / 2.0);
+
+            SetRowIndicators(targetRow, dropAbove);
+
+            e.Effects = DragDropEffects.Move;
+            e.Handled = true;
+            return;
+        }
+
+        if (sender is FrameworkElement row)
+        {
+            ClearDropIndicators(row);
+        }
+
+        e.Effects = DragDropEffects.None;
+        e.Handled = true;
+    }
+
+    private void OnRowDragLeave(object sender, DragEventArgs e)
+    {
+        if (sender is FrameworkElement row)
+        {
+            ClearDropIndicators(row);
+        }
+    }
+
+    private void OnRowDrop(object sender, DragEventArgs e)
+    {
+        if (sender is FrameworkElement targetRow)
+        {
+            ClearDropIndicators(targetRow);
+
+            if (targetRow.DataContext is RadioCategoryItemViewModel targetItem &&
+                e.Data.GetData(typeof(RadioCategoryItemViewModel)) is RadioCategoryItemViewModel droppedItem &&
+                droppedItem != targetItem)
+            {
+                int oldIndex = CategoryViewModel.Categories.IndexOf(droppedItem);
+                int targetIndex = CategoryViewModel.Categories.IndexOf(targetItem);
+
+                if (oldIndex >= 0 && targetIndex >= 0)
+                {
+                    Point pt = e.GetPosition(targetRow);
+                    bool dropAbove = pt.Y < (targetRow.ActualHeight / 2.0);
+                    int newIndex = dropAbove
+                        ? (oldIndex < targetIndex ? targetIndex - 1 : targetIndex)
+                        : (oldIndex < targetIndex ? targetIndex : targetIndex + 1);
+
+                    if (newIndex >= 0 && newIndex < CategoryViewModel.Categories.Count && newIndex != oldIndex)
+                    {
+                        CategoryViewModel.ReorderCategory(oldIndex, newIndex).FireAndForget("RadioStationDialog.OnRowDrop");
+                    }
+                }
+            }
+        }
+        e.Handled = true;
+    }
+
+    private static bool IsInteractiveElement(DependencyObject? element)
+    {
+        while (element != null && element is not Window)
+        {
+            if (element is System.Windows.Controls.Primitives.ButtonBase ||
+                element is System.Windows.Controls.Primitives.TextBoxBase ||
+                element is System.Windows.Controls.Primitives.Popup)
+            {
+                return true;
+            }
+
+            if (element is FrameworkElement fe && fe.Name == "RowRootBorder")
+            {
+                break;
+            }
+
+            element = VisualTreeHelper.GetParent(element);
+        }
+        return false;
+    }
+
+    private static void SetRowIndicators(FrameworkElement row, bool topActive)
+    {
+        if (row.FindName("PART_TopIndicator") is FrameworkElement top)
+        {
+            top.Visibility = topActive ? Visibility.Visible : Visibility.Collapsed;
+        }
+        if (row.FindName("PART_BottomIndicator") is FrameworkElement bottom)
+        {
+            bottom.Visibility = topActive ? Visibility.Collapsed : Visibility.Visible;
+        }
+    }
+
+    private static void ClearDropIndicators(FrameworkElement row)
+    {
+        if (row.FindName("PART_TopIndicator") is FrameworkElement top)
+        {
+            top.Visibility = Visibility.Collapsed;
+        }
+        if (row.FindName("PART_BottomIndicator") is FrameworkElement bottom)
+        {
+            bottom.Visibility = Visibility.Collapsed;
+        }
+    }
+
+    #endregion
 }

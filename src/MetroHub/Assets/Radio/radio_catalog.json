@@ -131,7 +131,7 @@
     {
       "id": "nature",
       "displayName": "Nature",
-      "iconSymbol": "TreeDeciduous24",
+      "iconSymbol": "LeafTwo24",
       "stations": [
         {
           "id": "birdsong",

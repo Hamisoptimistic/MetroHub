@@ -31,8 +31,31 @@ public sealed partial class RadioWidgetViewModel : WidgetViewModelBase
         WidgetSize.Huge // 8x6 (504x376px)
     };
 
-    [ObservableProperty]
     private string _selectedCategoryId = "ambient";
+    public string SelectedCategoryId
+    {
+        get => _selectedCategoryId;
+        set
+        {
+            if (string.IsNullOrWhiteSpace(value)) return;
+
+            var catalog = _catalogService.GetCatalog();
+            if (catalog.Categories.Count > 0)
+            {
+                var matched = catalog.Categories.Find(c => string.Equals(c.Id, value, StringComparison.OrdinalIgnoreCase));
+                if (matched == null) return;
+                value = matched.Id;
+            }
+
+            if (SetProperty(ref _selectedCategoryId, value))
+            {
+                LoadCategoryStations(value);
+                SaveSettings();
+            }
+        }
+    }
+
+    public RadioCatalogService CatalogService => _catalogService;
 
     [ObservableProperty]
     private RadioStation? _currentStation;
@@ -158,11 +181,6 @@ public sealed partial class RadioWidgetViewModel : WidgetViewModelBase
         }
     }
 
-    partial void OnSelectedCategoryIdChanged(string value)
-    {
-        LoadCategoryStations(value);
-        SaveSettings();
-    }
 
     partial void OnVolumeChanged(double value)
     {
@@ -429,7 +447,16 @@ public sealed partial class RadioWidgetViewModel : WidgetViewModelBase
     {
         DispatchToUi(() =>
         {
-            LoadCategoryStations(SelectedCategoryId);
+            var catalog = _catalogService.GetCatalog();
+            bool exists = catalog.Categories.Any(c => string.Equals(c.Id, SelectedCategoryId, StringComparison.OrdinalIgnoreCase));
+            if (!exists)
+            {
+                SelectedCategoryId = catalog.Categories.Count > 0 ? catalog.Categories[0].Id : "ambient";
+            }
+            else
+            {
+                LoadCategoryStations(SelectedCategoryId);
+            }
             UpdateTileStates();
         });
     }

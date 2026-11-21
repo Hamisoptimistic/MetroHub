@@ -45,6 +45,11 @@ public sealed class RadioCatalogService
     public event EventHandler? CatalogChanged;
 
     /// <summary>
+    /// Test / internal helper to notify listeners of a catalog change.
+    /// </summary>
+    internal void NotifyCatalogChanged() => CatalogChanged?.Invoke(this, EventArgs.Empty);
+
+    /// <summary>
     /// Initializes a new instance of <see cref="RadioCatalogService"/>.
     /// </summary>
     /// <param name="customCatalogPath">Optional custom path for testing isolation; defaults to %LocalAppData%\MetroHub\radio_catalog.json.</param>
@@ -129,6 +134,7 @@ public sealed class RadioCatalogService
                         var parsed = JsonSerializer.Deserialize<RadioCatalog>(diskJson, JsonOptions);
                         if (parsed != null && parsed.Categories.Count > 0)
                         {
+                            NormalizeCategories(parsed);
                             _cachedCatalog = parsed;
                             return _cachedCatalog;
                         }
@@ -146,6 +152,7 @@ public sealed class RadioCatalogService
                             var bakParsed = JsonSerializer.Deserialize<RadioCatalog>(bakJson, JsonOptions);
                             if (bakParsed != null && bakParsed.Categories.Count > 0)
                             {
+                                NormalizeCategories(bakParsed);
                                 _cachedCatalog = bakParsed;
                                 return _cachedCatalog;
                             }
@@ -167,6 +174,7 @@ public sealed class RadioCatalogService
                     _cachedCatalog = JsonSerializer.Deserialize<RadioCatalog>(bundledJson, JsonOptions);
                     if (_cachedCatalog != null && _cachedCatalog.Categories.Count > 0)
                     {
+                        NormalizeCategories(_cachedCatalog);
                         // Seed to AppData so future launches have the physical file ready
                         SaveCatalogAtomicInternal(_cachedCatalog);
                         return _cachedCatalog;
@@ -180,6 +188,7 @@ public sealed class RadioCatalogService
 
             // 3. Emergency fallback
             _cachedCatalog ??= CreateFallbackCatalog();
+            NormalizeCategories(_cachedCatalog);
             return _cachedCatalog;
         }
     }
@@ -320,6 +329,7 @@ public sealed class RadioCatalogService
                 var factoryCatalog = JsonSerializer.Deserialize<RadioCatalog>(bundledJson, JsonOptions);
                 if (factoryCatalog != null && factoryCatalog.Categories.Count > 0)
                 {
+                    NormalizeCategories(factoryCatalog);
                     _cachedCatalog = factoryCatalog;
                     SaveCatalogAtomicInternal(_cachedCatalog);
                 }
@@ -328,6 +338,244 @@ public sealed class RadioCatalogService
 
         CatalogChanged?.Invoke(this, EventArgs.Empty);
         return Task.CompletedTask;
+    }
+
+    /// <summary>
+    /// Adds a new category and persists the catalog atomically.
+    /// </summary>
+    public Task AddCategoryAsync(RadioCategory category)
+    {
+        ArgumentNullException.ThrowIfNull(category);
+
+        lock (_gate)
+        {
+            var catalog = LoadCatalog();
+
+            string catId = string.IsNullOrWhiteSpace(category.Id)
+                ? (string.IsNullOrWhiteSpace(category.DisplayName)
+                    ? $"cat_{Guid.NewGuid():N}"
+                    : category.DisplayName.Trim().ToLowerInvariant().Replace(' ', '_'))
+                : category.Id.Trim().ToLowerInvariant();
+
+            if (catalog.Categories.Any(c => string.Equals(c.Id, catId, StringComparison.OrdinalIgnoreCase)))
+            {
+                catId = $"{catId}_{Guid.NewGuid():N}"[..Math.Min(32, 5 + 32)];
+            }
+
+            var normalizedCategory = category with
+            {
+                Id = catId,
+                DisplayName = string.IsNullOrWhiteSpace(category.DisplayName) ? "New Category" : category.DisplayName.Trim(),
+                IconSymbol = string.IsNullOrWhiteSpace(category.IconSymbol) ? "Headphones24" : category.IconSymbol.Trim(),
+                SortOrder = catalog.Categories.Count,
+                Stations = category.Stations ?? new List<RadioStation>()
+            };
+
+            catalog.Categories.Add(normalizedCategory);
+            for (int i = 0; i < catalog.Categories.Count; i++)
+            {
+                catalog.Categories[i] = catalog.Categories[i] with { SortOrder = i };
+            }
+            SaveCatalogAtomicInternal(catalog);
+        }
+
+        CatalogChanged?.Invoke(this, EventArgs.Empty);
+        return Task.CompletedTask;
+    }
+
+    /// <summary>
+    /// Deletes a category, moving all its stations to the fallback category, and persists atomically.
+    /// </summary>
+    public Task<bool> DeleteCategoryAsync(string categoryId, string fallbackCategoryId)
+    {
+        if (string.IsNullOrWhiteSpace(categoryId)) return Task.FromResult(false);
+
+        bool removed = false;
+        lock (_gate)
+        {
+            var catalog = LoadCatalog();
+
+            var source = catalog.Categories.Find(c => string.Equals(c.Id, categoryId, StringComparison.OrdinalIgnoreCase));
+            if (source == null || catalog.Categories.Count <= 1) return Task.FromResult(false);
+
+            var fallback = catalog.Categories.Find(c =>
+                !string.Equals(c.Id, categoryId, StringComparison.OrdinalIgnoreCase) &&
+                string.Equals(c.Id, fallbackCategoryId, StringComparison.OrdinalIgnoreCase))
+                ?? catalog.Categories.First(c => !string.Equals(c.Id, categoryId, StringComparison.OrdinalIgnoreCase));
+
+            if (source.Stations is { Count: > 0 })
+            {
+                foreach (var station in source.Stations)
+                {
+                    var movedStation = station with { Category = fallback.Id };
+                    fallback.Stations.RemoveAll(s => s.Id == movedStation.Id || string.Equals(s.StreamUrl, movedStation.StreamUrl, StringComparison.OrdinalIgnoreCase));
+                    fallback.Stations.Add(movedStation);
+                }
+            }
+
+            catalog.Categories.Remove(source);
+            for (int i = 0; i < catalog.Categories.Count; i++)
+            {
+                catalog.Categories[i] = catalog.Categories[i] with { SortOrder = i };
+            }
+            SaveCatalogAtomicInternal(catalog);
+            removed = true;
+        }
+
+        if (removed)
+        {
+            CatalogChanged?.Invoke(this, EventArgs.Empty);
+        }
+
+        return Task.FromResult(removed);
+    }
+
+    /// <summary>
+    /// Renames an existing category's display name and persists atomically.
+    /// </summary>
+    public Task<bool> RenameCategoryAsync(string categoryId, string newDisplayName)
+    {
+        if (string.IsNullOrWhiteSpace(categoryId) || string.IsNullOrWhiteSpace(newDisplayName))
+            return Task.FromResult(false);
+
+        bool renamed = false;
+        lock (_gate)
+        {
+            var catalog = LoadCatalog();
+            for (int i = 0; i < catalog.Categories.Count; i++)
+            {
+                if (string.Equals(catalog.Categories[i].Id, categoryId, StringComparison.OrdinalIgnoreCase))
+                {
+                    catalog.Categories[i] = catalog.Categories[i] with { DisplayName = newDisplayName.Trim() };
+                    renamed = true;
+                    break;
+                }
+            }
+
+            if (renamed)
+            {
+                SaveCatalogAtomicInternal(catalog);
+            }
+        }
+
+        if (renamed)
+        {
+            CatalogChanged?.Invoke(this, EventArgs.Empty);
+        }
+
+        return Task.FromResult(renamed);
+    }
+
+    /// <summary>
+    /// Updates the icon symbol for an existing category and persists atomically.
+    /// </summary>
+    public Task<bool> UpdateCategoryIconAsync(string categoryId, string newIconSymbol)
+    {
+        if (string.IsNullOrWhiteSpace(categoryId) || string.IsNullOrWhiteSpace(newIconSymbol))
+            return Task.FromResult(false);
+
+        bool updated = false;
+        lock (_gate)
+        {
+            var catalog = LoadCatalog();
+            for (int i = 0; i < catalog.Categories.Count; i++)
+            {
+                if (string.Equals(catalog.Categories[i].Id, categoryId, StringComparison.OrdinalIgnoreCase))
+                {
+                    catalog.Categories[i] = catalog.Categories[i] with { IconSymbol = newIconSymbol.Trim() };
+                    updated = true;
+                    break;
+                }
+            }
+
+            if (updated)
+            {
+                SaveCatalogAtomicInternal(catalog);
+            }
+        }
+
+        if (updated)
+        {
+            CatalogChanged?.Invoke(this, EventArgs.Empty);
+        }
+
+        return Task.FromResult(updated);
+    }
+
+    /// <summary>
+    /// Reorders categories by moving a category from oldIndex to newIndex and persists atomically.
+    /// </summary>
+    public Task<bool> ReorderCategoriesAsync(int oldIndex, int newIndex)
+    {
+        bool reordered = false;
+        lock (_gate)
+        {
+            var catalog = LoadCatalog();
+            if (oldIndex < 0 || oldIndex >= catalog.Categories.Count ||
+                newIndex < 0 || newIndex >= catalog.Categories.Count ||
+                oldIndex == newIndex)
+            {
+                return Task.FromResult(false);
+            }
+
+            var item = catalog.Categories[oldIndex];
+            catalog.Categories.RemoveAt(oldIndex);
+            catalog.Categories.Insert(newIndex, item);
+
+            for (int i = 0; i < catalog.Categories.Count; i++)
+            {
+                catalog.Categories[i] = catalog.Categories[i] with { SortOrder = i };
+            }
+
+            SaveCatalogAtomicInternal(catalog);
+            reordered = true;
+        }
+
+        if (reordered)
+        {
+            CatalogChanged?.Invoke(this, EventArgs.Empty);
+        }
+
+        return Task.FromResult(reordered);
+    }
+
+    private static void NormalizeCategories(RadioCatalog? catalog)
+    {
+        if (catalog?.Categories == null || catalog.Categories.Count == 0) return;
+
+        var distinctOrders = catalog.Categories.Select(c => c.SortOrder).Distinct().Count();
+        if (distinctOrders != catalog.Categories.Count)
+        {
+            for (int i = 0; i < catalog.Categories.Count; i++)
+            {
+                catalog.Categories[i] = catalog.Categories[i] with { SortOrder = i };
+            }
+        }
+        else
+        {
+            bool needsSorting = false;
+            for (int i = 0; i < catalog.Categories.Count - 1; i++)
+            {
+                if (catalog.Categories[i].SortOrder > catalog.Categories[i + 1].SortOrder)
+                {
+                    needsSorting = true;
+                    break;
+                }
+            }
+
+            if (needsSorting)
+            {
+                catalog.Categories.Sort((a, b) => a.SortOrder.CompareTo(b.SortOrder));
+            }
+
+            for (int i = 0; i < catalog.Categories.Count; i++)
+            {
+                if (catalog.Categories[i].SortOrder != i)
+                {
+                    catalog.Categories[i] = catalog.Categories[i] with { SortOrder = i };
+                }
+            }
+        }
     }
 
     private void SaveCatalogAtomicInternal(RadioCatalog catalog)
@@ -406,20 +654,24 @@ public sealed class RadioCatalogService
         try
         {
             string baseDir = AppDomain.CurrentDomain.BaseDirectory;
-            string[] candidates = new[]
+            string current = baseDir;
+            for (int depth = 0; depth < 8; depth++)
             {
-                Path.Combine(baseDir, "Assets", "Radio", "radio_catalog.json"),
-                Path.Combine(baseDir, "..", "..", "..", "..", "src", "MetroHub", "Assets", "Radio", "radio_catalog.json"),
-                Path.Combine(baseDir, "..", "..", "src", "MetroHub", "Assets", "Radio", "radio_catalog.json")
-            };
-
-            foreach (var path in candidates)
-            {
-                string fullPath = Path.GetFullPath(path);
-                if (File.Exists(fullPath))
+                string candidate = Path.Combine(current, "Assets", "Radio", "radio_catalog.json");
+                if (File.Exists(candidate))
                 {
-                    return File.ReadAllText(fullPath, Encoding.UTF8);
+                    return File.ReadAllText(candidate, Encoding.UTF8);
                 }
+
+                candidate = Path.Combine(current, "src", "MetroHub", "Assets", "Radio", "radio_catalog.json");
+                if (File.Exists(candidate))
+                {
+                    return File.ReadAllText(candidate, Encoding.UTF8);
+                }
+
+                string? parent = Directory.GetParent(current)?.FullName;
+                if (parent == null) break;
+                current = parent;
             }
         }
         catch (Exception ex)
