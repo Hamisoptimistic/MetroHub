@@ -57,6 +57,8 @@ public sealed partial class RadioStationDialog : MetroDialog
         Closed += OnDialogClosed;
         IsVisibleChanged += OnWindowIsVisibleChanged;
         PreviewKeyDown += OnDialogPreviewKeyDown;
+        PreviewMouseDown += OnDialogPreviewMouseDown;
+        RowIconPickerPopup.Closed += (s, e) => RowIconPickerPopup.Tag = null;
     }
 
     private void OnDialogClosed(object? sender, EventArgs e)
@@ -875,7 +877,7 @@ public sealed partial class RadioStationDialog : MetroDialog
 
     private void OnInlineRenameTextBoxLoaded(object sender, RoutedEventArgs e)
     {
-        if (sender is TextBox tb)
+        if (sender is TextBox tb && tb.IsVisible)
         {
             tb.Focus();
             tb.SelectAll();
@@ -917,6 +919,48 @@ public sealed partial class RadioStationDialog : MetroDialog
         {
             CategoryViewModel.CommitRenameCommand.Execute(item);
         }
+    }
+
+    private void OnDialogPreviewMouseDown(object sender, MouseButtonEventArgs e)
+    {
+        var renamingItem = CategoryViewModel.Categories.FirstOrDefault(c => c.IsRenaming);
+        if (renamingItem == null) return;
+
+        var current = e.OriginalSource as DependencyObject;
+        bool isInsideRenameTextBox = false;
+        bool isCancelButton = false;
+
+        while (current != null && current is not Window)
+        {
+            if (current is TextBox tb && ReferenceEquals(tb.DataContext, renamingItem))
+            {
+                isInsideRenameTextBox = true;
+                break;
+            }
+
+            if (current is FrameworkElement fe && fe.Name == "InlineRenameCancelButton")
+            {
+                isCancelButton = true;
+                break;
+            }
+
+            current = current is Visual or System.Windows.Media.Media3D.Visual3D
+                ? VisualTreeHelper.GetParent(current)
+                : (current is FrameworkContentElement fce ? fce.Parent : LogicalTreeHelper.GetParent(current));
+        }
+
+        if (isInsideRenameTextBox)
+        {
+            return;
+        }
+
+        if (isCancelButton)
+        {
+            CategoryViewModel.CancelRenameCommand.Execute(renamingItem);
+            return;
+        }
+
+        CategoryViewModel.CommitRenameCommand.Execute(renamingItem);
     }
 
     private Point _dragStartPoint;
@@ -1065,7 +1109,9 @@ public sealed partial class RadioStationDialog : MetroDialog
                 break;
             }
 
-            element = VisualTreeHelper.GetParent(element);
+            element = element is Visual or System.Windows.Media.Media3D.Visual3D
+                ? VisualTreeHelper.GetParent(element)
+                : (element is FrameworkContentElement fce ? fce.Parent : LogicalTreeHelper.GetParent(element));
         }
         return false;
     }

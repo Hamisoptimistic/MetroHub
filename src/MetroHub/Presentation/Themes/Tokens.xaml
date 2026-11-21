@@ -60,6 +60,8 @@
     <SolidColorBrush x:Key="SmokeFillColorDefaultBrush" Color="#1A08080C" po:Freeze="True" />
     <!-- Tier 2 Obsidian Deck Tint (calibrated translucent acrylic tint matching SettingsWindow) -->
     <SolidColorBrush x:Key="DialogPanelBackground" Color="#280D0D11" po:Freeze="True" />
+    <!-- 100% Opaque Dark Surface Brush for Popups / Flyouts (eliminates Win32 transparent window bleed-through) -->
+    <SolidColorBrush x:Key="FlyoutBackgroundBrush" Color="#202022" po:Freeze="True" />
 
     <!-- ========================================================================= -->
     <!-- SHELL & CANVAS CHROME OVERLAY TOKENS                                      -->

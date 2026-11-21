@@ -61,8 +61,25 @@ public sealed partial class RadioCategoryItemViewModel : ObservableObject
         _draftName = category.DisplayName;
     }
 
+    public string StationCountDisplay => StationCount == 1 ? "1 station" : $"{StationCount} stations";
+
+    public string DeleteConfirmationPrompt => StationCount == 1
+        ? $"Move 1 station to {DeleteFallbackName}?"
+        : $"Move {StationCount} stations to {DeleteFallbackName}?";
+
     partial void OnIconKeyChanged(string value)
     {
         IconSymbol = RadioSymbols.ParseSymbol(value);
+    }
+
+    partial void OnStationCountChanged(int value)
+    {
+        OnPropertyChanged(nameof(StationCountDisplay));
+        OnPropertyChanged(nameof(DeleteConfirmationPrompt));
+    }
+
+    partial void OnDeleteFallbackNameChanged(string value)
+    {
+        OnPropertyChanged(nameof(DeleteConfirmationPrompt));
     }
 }
